@@ -227,4 +227,11 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - CRITICAL: ALWAYS use `search-docs` tool for version-specific Pest documentation and updated code examples.
 - IMPORTANT: Activate `pest-testing` every time you're working with a Pest or testing-related task.
 
+=== project context ===
+
+# Project Distinction: eadIA vs ead2026
+
+- **eadIA** (or `ead-ia`): The legacy/previous project that uses Filament 5.
+- **ead2026**: The new project being developed from scratch. It uses an **API-first architecture**. All business rules from the legacy `eadIA` project must be incorporated here, but `ead2026` is the completely new application.
+
 </laravel-boost-guidelines>

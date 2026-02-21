@@ -1,5 +1,37 @@
 # Domain Spec: Core & Identity (API-First)
 
+## Status de Implementação
+
+### ✅ Implementado
+- [x] Middleware de resolução de tenant (`ResolveTenant`, `ResolveTenantOptional`)
+- [x] Middleware de validação de acesso ao tenant (`EnsureTenantAccess`)
+- [x] Middleware de contexto obrigatório para não-developers (`EnsureTenantRequiredForNonDeveloper`)
+- [x] `ApiContext` Value Object injetado via middleware
+- [x] Exceptions de domínio com render centralizado (`TenantContextRequiredException`, `InvalidCredentialsException`, `ResourceNotFoundException`)
+- [x] Response Pattern padronizado (`->toResponse(request())`, `JsonResource`)
+- [x] Models: `User`, `Tenant` com relacionamentos e roles/permissions (spatie/laravel-permission)
+- [x] Policies: `UserPolicy`, `CategoryPolicy`
+- [x] Seeders: Roles, Permissions, Users de desenvolvimento
+
+### ✅ Endpoints Implementados
+- [x] `POST /api/v1/core/auth/login` - Autenticação com rate limiting (5/min), token com device type
+- [x] `POST /api/v1/core/auth/logout` - Revoga token atual
+- [x] `GET /api/v1/core/auth/me` - Retorna usuário + roles + permissions
+- [x] `POST /api/v1/core/users` - Registro de usuário
+- [x] `GET /api/v1/core/users` - Listagem (tenant-scoped, developers veem todos)
+- [x] `GET /api/v1/core/users/{id}` - Detalhe do usuário
+- [x] `PATCH /api/v1/core/users/me` - Atualização de perfil
+- [x] `PATCH /api/v1/core/users/me/password` - Atualização de senha
+
+### ⏳ Pendente
+- [ ] `GET /api/v1/core/tenant/config` - Configurações públicas do tenant (white-label)
+- [ ] `PATCH /api/v1/core/tenant/config` - Edição de personalizações (tenant_admin)
+- [ ] Impersonação segura (tokens especiais com Sanctum Abilities)
+- [ ] `TenantCustomization` model e relacionamentos
+- [ ] `TenantIntegration` model e relacionamentos
+
+---
+
 ## Visão Geral
 Este domínio é responsável pela Autenticação, Identidade do Usuário, Controle de Acesso (RBAC) e Multi-Tenancy. Ele serve como o alicerce fundamental, garantindo que usuários sejam devidamente identificados, autorizados e roteados para o inquilino (Tenant) correto.
 

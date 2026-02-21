@@ -1,5 +1,37 @@
 # Domain Spec: Catalog & Learning (API-First)
 
+## Status de Implementação
+
+### ✅ Implementado
+- [x] Models: `Course`, `Category`, `CourseModule`, `Lesson`, `Enrollment` com relacionamentos
+- [x] Migrações com soft deletes, tenant_id, hierarchical categories
+- [x] Sistema de categorias com `is_system` e `parent_id`
+- [x] Regra de antiduplicação: tenant não pode criar categoria com mesmo nome de categoria padrão
+- [x] Pivot `category_course` tenant-aware
+- [x] Policies: `CategoryPolicy`, `CoursePolicy`, `CourseModulePolicy`, `EnrollmentPolicy`, `LessonPolicy`
+- [x] Validação de categoria duplicada no `StoreCategoryAction`
+
+### ✅ Endpoints Implementados
+- [x] `GET /api/v1/learning/catalog/courses` - Lista cursos publicados com filtros (category, is_free, is_featured)
+- [x] `GET /api/v1/learning/catalog/courses/{slug}` - Detalhe do curso com módulos e aulas
+- [x] `GET /api/v1/learning/catalog/categories` - Lista categorias (sistema + tenant)
+- [x] `POST /api/v1/learning/catalog/categories` - Cria categoria (tenant ou sistema se developer)
+
+### ⏳ Pendente
+- [ ] `GET /api/v1/learning/courses/{id}/enrollment` - Situação da matrícula
+- [ ] `GET /api/v1/learning/courses/{id}/modules` - Árvore do curso com tracking
+- [ ] `GET /api/v1/learning/lessons/{id}` - Aula com pre-signed URL
+- [ ] `POST /api/v1/learning/lessons/{id}/progress` - Heartbeat de progresso
+- [ ] `CourseMaterial` model e download tracking
+- [ ] `LessonProgress` model e cálculo de progresso
+- [ ] Eventos de domínio (`LessonCompletedEvent`)
+- [ ] Job de cálculo assíncrono de progresso
+- [ ] Ratings (1-5 estrelas, like/dislike)
+- [ ] Pre-signed URLs para mídias (AWS S3, Vimeo)
+- [ ] Preview de cursos draft para instrutores/admins
+
+---
+
 ## Visão Geral
 Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem estrutural dos cursos (Trilhas, Módulos, Aulas, Materiais) e a jornada de execução e progresso feita pelo aluno (Enrollments, Progress).
 

@@ -19,17 +19,6 @@ class Enrollment extends Model
         'progress_percentage',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'tenant_id' => 'integer',
-            'user_id' => 'integer',
-            'course_id' => 'integer',
-            'progress_percentage' => 'integer',
-            'expires_at' => 'datetime',
-        ];
-    }
-
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -43,5 +32,16 @@ class Enrollment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'tenant_id' => 'integer',
+            'user_id' => 'integer',
+            'course_id' => 'integer',
+            'progress_percentage' => 'integer',
+            'expires_at' => 'datetime',
+        ];
     }
 }

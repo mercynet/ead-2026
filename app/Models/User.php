@@ -43,20 +43,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'tenant_id' => 'integer',
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
-
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -85,5 +71,19 @@ class User extends Authenticatable
     public function belongsToTenant(Tenant $tenant): bool
     {
         return (int) $this->tenant_id === (int) $tenant->id;
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tenant_id' => 'integer',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
     }
 }

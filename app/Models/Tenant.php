@@ -24,13 +24,6 @@ class Tenant extends Model implements IsTenant
         'is_active',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_active' => 'boolean',
-        ];
-    }
-
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
@@ -44,5 +37,12 @@ class Tenant extends Model implements IsTenant
     public function integrations(): HasMany
     {
         return $this->hasMany(TenantIntegration::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
     }
 }

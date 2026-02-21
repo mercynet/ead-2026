@@ -8,7 +8,7 @@ use App\Http\Context\ApiContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\Catalog\StoreCategoryRequest;
 use App\Http\Resources\Learning\Catalog\CatalogCategoryResource;
-use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -19,16 +19,16 @@ class CategoryController extends Controller
         private readonly StoreCategoryAction $storeCategoryAction,
     ) {}
 
-    public function index(ApiContext $context): Response
+    public function index(ApiContext $context): JsonResponse
     {
         Gate::forUser($context->user)->authorize('learning.categories.list', [$context->tenant]);
 
         $paginator = $this->listCategoriesAction->handle($context);
 
-        return response(CatalogCategoryResource::collection($paginator)->response()->getData(true));
+        return CatalogCategoryResource::collection($paginator)->toResponse(request());
     }
 
-    public function store(StoreCategoryRequest $request, ApiContext $context): Response
+    public function store(StoreCategoryRequest $request, ApiContext $context): JsonResponse
     {
         Gate::forUser($context->user)->authorize('learning.categories.create', [$context->tenant, $request->boolean('is_system')]);
 
@@ -38,8 +38,8 @@ class CategoryController extends Controller
             throw $exception;
         }
 
-        return response([
-            'data' => CatalogCategoryResource::make($category)->resolve(),
-        ], 201);
+        return CatalogCategoryResource::make($category)
+            ->toResponse(request())
+            ->setStatusCode(201);
     }
 }

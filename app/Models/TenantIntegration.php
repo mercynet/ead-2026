@@ -14,16 +14,16 @@ class TenantIntegration extends Model
         'is_enabled',
     ];
 
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     protected function casts(): array
     {
         return [
             'configuration' => 'array',
             'is_enabled' => 'boolean',
         ];
-    }
-
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(Tenant::class);
     }
 }

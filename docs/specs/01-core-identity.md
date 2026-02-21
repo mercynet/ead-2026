@@ -9,22 +9,63 @@ Este domínio é responsável pela Autenticação, Identidade do Usuário, Contr
 - **Controladores / Handlers:** Controller HTTP com métodos explícitos (`index`, `show`, `store`, etc.), sem `__invoke` como padrão do domínio.
 - **Command/Query (Action Layer):** Toda regra de negócio deve viver em `app/Actions/<Domain>/<Resource>/...`, separando leitura (Query Actions) e escrita (Command Actions). Controller apenas orquestra request/authorization/response.
 - **Autorização Obrigatória por Endpoint:** Todo método de controller deve validar autorização via Gate/Policy antes de executar a Action.
-- **Validação & Transferência:** `FormRequests` do Laravel para validação estrita, mapeados para `DTOs` (Data Transfer Objects) tipados antes de tocarem os Actions/Services.
-- **Tratamento de Exceções:** Formato unificado de erros de API.
-- **Padronização obrigatória de Tenant Context:** controllers não podem fazer parsing/manual check de tenant; devem usar contexto resolvido centralmente.
+- **Validação & Transferência:** `FormRequests` do Laravel para validação estrita.
+- **Tratamento de Exceções:** Formato unificado de erros de API com render centralizado em `bootstrap/app.php`.
+- **API Context (`ApiContext`):** Value Object injetado automaticamente via middleware que encapsula `$user` e `$tenant`. Controllers e Actions recebem `ApiContext` como parâmetro, nunca acessam request/tenant manualmente.
 
-### 1.1 Guardrails Obrigatórios (não repetir anti-patterns)
-- Não repetir em controllers:
-  - leitura manual de tenant (`header`, `host`, `request->attributes`)
-  - blocos de retorno inline para `tenant_not_resolved`
-- `tenant_not_resolved` deve ser emitido por exceção de domínio única (`TenantContextRequiredException`) com render centralizado.
-- `FormRequest` deve validar pré-condições de tenant para casos obrigatórios (422), usando o trait de contexto HTTP compartilhado.
-- Controllers devem somente orquestrar: `FormRequest` + `Gate/Policy` + Action + Resource/Response.
+### 1.1 ApiContext Pattern (Obrigatório)
+```php
+// app/Http/Context/ApiContext.php - Value Object injetado via middleware
+final readonly class ApiContext {
+    public function __construct(
+        public readonly ?User $user,
+        public readonly ?Tenant $tenant,
+    ) {}
+    
+    public function hasUser(): bool { return $this->user !== null; }
+    public function hasTenant(): bool { return $this->tenant !== null; }
+    public function requiredUser(): User { ... }
+    public function requiredTenant(): Tenant { ... }
+}
+
+// Controller - injetar ApiContext no método
+public function index(ApiContext $context): JsonResponse
+{
+    Gate::forUser($context->user)->authorize('core.users.list', [$context->tenant]);
+    $result = $this->action->handle($context);
+    return Resource::collection($result)->toResponse(request());
+}
+
+// Action - receber ApiContext
+public function handle(ApiContext $context): CursorPaginator
+{
+    if ($context->user->isDeveloper()) { ... }
+    if ($context->tenant !== null) { ... }
+}
+```
+
+### 1.2 Response Pattern (Obrigatório)
+```php
+// Para Collections paginadas - usar toResponse()
+return Resource::collection($paginator)->toResponse(request());
+
+// Para Resource único - usar toResponse()
+return Resource::make($model)->toResponse(request());
+
+// Para Resource único com status 201
+return Resource::make($model)->toResponse(request())->setStatusCode(201);
+
+// Para payloads manuais (login, logout, etc.)
+return new JsonResponse(['data' => $payload]);
+```
+
+### 1.3 Guardrails Obrigatórios (não repetir anti-patterns)
+- Controllers devem injetar `ApiContext` como parâmetro de método, NUNCA acessar tenant/user via request manualmente.
+- `tenant_not_resolved` deve ser emitido por exceção de domínio (`TenantContextRequiredException`) com render centralizado.
+- Controllers devem somente orquestrar: `ApiContext` + `Gate/Policy` + Action + Resource.
 - Decisão condicional de autorização (ex.: `is_system`) deve ficar em `Policy`, não em `if` de controller.
-- Convenção de payload manual:
-  - quando não for `JsonResource` / `ResourceCollection`, retornar `data` direto (sem wrapper redundante `user`, `course`, `category`).
-  - Exemplo correto: `'data' => $payload`.
-  - Exemplo proibido: `'data' => ['user' => $payload]`.
+- Não usar `->resolve()` em Resources - usar `->toResponse(request())`.
+- Não retornar `response(Resource::collection(...)->response()->getData(true))` - usar `->toResponse(request())` diretamente.
 - `meta` vazio não deve ser retornado (`'meta' => []` proibido). Só incluir `meta` quando houver conteúdo real.
 
 ## 2. Multi-Tenancy Resolution

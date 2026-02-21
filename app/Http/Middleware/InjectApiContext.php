@@ -27,16 +27,12 @@ class InjectApiContext
     private function resolveUser(Request $request): ?User
     {
         /** @var User|null $user */
-        $user = $request->user('sanctum') ?? $request->user();
-
-        return $user;
+        return $request->user('sanctum') ?? $request->user();
     }
 
     private function resolveTenant(Request $request): ?Tenant
     {
         /** @var Tenant|null $tenant */
-        $tenant = $request->attributes->get('tenant');
-
-        return $tenant;
+        return $request->attributes->get('tenant');
     }
 }

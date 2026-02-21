@@ -14,7 +14,7 @@ use App\Http\Requests\Core\Users\UpdatePasswordRequest;
 use App\Http\Requests\Core\Users\UpdateProfileRequest;
 use App\Http\Resources\Core\UserListResource;
 use App\Models\User;
-use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
@@ -27,49 +27,49 @@ class UserController extends Controller
         private readonly UpdatePasswordAction $updatePasswordAction,
     ) {}
 
-    public function index(ApiContext $context): Response
+    public function index(ApiContext $context): JsonResponse
     {
         Gate::forUser($context->user)->authorize('core.users.list', [$context->tenant]);
 
         $paginator = $this->listUsersAction->handle($context);
 
-        return response(UserListResource::collection($paginator)->response()->getData(true));
+        return UserListResource::collection($paginator)->toResponse(request());
     }
 
-    public function store(RegisterUserRequest $request, ApiContext $context): Response
+    public function store(RegisterUserRequest $request, ApiContext $context): JsonResponse
     {
         $user = $this->registerUserAction->handle($context->requiredTenant(), $request->validated());
 
-        return response([
+        return (new JsonResponse([
             'data' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
             ],
-        ], 201);
+        ]))->setStatusCode(201);
     }
 
-    public function show(ApiContext $context, User $user): Response
+    public function show(ApiContext $context, User $user): JsonResponse
     {
         Gate::forUser($context->user)->authorize('core.users.show', [$context->tenant, $user]);
 
-        return response([
+        return new JsonResponse([
             'data' => $this->showUserAction->handle($user),
         ]);
     }
 
-    public function updateMe(UpdateProfileRequest $request, ApiContext $context): Response
+    public function updateMe(UpdateProfileRequest $request, ApiContext $context): JsonResponse
     {
         Gate::forUser($context->user)->authorize('core.users.update-self', [$context->tenant, $context->requiredUser()]);
 
         $user = $this->updateProfileAction->handle($context->requiredUser(), $request->validated());
 
-        return response([
+        return new JsonResponse([
             'data' => $this->showUserAction->handle($user),
         ]);
     }
 
-    public function updatePassword(UpdatePasswordRequest $request, ApiContext $context): Response
+    public function updatePassword(UpdatePasswordRequest $request, ApiContext $context): JsonResponse
     {
         Gate::forUser($context->user)->authorize('core.users.update-self', [$context->tenant, $context->requiredUser()]);
 
@@ -79,7 +79,7 @@ class UserController extends Controller
             $request->string('password')->toString(),
         );
 
-        return response([
+        return new JsonResponse([
             'data' => [
                 'password_updated' => true,
             ],

@@ -25,17 +25,6 @@ class Course extends Model
         'published_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'tenant_id' => 'integer',
-            'price_cents' => 'integer',
-            'access_days' => 'integer',
-            'is_featured' => 'boolean',
-            'published_at' => 'datetime',
-        ];
-    }
-
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -61,5 +50,16 @@ class Course extends Model
     public function isFree(): bool
     {
         return (int) $this->price_cents === 0;
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'tenant_id' => 'integer',
+            'price_cents' => 'integer',
+            'access_days' => 'integer',
+            'is_featured' => 'boolean',
+            'published_at' => 'datetime',
+        ];
     }
 }

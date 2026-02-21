@@ -15,6 +15,11 @@ class TenantCustomization extends Model
         'has_pending_changes',
     ];
 
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     protected function casts(): array
     {
         return [
@@ -23,10 +28,5 @@ class TenantCustomization extends Model
             'last_published_at' => 'datetime',
             'has_pending_changes' => 'boolean',
         ];
-    }
-
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(Tenant::class);
     }
 }

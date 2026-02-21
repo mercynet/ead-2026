@@ -4,41 +4,38 @@ namespace App\Http\Controllers\Api\V1\Core;
 
 use App\Actions\Core\Auth\LoginAction;
 use App\Actions\Core\Auth\LogoutAction;
-use App\Actions\Core\Auth\MeAction;
 use App\Http\Context\ApiContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Auth\LoginRequest;
-use Illuminate\Http\Response;
+use App\Http\Resources\Core\Auth\AuthUserResource;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
     public function __construct(
         private readonly LoginAction $loginAction,
-        private readonly MeAction $meAction,
         private readonly LogoutAction $logoutAction,
     ) {}
 
-    public function login(LoginRequest $request, ApiContext $context): Response
+    public function login(LoginRequest $request, ApiContext $context): JsonResponse
     {
         $result = $this->loginAction->handle($request, $context);
 
-        return response([
+        return new JsonResponse([
             'data' => $result,
         ]);
     }
 
-    public function me(ApiContext $context): Response
+    public function me(ApiContext $context): AuthUserResource
     {
-        return response([
-            'data' => $this->meAction->handle($context->requiredUser()),
-        ]);
+        return AuthUserResource::make($context->requiredUser());
     }
 
-    public function logout(ApiContext $context): Response
+    public function logout(ApiContext $context): JsonResponse
     {
         $this->logoutAction->handle($context->requiredUser());
 
-        return response([
+        return new JsonResponse([
             'data' => [
                 'logged_out' => true,
             ],

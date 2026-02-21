@@ -43,7 +43,6 @@ it('logs in with valid tenant context and credentials', function (): void {
                 'token',
                 'user' => ['id', 'name', 'email'],
             ],
-            'links' => ['first', 'last', 'prev', 'next'],
         ]);
 
     expect(PersonalAccessToken::query()->where('tokenable_id', $user->id)->exists())->toBeTrue();

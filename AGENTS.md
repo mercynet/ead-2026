@@ -250,4 +250,107 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - IMPORTANT: Always use `search-docs` tool for version-specific Tailwind CSS documentation and updated code examples. Never rely on training data.
 - IMPORTANT: Activate `tailwindcss-development` every time you're working with a Tailwind CSS or styling-related task.
 
+=== project/architecture rules ===
+
+# Project Architecture
+
+This is a multi-tenant EAD (E-learning) platform with specific architectural patterns that MUST be followed.
+
+## ApiContext Pattern
+
+All controllers and actions MUST use `ApiContext` for accessing user and tenant data. NEVER access request attributes directly.
+
+```php
+// CORRECT - Inject ApiContext
+public function index(ApiContext $context): JsonResponse
+{
+    Gate::forUser($context->user)->authorize('permission', [$context->tenant]);
+    return Resource::collection($this->action->handle($context))->toResponse(request());
+}
+
+// WRONG - Manual access
+public function index(Request $request): Response
+{
+    $user = $request->user();
+    $tenant = $request->attributes->get('tenant');
+}
+```
+
+## Response Pattern
+
+- Use `->toResponse(request())` for Resources, NOT `->response()->getData(true)` wrapped in `response()`.
+- Do NOT use `->resolve()` on Resources.
+- For manual payloads (login, logout), use `new JsonResponse(['data' => ...])`.
+
+```php
+// CORRECT - Collection
+return Resource::collection($paginator)->toResponse(request());
+
+// CORRECT - Single resource
+return Resource::make($model)->toResponse(request());
+
+// CORRECT - Single resource with 201
+return Resource::make($model)->toResponse(request())->setStatusCode(201);
+
+// CORRECT - Manual payload
+return new JsonResponse(['data' => ['token' => $token]]);
+
+// WRONG
+return response(Resource::collection($paginator)->response()->getData(true));
+return response(['data' => Resource::make($model)->resolve()]);
+```
+
+## Actions
+
+Actions receive `ApiContext` as parameter, not individual User/Tenant objects.
+
+```php
+// CORRECT
+public function handle(ApiContext $context): CursorPaginator
+{
+    if ($context->user->isDeveloper()) { ... }
+}
+
+// WRONG
+public function handle(User $user, ?Tenant $tenant): CursorPaginator
+```
+
+## Exceptions
+
+Domain exceptions are rendered centrally in `bootstrap/app.php`. Throw exceptions, do NOT return error payloads inline.
+
+```php
+// CORRECT
+throw InvalidCredentialsException::make();
+throw ResourceNotFoundException::course($slug);
+throw TenantContextRequiredException::make();
+
+// WRONG
+return ['status' => 401, 'payload' => ['errors' => [...]]];
+```
+
+## Artisan Commands
+
+This project uses Laravel Sail. Always use `sail artisan` instead of `php artisan`.
+
+```bash
+# CORRECT
+sail artisan test --compact
+sail artisan make:class ...
+
+# WRONG
+php artisan test --compact
+```
+
+## Directory Structure
+
+- Controllers: `app/Http/Controllers/Api/V1/<Domain>/...`
+- Actions: `app/Actions/<Domain>/<Resource>/...`
+- Resources: `app/Http/Resources/<Domain>/...`
+- Requests: `app/Http/Requests/<Domain>/...`
+- Policies: `app/Policies/...`
+- Exceptions: `app/Exceptions/...`
+- Context: `app/Http/Context/ApiContext.php`
+- Specs: `docs/specs/*.md`
+
 </laravel-boost-guidelines>

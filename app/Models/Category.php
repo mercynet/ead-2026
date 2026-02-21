@@ -22,15 +22,6 @@ class Category extends Model
         'is_system',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'tenant_id' => 'integer',
-            'parent_id' => 'integer',
-            'is_system' => 'boolean',
-        ];
-    }
-
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -51,5 +42,14 @@ class Category extends Model
         return $this->belongsToMany(Course::class)
             ->withPivot('tenant_id')
             ->withTimestamps();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'tenant_id' => 'integer',
+            'parent_id' => 'integer',
+            'is_system' => 'boolean',
+        ];
     }
 }

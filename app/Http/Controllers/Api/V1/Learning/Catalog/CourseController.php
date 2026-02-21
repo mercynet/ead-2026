@@ -9,7 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\Catalog\ListCatalogCoursesRequest;
 use App\Http\Resources\Learning\Catalog\CourseCatalogResource;
 use App\Http\Resources\Learning\Catalog\CourseDetailResource;
-use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class CourseController extends Controller
@@ -19,7 +19,7 @@ class CourseController extends Controller
         private readonly ShowCourseAction $showCourseAction,
     ) {}
 
-    public function index(ListCatalogCoursesRequest $request, ApiContext $context): Response
+    public function index(ListCatalogCoursesRequest $request, ApiContext $context): JsonResponse
     {
         if ($context->hasUser()) {
             Gate::forUser($context->user)->authorize('learning.catalog.courses.list', [$context->tenant]);
@@ -27,10 +27,10 @@ class CourseController extends Controller
 
         $paginator = $this->listCoursesAction->handle($request, $context);
 
-        return response(CourseCatalogResource::collection($paginator)->response()->getData(true));
+        return CourseCatalogResource::collection($paginator)->toResponse(request());
     }
 
-    public function show(string $slug, ListCatalogCoursesRequest $request, ApiContext $context): Response
+    public function show(string $slug, ListCatalogCoursesRequest $request, ApiContext $context): JsonResponse
     {
         if ($context->hasUser()) {
             Gate::forUser($context->user)->authorize('learning.catalog.courses.show', [$context->tenant]);
@@ -38,8 +38,6 @@ class CourseController extends Controller
 
         $course = $this->showCourseAction->handle($context->tenant, $slug);
 
-        return response([
-            'data' => CourseDetailResource::make($course)->resolve(),
-        ]);
+        return CourseDetailResource::make($course)->toResponse(request());
     }
 }

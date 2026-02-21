@@ -18,15 +18,6 @@ class CourseModule extends Model
         'sort_order',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'tenant_id' => 'integer',
-            'course_id' => 'integer',
-            'sort_order' => 'integer',
-        ];
-    }
-
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -40,5 +31,14 @@ class CourseModule extends Model
     public function lessons(): HasMany
     {
         return $this->hasMany(Lesson::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'tenant_id' => 'integer',
+            'course_id' => 'integer',
+            'sort_order' => 'integer',
+        ];
     }
 }

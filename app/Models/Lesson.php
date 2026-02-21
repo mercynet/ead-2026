@@ -18,16 +18,6 @@ class Lesson extends Model
         'is_free',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'tenant_id' => 'integer',
-            'course_module_id' => 'integer',
-            'sort_order' => 'integer',
-            'is_free' => 'boolean',
-        ];
-    }
-
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -36,5 +26,15 @@ class Lesson extends Model
     public function courseModule(): BelongsTo
     {
         return $this->belongsTo(CourseModule::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'tenant_id' => 'integer',
+            'course_module_id' => 'integer',
+            'sort_order' => 'integer',
+            'is_free' => 'boolean',
+        ];
     }
 }

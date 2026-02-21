@@ -48,7 +48,7 @@
                                                 },
                                                 "body": {
                                                     "mode": "raw",
-                                                    "raw": "{\n    \"email\": \"user94@example.com\",\n    \"password\": \"sample_text\"\n}",
+                                                    "raw": "{\n    \"email\": \"user92@example.com\",\n    \"password\": \"sample_text\"\n}",
                                                     "options": []
                                                 }
                                             }
@@ -162,7 +162,7 @@
                                         },
                                         "body": {
                                             "mode": "raw",
-                                            "raw": "{\n    \"name\": \"sample_text\",\n    \"email\": \"user9@example.com\",\n    \"password\": \"sample_text\"\n}",
+                                            "raw": "{\n    \"name\": \"sample_text\",\n    \"email\": \"user72@example.com\",\n    \"password\": \"sample_text\"\n}",
                                             "options": []
                                         }
                                     }
@@ -309,6 +309,90 @@
                                                     }
                                                 }
                                             ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "learning",
+                    "item": [
+                        {
+                            "name": "catalog",
+                            "item": [
+                                {
+                                    "name": "courses",
+                                    "item": [
+                                        {
+                                            "name": "[GET] api/v1/learning/catalog/courses",
+                                            "request": {
+                                                "method": "GET",
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "key": "Content-Type",
+                                                        "value": "application/json",
+                                                        "type": "text"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{base_url}}/api/v1/learning/catalog/courses",
+                                                    "host": [
+                                                        "{{base_url}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "v1",
+                                                        "learning",
+                                                        "catalog",
+                                                        "courses"
+                                                    ]
+                                                },
+                                                "body": {
+                                                    "mode": "raw",
+                                                    "raw": "{\n    \"category\": \"sample_text\",\n    \"is_free\": 0,\n    \"is_featured\": 0\n}",
+                                                    "options": []
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "name": "[GET] api/v1/learning/catalog/courses/{slug}",
+                                            "request": {
+                                                "method": "GET",
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "key": "Content-Type",
+                                                        "value": "application/json",
+                                                        "type": "text"
+                                                    }
+                                                ],
+                                                "url": {
+                                                    "raw": "{{base_url}}/api/v1/learning/catalog/courses/:slug",
+                                                    "host": [
+                                                        "{{base_url}}"
+                                                    ],
+                                                    "path": [
+                                                        "api",
+                                                        "v1",
+                                                        "learning",
+                                                        "catalog",
+                                                        "courses",
+                                                        ":slug"
+                                                    ],
+                                                    "variable": []
+                                                }
+                                            }
                                         }
                                     ]
                                 }

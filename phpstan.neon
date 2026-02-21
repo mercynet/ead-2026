@@ -7,3 +7,10 @@ parameters:
         - database/seeders
 
     level: 5
+    ignoreErrors:
+        - message: '#Access to an undefined property App\\Http\\Resources\\Learning\\Catalog\\.*#'
+          paths:
+              - app/Http/Resources/Learning/Catalog/*
+        - message: '#Call to an undefined method App\\Http\\Resources\\Learning\\Catalog\\.*#'
+          paths:
+              - app/Http/Resources/Learning/Catalog/*

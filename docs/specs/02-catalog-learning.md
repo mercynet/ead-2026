@@ -13,6 +13,27 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
 - **Course:** Agrupador raiz. Status (`published`, `draft`, `archived`), `price`, `access_days`. Soft deletes globais. Atrelado a Categorias. Multiplos relacionamentos com Módulos.
   - O `access_days` deve prover uma lista fechada de presets (30 dias, 90 dias, 180 dias, 365 dias, e 0 para Vitalício). 
 - **CourseModule:** Organiza a ordem das Aulas. Quando um Instrutor for criar um módulo, o filtro de Categorias exibirá apenas categorias onde o instrutor já possui cursos.
+- **Category:** Estrutura hierárquica (aninhamento infinito via `parent_id`), com dois tipos de ownership:
+  - **Categoria Padrão do Sistema** (`tenant_id = null`, `is_system = true`): disponível para todos os tenants e **editável somente por `developer`**.
+  - **Categoria do Tenant** (`tenant_id = current_tenant`, `is_system = false`): criada e gerida pelo próprio tenant.
+
+#### Regra Obrigatória: Categorias Padrão Globais e Antiduplicação
+- Haverá um conjunto de categorias padrão globais, pré-cadastradas pela plataforma, reutilizáveis por todos os tenants.
+- `tenant_admin` e demais usuários de tenant podem **usar** categorias padrão em seus cursos, mas **não podem criar/editar/excluir** categorias padrão.
+- O tenant pode criar categorias próprias, porém **não pode criar categoria com mesmo nome (normalizado) de qualquer categoria padrão global**.
+  - Exemplo: se já existe categoria padrão `Desenvolvimento de Software`, nenhum tenant pode criar outra com esse mesmo nome.
+  - Exemplo: `Desenvolvimento de Programas` pode ser criada por um tenant.
+- O isolamento entre tenants permanece: categorias próprias iguais entre tenants diferentes são permitidas, desde que não conflitem com categorias padrão globais.
+- A validação de duplicidade deve usar nome normalizado (case-insensitive, sem espaços excedentes e sem acentuação para comparação).
+
+#### Relação Curso x Categoria
+- A relação entre cursos e categorias deve ser feita em tabela pivô tenant-aware contendo `tenant_id`, `course_id`, `category_id`.
+- Regras da pivô:
+  - `course_id` deve referenciar curso do mesmo `tenant_id`.
+  - `category_id` pode referenciar:
+    - categoria padrão (`tenant_id = null`), ou
+    - categoria do mesmo `tenant_id` do curso.
+  - Nunca permitir vínculo com categoria de outro tenant.
 
 ### Learning (`Lesson`, `CourseMaterial`)
 - **Lesson:** Conteúdo da aula. Mídia vinculada (`LessonMedia`).

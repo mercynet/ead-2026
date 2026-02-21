@@ -168,10 +168,14 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 - Always create Form Request classes for validation rather than inline validation in controllers. Include both validation rules and custom error messages.
 - Check sibling Form Requests to see if the application uses array or string based validation rules.
+- For API endpoints, query-string filters (index/list endpoints) must also be validated via FormRequest.
+- Do not build API payload arrays directly in controllers using `map()`/manual transformation. Use `JsonResource` / `ResourceCollection` classes.
 
 ## Authentication & Authorization
 
 - Use Laravel's built-in authentication and authorization features (gates, policies, Sanctum, etc.).
+- Every new feature/endoint must introduce explicit permission keys (Spatie Permission), update `database/seeders/RolesSeeder.php`, and assign permissions to the relevant roles in the same slice/PR.
+- Do not defer permission creation for later; authorization is mandatory from the first implementation of each feature.
 
 ## URL Generation
 
@@ -236,6 +240,14 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - Do NOT delete tests without approval.
 - CRITICAL: ALWAYS use `search-docs` tool for version-specific Pest documentation and updated code examples.
 - IMPORTANT: Activate `pest-testing` every time you're working with a Pest or testing-related task.
+
+=== docs/core rules ===
+
+# Documentation via MCP
+
+- Before implementing or refactoring framework/package behavior, consult docs via MCP tools first.
+- Use `search-docs` for Laravel ecosystem packages and prefer version-matched docs.
+- For non-Laravel ecosystem packages (example: Spatie packages when needed), use MCP documentation tooling (Context7) before coding.
 
 === tailwindcss/core rules ===
 

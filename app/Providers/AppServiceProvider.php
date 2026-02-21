@@ -57,5 +57,23 @@ class AppServiceProvider extends ServiceProvider
 
             return $authenticatedUser->belongsToTenant($tenant);
         });
+
+        Gate::define('learning.catalog.courses.list', function (User $authenticatedUser, Tenant $tenant): bool {
+            if ($authenticatedUser->isDeveloper()) {
+                return true;
+            }
+
+            return $authenticatedUser->belongsToTenant($tenant)
+                && $authenticatedUser->getAllPermissions()->contains('name', 'learning.catalog.courses.list');
+        });
+
+        Gate::define('learning.catalog.courses.show', function (User $authenticatedUser, Tenant $tenant): bool {
+            if ($authenticatedUser->isDeveloper()) {
+                return true;
+            }
+
+            return $authenticatedUser->belongsToTenant($tenant)
+                && $authenticatedUser->getAllPermissions()->contains('name', 'learning.catalog.courses.show');
+        });
     }
 }

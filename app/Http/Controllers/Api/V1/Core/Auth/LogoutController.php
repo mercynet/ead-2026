@@ -29,7 +29,7 @@ class LogoutController extends Controller
             ], 403);
         }
 
-        $user->currentAccessToken()?->delete();
+        $user->currentAccessToken()->delete();
 
         return response()->json([
             'data' => [

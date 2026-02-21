@@ -4,10 +4,12 @@ namespace App\Actions\Core\Auth;
 
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Spatie\Multitenancy\Contracts\IsTenant;
+use Spatie\Multitenancy\TenantFinder\TenantFinder;
 
-class ResolveTenantFromRequestAction
+class RequestTenantFinder extends TenantFinder
 {
-    public function handle(Request $request): ?Tenant
+    public function findForRequest(Request $request): ?IsTenant
     {
         $tenantId = $request->header('X-Tenant-ID');
         $tenantDomain = $request->header('X-Tenant-Domain');
@@ -28,23 +30,5 @@ class ResolveTenantFromRequestAction
         }
 
         return null;
-    }
-
-    public function resolveAndBind(Request $request): ?Tenant
-    {
-        $tenant = $this->handle($request);
-        $this->bind($request, $tenant);
-
-        return $tenant;
-    }
-
-    public function bind(Request $request, ?Tenant $tenant): void
-    {
-        $request->attributes->set('tenant', $tenant);
-        app()->instance('tenant', $tenant);
-
-        if ($tenant !== null) {
-            app()->instance(Tenant::class, $tenant);
-        }
     }
 }

@@ -9,13 +9,10 @@ use Illuminate\Support\Facades\Hash;
 
 class LoginAction
 {
-    public function __construct(private readonly ResolveTenantFromRequestAction $resolveTenantFromRequestAction) {}
-
     public function handle(Request $request): array
     {
         /** @var Tenant|null $tenant */
         $tenant = $request->attributes->get('tenant');
-        $tenant ??= $this->resolveTenantFromRequestAction->handle($request);
 
         $user = User::query()
             ->where('email', $request->string('email')->toString())

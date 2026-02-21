@@ -13,6 +13,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/framework (LARAVEL) - v12
 - laravel/prompts (PROMPTS) - v0
 - laravel/sanctum (SANCTUM) - v4
+- larastan/larastan (LARASTAN) - v3
 - laravel/boost (BOOST) - v2
 - laravel/mcp (MCP) - v0
 - laravel/pail (PAIL) - v1
@@ -43,8 +44,6 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
-- API controllers must be resource-style classes with explicit methods (`index`, `show`, `store`, etc.), not `__invoke` controllers.
-- Business rules must live in `app/Actions/<Domain>/<Resource>/...`; controllers should only orchestrate request validation, authorization, and response mapping.
 
 ## Frontend Bundling
 
@@ -170,14 +169,10 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 - Always create Form Request classes for validation rather than inline validation in controllers. Include both validation rules and custom error messages.
 - Check sibling Form Requests to see if the application uses array or string based validation rules.
-- For API endpoints, query-string filters (index/list endpoints) must also be validated via FormRequest.
-- Do not build API payload arrays directly in controllers using `map()`/manual transformation. Use `JsonResource` / `ResourceCollection` classes.
 
 ## Authentication & Authorization
 
 - Use Laravel's built-in authentication and authorization features (gates, policies, Sanctum, etc.).
-- Every new feature/endoint must introduce explicit permission keys (Spatie Permission), update `database/seeders/RolesSeeder.php`, and assign permissions to the relevant roles in the same slice/PR.
-- Do not defer permission creation for later; authorization is mandatory from the first implementation of each feature.
 
 ## URL Generation
 
@@ -242,14 +237,6 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - Do NOT delete tests without approval.
 - CRITICAL: ALWAYS use `search-docs` tool for version-specific Pest documentation and updated code examples.
 - IMPORTANT: Activate `pest-testing` every time you're working with a Pest or testing-related task.
-
-=== docs/core rules ===
-
-# Documentation via MCP
-
-- Before implementing or refactoring framework/package behavior, consult docs via MCP tools first.
-- Use `search-docs` for Laravel ecosystem packages and prefer version-matched docs.
-- For non-Laravel ecosystem packages (example: Spatie packages when needed), use MCP documentation tooling (Context7) before coding.
 
 === tailwindcss/core rules ===
 

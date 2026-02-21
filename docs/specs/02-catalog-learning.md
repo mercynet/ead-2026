@@ -1,0 +1,56 @@
+# Domain Spec: Catalog & Learning (API-First)
+
+## Visão Geral
+Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem estrutural dos cursos (Trilhas, Módulos, Aulas, Materiais) e a jornada de execução e progresso feita pelo aluno (Enrollments, Progress).
+
+## 1. Padrões Arquiteturais
+- **Divisão DTO:** Os payloads de leitura devem separar "Dados Frios" (Catálogo: Título do curso, Grade Curricular) de "Dados Quentes" (Progresso Pessoal do Aluno logado). Isso permite cachear a camada do modelo (`Course`) no Redis e consultar o progresso via banco.
+- **Media Decentralizada:**
+  - Requisições das mídias (Vídeos e Arquivos de Material) resolverão `Pre-signed URLs` apontando para o Storage configurado pelo Tenant (ex: AWS S3 ou integração via Vimeo na API). O back-end não fará *proxy pass* binário de grandes arquivos. Carga aliviada no servidor da API.
+
+## 2. Entidades Principais
+### Catalog (`Course`, `Category`, `CourseModule`)
+- **Course:** Agrupador raiz. Status (`published`, `draft`, `archived`), `price`, `access_days`. Soft deletes globais. Atrelado a Categorias. Multiplos relacionamentos com Módulos.
+  - O `access_days` deve prover uma lista fechada de presets (30 dias, 90 dias, 180 dias, 365 dias, e 0 para Vitalício). 
+- **CourseModule:** Organiza a ordem das Aulas. Quando um Instrutor for criar um módulo, o filtro de Categorias exibirá apenas categorias onde o instrutor já possui cursos.
+
+### Learning (`Lesson`, `CourseMaterial`)
+- **Lesson:** Conteúdo da aula. Mídia vinculada (`LessonMedia`).
+- **CourseMaterial:** Arquivos auxiliares (PDFs, PPTXs).
+
+### Progresso e Matrícula (`Enrollment`, `LessonProgress`)
+- **Enrollment:** Matrícula de um usuário (Student) a um curso. Registra expiração de acesso, progresso total (0-100%). Funciona como Agreggate Root para cálculos de conclusão.
+- **LessonProgress:** Tracking granular por vídeo/aula.
+
+## 3. Endpoints Principais (JSON)
+*Base URL: `api/v1/learning`*
+
+### Catálogo e Descoberta
+_Acessíveis de forma pública ou apenas usuários logados (depende da flag do tenant)_
+- `GET /catalog/courses`: Lista de cursos publicados. Suporta filtros dinâmicos por Category, is_free, is_featured. **Regra Forte**: Não devem aparecer cursos que o Aluno logado já comprou.
+- `GET /catalog/courses/{slug}`: Retorna toda a matriz curricular do curso (Módulos e Lições) + DTO público completo (preço, descrição) formatado perfeitamente para montagem de uma Landing Page rica pelo Front-end / App.
+
+### Consumo e Aulas (Arestas Autenticadas)
+- `GET /courses/{id}/enrollment`: Verifica a situação da matrícula (Ativa, Expirada). Carrega o progresso acumulado (`progress_percentage`).
+- `GET /courses/{id}/modules`: A árvore do curso já misturada com o Tracking de conclusão (Quais aulas estão lidas).
+- `GET /lessons/{id}`: Resolve a Aula. Retorna `Pre-signed URL` da masterização de vídeo e links temporários AWS para downloads de `CourseMaterial`.
+- `POST /lessons/{id}/progress`: (Heartbeat payload) Frontend envia `{"duration_watched": 120, "is_completed": true}` em intervalos ou ao término para atualizar o `LessonMediaProgress`.
+
+## 4. Regras de Negócio e Lógica Crítica
+- **Access Control na Lição (Middlewares):** 
+  - Regra: O usuário só tem acesso à mídia / material se o curso for gratuito (`course.is_free = true`), ou se a aula for degustação (`lesson.is_free = true`), ou se o aluno tiver um `Enrollment` ativo e não expirado para o curso pago.
+  - Alunos com `Enrollment.status = expired` podem continuar vendo a vitrine do curso (`canViewCourse()` = true), mas não podem consumir os vídeos/arquivos (`canAccessPaidContent()` = false).
+- **Preview de Conteúdo (Drafts):** Cursos no estágio `draft` não podem ser acessados por alunos comuns. Eles possuem uma rota restrita de Preview acessível apenas pelos Instrutores donos do curso, Tenant Admins e Super Admins.
+- **Tipos de Mídia e Estratégia de Progresso:**
+  - Aulas suportarão múltiplos provedores via Enum `MediaType` (Vídeos do YouTube/Vimeo/AWS, Live Streaming, Áudio, Documentos PDF).
+  - O cálculo de tempo assistido obedece a uma `ProgressStrategy` configurável por aula (ex: `80_percent`, `full_duration`, `manual` ou `time_based`). O Back-end guarda sessões de visualização e emite Evento ao bater a meta.
+- **Engajamento e Materiais Extras:**
+  - **Ratings:** Alunos podem dar estrelas (1-5) e like/dislikes para Cursos e Aulas. O sistema fará "rollup" das notas agregando num cache `RatingStats` global e também mapeando o top ranking por Tenant.
+  - **Materiais Opcionistas:** Cada `CourseMaterial` que o instrutor subir (limitado a 50MB, guardado nas pastas do tenant) terá rastreamento granular de downloads (`MaterialDownload`), alimentando a agregação de uso (`MaterialStats`).
+- **Matrículas Manuais por Instrutores:**
+  - Uma flexibilidade concedida por um switch ativado pelo Tenant Admin. Instrutores podem pesquisar e matricular alunos em seus próprios cursos manualmente.
+  - Se configurada a cobrança como `external` (Ex: aluno pagou PIX na conta física do instrutor), a matrícula pode cair como `pending` e notificar o Tenant Admin para aprovação, mantendo controle de evasão de receitas centralizadas.
+- **Cálculo de Progresso Assíncrono:**
+  - Ao atualizar `is_completed: true` de um `Lesson`, disparamos um evento de Domínio no Laravel (`LessonCompletedEvent`).
+  - Um `Job` / *Listener* roda em background para recalcular em tempo real a grade baseada em count de Módulos (se o aluno fez 2 de 4 aulas, 50% `Enrollment`), ativando a Flag de Complete (via Eventos, engatilhando o módulo de Certificado posteriormente).
+- **Decoupled Media:** Integrações de VIMEO ou AWS devolvem IDs, e a camada do App Laravel irá envelopar transformando em um Player URL configurável de acordo com as chaves globais da plataforma ou chaves do Tenant caso este tenha pago o recurso Adicional "Private External Storage" nos Plugins.

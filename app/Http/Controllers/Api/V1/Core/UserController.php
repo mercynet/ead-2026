@@ -7,21 +7,18 @@ use App\Actions\Core\Users\RegisterUserAction;
 use App\Actions\Core\Users\ShowUserAction;
 use App\Actions\Core\Users\UpdatePasswordAction;
 use App\Actions\Core\Users\UpdateProfileAction;
-use App\Http\Controllers\Concerns\InteractsWithApiContext;
+use App\Http\Context\ApiContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Users\RegisterUserRequest;
 use App\Http\Requests\Core\Users\UpdatePasswordRequest;
 use App\Http\Requests\Core\Users\UpdateProfileRequest;
 use App\Http\Resources\Core\UserListResource;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
-    use InteractsWithApiContext;
-
     public function __construct(
         private readonly RegisterUserAction $registerUserAction,
         private readonly ListUsersAction $listUsersAction,
@@ -30,23 +27,18 @@ class UserController extends Controller
         private readonly UpdatePasswordAction $updatePasswordAction,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(ApiContext $context): Response
     {
-        $authenticatedUser = $this->authenticatedUser($request);
-        $tenant = $this->currentTenant();
+        Gate::forUser($context->user)->authorize('core.users.list', [$context->tenant]);
 
-        Gate::authorize('core.users.list', [$tenant]);
-
-        $paginator = $this->listUsersAction->handle($authenticatedUser, $tenant);
+        $paginator = $this->listUsersAction->handle($context);
 
         return response(UserListResource::collection($paginator)->response()->getData(true));
     }
 
-    public function store(RegisterUserRequest $request): Response
+    public function store(RegisterUserRequest $request, ApiContext $context): Response
     {
-        $tenant = $this->requiredTenant();
-
-        $user = $this->registerUserAction->handle($tenant, $request->validated());
+        $user = $this->registerUserAction->handle($context->requiredTenant(), $request->validated());
 
         return response([
             'data' => [
@@ -57,40 +49,32 @@ class UserController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, User $user): Response
+    public function show(ApiContext $context, User $user): Response
     {
-        $authenticatedUser = $this->authenticatedUser($request);
-        $tenant = $this->currentTenant();
-
-        Gate::authorize('core.users.show', [$tenant, $user]);
+        Gate::forUser($context->user)->authorize('core.users.show', [$context->tenant, $user]);
 
         return response([
             'data' => $this->showUserAction->handle($user),
         ]);
     }
 
-    public function updateMe(UpdateProfileRequest $request): Response
+    public function updateMe(UpdateProfileRequest $request, ApiContext $context): Response
     {
-        $authenticatedUser = $this->authenticatedUser($request);
-        $tenant = $this->currentTenant();
+        Gate::forUser($context->user)->authorize('core.users.update-self', [$context->tenant, $context->requiredUser()]);
 
-        Gate::authorize('core.users.update-self', [$tenant, $authenticatedUser]);
-        $user = $this->updateProfileAction->handle($authenticatedUser, $request->validated());
+        $user = $this->updateProfileAction->handle($context->requiredUser(), $request->validated());
 
         return response([
             'data' => $this->showUserAction->handle($user),
         ]);
     }
 
-    public function updatePassword(UpdatePasswordRequest $request): Response
+    public function updatePassword(UpdatePasswordRequest $request, ApiContext $context): Response
     {
-        $authenticatedUser = $this->authenticatedUser($request);
-        $tenant = $this->currentTenant();
-
-        Gate::authorize('core.users.update-self', [$tenant, $authenticatedUser]);
+        Gate::forUser($context->user)->authorize('core.users.update-self', [$context->tenant, $context->requiredUser()]);
 
         $this->updatePasswordAction->handle(
-            $authenticatedUser,
+            $context->requiredUser(),
             $request->string('current_password')->toString(),
             $request->string('password')->toString(),
         );

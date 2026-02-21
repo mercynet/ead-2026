@@ -2,17 +2,15 @@
 
 namespace App\Http\Requests\Learning\Catalog;
 
-use App\Http\Controllers\Concerns\InteractsWithApiContext;
+use App\Http\Context\ApiContext;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCategoryRequest extends FormRequest
 {
-    use InteractsWithApiContext;
-
     public function authorize(): bool
     {
         if (! $this->boolean('is_system')) {
-            $this->requiredTenant();
+            app(ApiContext::class)->requiredTenant();
         }
 
         return true;

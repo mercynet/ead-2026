@@ -2,6 +2,9 @@
 
 namespace App\Actions\Core\Auth;
 
+use App\Exceptions\InvalidCredentialsException;
+use App\Exceptions\TenantContextRequiredException;
+use App\Http\Context\ApiContext;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -9,72 +12,77 @@ use Illuminate\Support\Facades\Hash;
 
 class LoginAction
 {
-    public function handle(Request $request): array
+    public function handle(Request $request, ApiContext $context): array
     {
-        /** @var Tenant|null $tenant */
-        $tenant = $request->attributes->get('tenant');
+        $tenant = $this->resolveTenant($context);
+        $user = $this->findUser($request);
 
+        $this->validateCredentials($request, $user);
+        $this->validateTenantAccess($user, $tenant);
+
+        $tokenName = $this->buildTokenName($request);
+
+        return [
+            'token' => $user->createToken($tokenName)->plainTextToken,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        ];
+    }
+
+    private function resolveTenant(ApiContext $context): ?Tenant
+    {
+        return $context->tenant;
+    }
+
+    private function findUser(Request $request): User
+    {
         $user = User::query()
             ->where('email', $request->string('email')->toString())
             ->first();
 
-        if ($user === null || ! Hash::check($request->string('password')->toString(), $user->password)) {
-            return [
-                'status' => 401,
-                'payload' => [
-                    'data' => null,
-                    'errors' => [
-                        [
-                            'code' => 'invalid_credentials',
-                            'message' => 'Invalid credentials.',
-                        ],
-                    ],
-                ],
-            ];
+        if ($user === null) {
+            throw InvalidCredentialsException::make();
         }
 
-        if (! $user->isDeveloper() && $tenant === null) {
-            return [
-                'status' => 422,
-                'payload' => [
-                    'data' => null,
-                    'errors' => [
-                        [
-                            'code' => 'tenant_not_resolved',
-                            'message' => 'Tenant context is required.',
-                        ],
-                    ],
-                ],
-            ];
+        return $user;
+    }
+
+    private function validateCredentials(Request $request, User $user): void
+    {
+        $password = $request->string('password')->toString();
+
+        if (! Hash::check($password, $user->password)) {
+            throw InvalidCredentialsException::make();
+        }
+    }
+
+    private function validateTenantAccess(User $user, ?Tenant $tenant): void
+    {
+        if ($user->isDeveloper()) {
+            return;
         }
 
-        if (! $user->isDeveloper() && (int) $user->tenant_id !== (int) $tenant?->id) {
-            return [
-                'status' => 401,
-                'payload' => [
-                    'data' => null,
-                    'errors' => [
-                        [
-                            'code' => 'invalid_credentials',
-                            'message' => 'Invalid credentials.',
-                        ],
-                    ],
-                ],
-            ];
+        if ($tenant === null) {
+            throw TenantContextRequiredException::make();
         }
 
-        return [
-            'status' => 200,
-            'payload' => [
-                'data' => [
-                    'token' => $user->createToken('core-auth')->plainTextToken,
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                    ],
-                ],
-            ],
-        ];
+        if (! $tenant->is_active) {
+            throw InvalidCredentialsException::make();
+        }
+
+        if ((int) $user->tenant_id !== (int) $tenant->id) {
+            throw InvalidCredentialsException::make();
+        }
+    }
+
+    private function buildTokenName(Request $request): string
+    {
+        $userAgent = substr($request->userAgent() ?? 'unknown', 0, 100);
+        $deviceType = str_contains(strtolower($userAgent), 'mobile') ? 'mobile' : 'web';
+
+        return "auth-{$deviceType}-".now()->format('Ymd');
     }
 }

@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Api\V1\Core;
 use App\Actions\Core\Auth\LoginAction;
 use App\Actions\Core\Auth\LogoutAction;
 use App\Actions\Core\Auth\MeAction;
+use App\Http\Context\ApiContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Auth\LoginRequest;
-use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class AuthController extends Controller
@@ -19,29 +18,25 @@ class AuthController extends Controller
         private readonly LogoutAction $logoutAction,
     ) {}
 
-    public function login(LoginRequest $request): Response
+    public function login(LoginRequest $request, ApiContext $context): Response
     {
-        $result = $this->loginAction->handle($request);
-
-        return response($result['payload'], $result['status']);
-    }
-
-    public function me(Request $request): Response
-    {
-        /** @var User $user */
-        $user = $request->user();
+        $result = $this->loginAction->handle($request, $context);
 
         return response([
-            'data' => $this->meAction->handle($user),
+            'data' => $result,
         ]);
     }
 
-    public function logout(Request $request): Response
+    public function me(ApiContext $context): Response
     {
-        /** @var User $user */
-        $user = $request->user();
+        return response([
+            'data' => $this->meAction->handle($context->requiredUser()),
+        ]);
+    }
 
-        $this->logoutAction->handle($user);
+    public function logout(ApiContext $context): Response
+    {
+        $this->logoutAction->handle($context->requiredUser());
 
         return response([
             'data' => [

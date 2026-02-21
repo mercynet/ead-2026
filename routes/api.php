@@ -6,13 +6,14 @@ use App\Http\Controllers\Api\V1\Learning\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Learning\Catalog\CourseController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('api.links')->group(function (): void {
+Route::middleware(['api.context', 'api.links'])->group(function (): void {
     Route::prefix('v1/core')
         ->group(function (): void {
             Route::prefix('auth')
                 ->controller(AuthController::class)
                 ->group(function (): void {
-                    Route::post('/login', 'login')->middleware('resolve.tenant.optional');
+                    Route::post('/login', 'login')
+                        ->middleware(['resolve.tenant.optional', 'throttle:5,1']);
 
                     Route::middleware([
                         'resolve.tenant.optional',

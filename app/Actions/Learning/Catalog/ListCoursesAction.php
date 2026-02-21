@@ -2,24 +2,23 @@
 
 namespace App\Actions\Learning\Catalog;
 
+use App\Http\Context\ApiContext;
 use App\Models\Course;
-use App\Models\Tenant;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\CursorPaginator;
 
 class ListCoursesAction
 {
-    public function handle(Request $request, ?Tenant $tenant, ?User $authenticatedUser): CursorPaginator
+    public function handle(Request $request, ApiContext $context): CursorPaginator
     {
         $coursesQuery = Course::query()
             ->where('status', 'published')
             ->with(['categories:id,name,slug'])
             ->orderBy('id');
 
-        if ($tenant !== null) {
-            $coursesQuery->where('tenant_id', $tenant->id);
+        if ($context->tenant !== null) {
+            $coursesQuery->where('tenant_id', $context->tenant->id);
         }
 
         $categorySlug = $request->query('category');
@@ -43,9 +42,9 @@ class ListCoursesAction
             $coursesQuery->where('is_featured', $request->boolean('is_featured'));
         }
 
-        if ($authenticatedUser !== null && ! $authenticatedUser->isDeveloper()) {
-            $coursesQuery->whereDoesntHave('enrollments', function (Builder $query) use ($authenticatedUser): void {
-                $query->where('user_id', $authenticatedUser->id);
+        if ($context->hasUser() && ! $context->user->isDeveloper()) {
+            $coursesQuery->whereDoesntHave('enrollments', function (Builder $query) use ($context): void {
+                $query->where('user_id', $context->user->id);
             });
         }
 

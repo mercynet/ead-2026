@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Learning\Catalog;
 
 use App\Actions\Learning\Catalog\ListCoursesAction;
 use App\Actions\Learning\Catalog\ShowCourseAction;
-use App\Http\Controllers\Concerns\InteractsWithApiContext;
+use App\Http\Context\ApiContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\Catalog\ListCatalogCoursesRequest;
 use App\Http\Resources\Learning\Catalog\CourseCatalogResource;
@@ -14,49 +14,29 @@ use Illuminate\Support\Facades\Gate;
 
 class CourseController extends Controller
 {
-    use InteractsWithApiContext;
-
     public function __construct(
         private readonly ListCoursesAction $listCoursesAction,
         private readonly ShowCourseAction $showCourseAction,
     ) {}
 
-    public function index(ListCatalogCoursesRequest $request): Response
+    public function index(ListCatalogCoursesRequest $request, ApiContext $context): Response
     {
-        $tenant = $this->currentTenant();
-        $authenticatedUser = $this->authenticatedUser($request);
-
-        if ($authenticatedUser !== null) {
-            Gate::forUser($authenticatedUser)->authorize('learning.catalog.courses.list', [$tenant]);
+        if ($context->hasUser()) {
+            Gate::forUser($context->user)->authorize('learning.catalog.courses.list', [$context->tenant]);
         }
 
-        $paginator = $this->listCoursesAction->handle($request, $tenant, $authenticatedUser);
+        $paginator = $this->listCoursesAction->handle($request, $context);
 
         return response(CourseCatalogResource::collection($paginator)->response()->getData(true));
     }
 
-    public function show(string $slug, ListCatalogCoursesRequest $request): Response
+    public function show(string $slug, ListCatalogCoursesRequest $request, ApiContext $context): Response
     {
-        $tenant = $this->currentTenant();
-        $authenticatedUser = $this->authenticatedUser($request);
-
-        if ($authenticatedUser !== null) {
-            Gate::forUser($authenticatedUser)->authorize('learning.catalog.courses.show', [$tenant]);
+        if ($context->hasUser()) {
+            Gate::forUser($context->user)->authorize('learning.catalog.courses.show', [$context->tenant]);
         }
 
-        $course = $this->showCourseAction->handle($tenant, $slug);
-
-        if ($course === null) {
-            return response([
-                'data' => null,
-                'errors' => [
-                    [
-                        'code' => 'not_found',
-                        'message' => 'Course not found.',
-                    ],
-                ],
-            ], 404);
-        }
+        $course = $this->showCourseAction->handle($context->tenant, $slug);
 
         return response([
             'data' => CourseDetailResource::make($course)->resolve(),

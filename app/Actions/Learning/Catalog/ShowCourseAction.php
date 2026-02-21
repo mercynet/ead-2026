@@ -2,12 +2,13 @@
 
 namespace App\Actions\Learning\Catalog;
 
+use App\Exceptions\ResourceNotFoundException;
 use App\Models\Course;
 use App\Models\Tenant;
 
 class ShowCourseAction
 {
-    public function handle(?Tenant $tenant, string $slug): ?Course
+    public function handle(?Tenant $tenant, string $slug): Course
     {
         $query = Course::query()
             ->where('slug', $slug)
@@ -22,6 +23,12 @@ class ShowCourseAction
             $query->where('tenant_id', $tenant->id);
         }
 
-        return $query->first();
+        $course = $query->first();
+
+        if ($course === null) {
+            throw ResourceNotFoundException::course($slug);
+        }
+
+        return $course;
     }
 }

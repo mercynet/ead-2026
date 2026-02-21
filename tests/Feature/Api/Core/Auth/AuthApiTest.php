@@ -5,6 +5,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -141,4 +142,53 @@ it('logs out and revokes current token', function (): void {
     ])->assertSuccessful();
 
     expect(PersonalAccessToken::query()->find($accessToken->id))->toBeNull();
+});
+
+it('allows developer login regardless of tenant scope', function (): void {
+    $tenantA = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $tenantB = Tenant::query()->create([
+        'name' => 'Tenant B',
+        'domain' => 'tenant-b.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    Role::query()->firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Platform Dev',
+        'email' => 'dev@platform.test',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    $this->postJson('/api/v1/core/auth/login', [
+        'email' => 'dev@platform.test',
+        'password' => 'password123',
+    ], [
+        'X-Tenant-ID' => (string) $tenantA->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.user.email', 'dev@platform.test');
+
+    $this->postJson('/api/v1/core/auth/login', [
+        'email' => 'dev@platform.test',
+        'password' => 'password123',
+    ], [
+        'X-Tenant-ID' => (string) $tenantB->id,
+    ])->assertSuccessful();
+
+    $token = $developer->createToken('dev-token')->plainTextToken;
+
+    $this->getJson('/api/v1/core/auth/me', [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenantA->id,
+    ])->assertSuccessful();
 });

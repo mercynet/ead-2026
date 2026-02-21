@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Users\UpdateProfileRequest;
 use App\Models\Tenant;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class UpdateMeController extends Controller
 {
@@ -16,7 +17,7 @@ class UpdateMeController extends Controller
         /** @var Tenant|null $tenant */
         $tenant = $request->attributes->get('tenant');
 
-        if ($user === null || $tenant === null || (int) $user->tenant_id !== (int) $tenant->id) {
+        if ($user === null || $tenant === null || Gate::denies('core.users.update-self', [$tenant, $user])) {
             return response()->json([
                 'data' => null,
                 'meta' => [],

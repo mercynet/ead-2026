@@ -16,7 +16,7 @@ class MeController extends Controller
         /** @var Tenant|null $tenant */
         $tenant = $request->attributes->get('tenant');
 
-        if ($user === null || $tenant === null || (int) $user->tenant_id !== (int) $tenant->id) {
+        if ($user === null || $tenant === null || (! $user->isDeveloper() && (int) $user->tenant_id !== (int) $tenant->id)) {
             return response()->json([
                 'data' => null,
                 'meta' => [],

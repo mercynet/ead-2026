@@ -36,6 +36,7 @@ it('registers a user within the resolved tenant', function (): void {
 
     expect($user)->not->toBeNull();
     expect($user?->tenant_id)->toBe($tenant->id);
+    expect($user?->hasRole('student'))->toBeTrue();
 });
 
 it('rejects registration without tenant context', function (): void {

@@ -30,11 +30,23 @@ class LoginController extends Controller
         }
 
         $user = User::query()
-            ->where('tenant_id', $tenant->id)
             ->where('email', $request->string('email')->toString())
             ->first();
 
         if ($user === null || ! Hash::check($request->string('password')->toString(), $user->password)) {
+            return response()->json([
+                'data' => null,
+                'meta' => [],
+                'errors' => [
+                    [
+                        'code' => 'invalid_credentials',
+                        'message' => 'Invalid credentials.',
+                    ],
+                ],
+            ], 401);
+        }
+
+        if (! $user->isDeveloper() && (int) $user->tenant_id !== (int) $tenant->id) {
             return response()->json([
                 'data' => null,
                 'meta' => [],

@@ -7,6 +7,7 @@ use App\Http\Requests\Core\Users\RegisterUserRequest;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Spatie\Permission\Models\Role;
 
 class RegisterUserController extends Controller
 {
@@ -34,6 +35,13 @@ class RegisterUserController extends Controller
             'email' => $request->string('email')->toString(),
             'password' => $request->string('password')->toString(),
         ]);
+
+        Role::query()->firstOrCreate([
+            'name' => 'student',
+            'guard_name' => 'web',
+        ]);
+
+        $user->assignRole('student');
 
         return response()->json([
             'data' => [

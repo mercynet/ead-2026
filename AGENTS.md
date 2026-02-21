@@ -256,6 +256,13 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 This is a multi-tenant EAD (E-learning) platform with specific architectural patterns that MUST be followed.
 
+## Specs
+
+Read `docs/specs/*.md` for detailed domain specifications before implementing features. These specs define:
+- API endpoints and their behavior
+- Business rules and validation
+- Data structures and relationships
+
 ## ApiContext Pattern
 
 All controllers and actions MUST use `ApiContext` for accessing user and tenant data. NEVER access request attributes directly.
@@ -276,11 +283,26 @@ public function index(Request $request): Response
 }
 ```
 
+## Middleware Order
+
+The middleware order matters for ApiContext to work correctly:
+1. `resolve.tenant.optional` - Resolves tenant from header/host FIRST
+2. `api.context` - Injects ApiContext with resolved tenant and user
+
+```php
+// CORRECT order in routes
+Route::middleware(['resolve.tenant.optional', 'api.context'])
+
+// WRONG - api.context before tenant resolution
+Route::middleware(['api.context', 'resolve.tenant.optional'])
+```
+
 ## Response Pattern
 
 - Use `->toResponse(request())` for Resources, NOT `->response()->getData(true)` wrapped in `response()`.
 - Do NOT use `->resolve()` on Resources.
 - For manual payloads (login, logout), use `new JsonResponse(['data' => ...])`.
+- Laravel includes `links` in paginated responses by default - this is expected behavior.
 
 ```php
 // CORRECT - Collection
@@ -351,6 +373,13 @@ php artisan test --compact
 - Policies: `app/Policies/...`
 - Exceptions: `app/Exceptions/...`
 - Context: `app/Http/Context/ApiContext.php`
+- Middleware: `app/Http/Middleware/...`
 - Specs: `docs/specs/*.md`
+
+## Authentication
+
+- Login uses rate limiting: `throttle:5,1` (5 attempts per minute)
+- Token names include device type: `auth-web-20260221` or `auth-mobile-20260221`
+- Inactive tenants cannot authenticate
 
 </laravel-boost-guidelines>

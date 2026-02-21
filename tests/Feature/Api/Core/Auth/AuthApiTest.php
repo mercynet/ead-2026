@@ -43,7 +43,7 @@ it('logs in with valid tenant context and credentials', function (): void {
                 'token',
                 'user' => ['id', 'name', 'email'],
             ],
-            'meta',
+            'links' => ['first', 'last', 'prev', 'next'],
         ]);
 
     expect(PersonalAccessToken::query()->where('tokenable_id', $user->id)->exists())->toBeTrue();
@@ -130,7 +130,7 @@ it('returns authenticated user on me endpoint', function (): void {
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('data.user.id', $user->id);
+        ->assertJsonPath('data.id', $user->id);
 });
 
 it('logs out and revokes current token', function (): void {
@@ -236,4 +236,24 @@ it('allows seeded developer login without tenant context', function (): void {
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.user.email', 'developer@example.com');
+});
+
+it('allows developer to access me endpoint without tenant context', function (): void {
+    Role::query()->firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Developer No Tenant',
+        'email' => 'developer-me-no-tenant@platform.test',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    $token = $developer->createToken('developer-me-token')->plainTextToken;
+
+    $this->getJson('/api/v1/core/auth/me', [
+        'Authorization' => 'Bearer '.$token,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.email', 'developer-me-no-tenant@platform.test');
 });

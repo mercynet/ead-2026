@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Exceptions\TenantContextRequiredException;
 use App\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
@@ -36,16 +37,7 @@ class ResolveTenant
         }
 
         if ($tenant === null) {
-            return response()->json([
-                'data' => null,
-                'meta' => [],
-                'errors' => [
-                    [
-                        'code' => 'tenant_not_resolved',
-                        'message' => 'Tenant context is required.',
-                    ],
-                ],
-            ], 422);
+            throw TenantContextRequiredException::make();
         }
 
         return $next($request);

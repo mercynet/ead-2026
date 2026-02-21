@@ -8,17 +8,21 @@ use Illuminate\Auth\Access\Response;
 
 class UserPolicy
 {
-    public function list(User $authenticatedUser, Tenant $tenant): bool
+    public function list(User $authenticatedUser, ?Tenant $tenant = null): bool
     {
         if ($authenticatedUser->isDeveloper()) {
             return true;
+        }
+
+        if ($tenant === null) {
+            return false;
         }
 
         return $authenticatedUser->isTenantAdmin()
             && $authenticatedUser->belongsToTenant($tenant);
     }
 
-    public function show(User $authenticatedUser, Tenant $tenant, User $targetUser): Response|bool
+    public function show(User $authenticatedUser, ?Tenant $tenant, User $targetUser): Response|bool
     {
         if (! $authenticatedUser->isDeveloper() && $targetUser->isDeveloper()) {
             return Response::denyAsNotFound();
@@ -26,6 +30,10 @@ class UserPolicy
 
         if ($authenticatedUser->isDeveloper()) {
             return true;
+        }
+
+        if ($tenant === null) {
+            return false;
         }
 
         if (! $authenticatedUser->belongsToTenant($tenant)) {
@@ -47,7 +55,7 @@ class UserPolicy
         return false;
     }
 
-    public function updateSelf(User $authenticatedUser, Tenant $tenant, User $targetUser): bool
+    public function updateSelf(User $authenticatedUser, ?Tenant $tenant, User $targetUser): bool
     {
         if (! $authenticatedUser->is($targetUser)) {
             return false;
@@ -55,6 +63,10 @@ class UserPolicy
 
         if ($authenticatedUser->isDeveloper()) {
             return true;
+        }
+
+        if ($tenant === null) {
+            return false;
         }
 
         return $authenticatedUser->belongsToTenant($tenant);

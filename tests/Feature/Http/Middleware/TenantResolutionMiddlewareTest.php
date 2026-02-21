@@ -16,7 +16,6 @@ function registerTenantResolutionProbeRoutes(): void
                     'data' => [
                         'tenant_id' => $request->attributes->get('tenant')?->id,
                     ],
-                    'meta' => [],
                 ]);
             })
             ->name('test.tenant.required');
@@ -29,7 +28,6 @@ function registerTenantResolutionProbeRoutes(): void
                     'data' => [
                         'tenant_id' => $request->attributes->get('tenant')?->id,
                     ],
-                    'meta' => [],
                 ]);
             })
             ->name('test.tenant.optional');

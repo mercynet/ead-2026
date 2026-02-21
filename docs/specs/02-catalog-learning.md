@@ -10,8 +10,16 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
   - Regras de negócio devem ser extraídas para `app/Actions/Learning/<Resource>/...`.
   - Cada método de controller deve aplicar autorização (Gate/Policy) antes de chamar a Action.
 - **Paginação em Listagens:** Toda listagem deve usar `cursorPaginate`, com Resource Collection retornada diretamente no controller.
+- **Controller Lean (obrigatório):** proíbe checks repetidos de contexto/infra no método (`tenant`, `auth`, payload de erro). Isso deve ficar em middleware, FormRequest e exceções centralizadas.
 - **Media Decentralizada:**
   - Requisições das mídias (Vídeos e Arquivos de Material) resolverão `Pre-signed URLs` apontando para o Storage configurado pelo Tenant (ex: AWS S3 ou integração via Vimeo na API). O back-end não fará *proxy pass* binário de grandes arquivos. Carga aliviada no servidor da API.
+
+### 1.1 Guardrails de Resposta e Tenant
+- Não construir manualmente, em múltiplos lugares, payload de `tenant_not_resolved`.
+- Usar exceção de domínio padronizada e render global para manter consistência.
+- Quando não houver `JsonResource`/`ResourceCollection`, retornar `data` direto no payload.
+- Evitar wrappers redundantes como `data.user`, `data.course`, `data.category` para respostas manuais.
+- Não retornar `meta` vazio (`'meta' => []`). `meta` só existe quando tiver dados reais de metadados.
 
 ## 2. Entidades Principais
 ### Catalog (`Course`, `Category`, `CourseModule`)

@@ -169,6 +169,10 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 - Always create Form Request classes for validation rather than inline validation in controllers. Include both validation rules and custom error messages.
 - Check sibling Form Requests to see if the application uses array or string based validation rules.
+- Tenant preconditions must be validated in FormRequest / middleware, not with inline `if` blocks in controller methods.
+- Reuse shared API context trait methods for tenant/user context access instead of manual request parsing in each controller method.
+- For manual JSON payloads (when not returning a JsonResource / ResourceCollection), return `data` directly and avoid redundant wrappers like `data.user`, `data.course`, or `data.category`.
+- Do not return empty `meta` blocks (`'meta' => []`). Include `meta` only when it has meaningful fields.
 
 ## Authentication & Authorization
 

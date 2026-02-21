@@ -8,20 +8,37 @@ use App\Models\User;
 
 class CategoryPolicy
 {
-    public function list(User $user, Tenant $tenant): bool
+    public function list(User $user, ?Tenant $tenant = null): bool
     {
         if ($user->isDeveloper()) {
             return true;
+        }
+
+        if ($tenant === null) {
+            return false;
         }
 
         return $user->belongsToTenant($tenant)
             && $user->getAllPermissions()->contains('name', 'learning.categories.list');
     }
 
-    public function createTenant(User $user, Tenant $tenant): bool
+    public function create(User $user, ?Tenant $tenant = null, bool $isSystem = false): bool
+    {
+        if ($isSystem) {
+            return $this->manageSystem($user);
+        }
+
+        return $this->createTenant($user, $tenant);
+    }
+
+    public function createTenant(User $user, ?Tenant $tenant = null): bool
     {
         if ($user->isDeveloper()) {
             return true;
+        }
+
+        if ($tenant === null) {
+            return false;
         }
 
         return $user->belongsToTenant($tenant)

@@ -11,6 +11,21 @@ Este domínio é responsável pela Autenticação, Identidade do Usuário, Contr
 - **Autorização Obrigatória por Endpoint:** Todo método de controller deve validar autorização via Gate/Policy antes de executar a Action.
 - **Validação & Transferência:** `FormRequests` do Laravel para validação estrita, mapeados para `DTOs` (Data Transfer Objects) tipados antes de tocarem os Actions/Services.
 - **Tratamento de Exceções:** Formato unificado de erros de API.
+- **Padronização obrigatória de Tenant Context:** controllers não podem fazer parsing/manual check de tenant; devem usar contexto resolvido centralmente.
+
+### 1.1 Guardrails Obrigatórios (não repetir anti-patterns)
+- Não repetir em controllers:
+  - leitura manual de tenant (`header`, `host`, `request->attributes`)
+  - blocos de retorno inline para `tenant_not_resolved`
+- `tenant_not_resolved` deve ser emitido por exceção de domínio única (`TenantContextRequiredException`) com render centralizado.
+- `FormRequest` deve validar pré-condições de tenant para casos obrigatórios (422), usando o trait de contexto HTTP compartilhado.
+- Controllers devem somente orquestrar: `FormRequest` + `Gate/Policy` + Action + Resource/Response.
+- Decisão condicional de autorização (ex.: `is_system`) deve ficar em `Policy`, não em `if` de controller.
+- Convenção de payload manual:
+  - quando não for `JsonResource` / `ResourceCollection`, retornar `data` direto (sem wrapper redundante `user`, `course`, `category`).
+  - Exemplo correto: `'data' => $payload`.
+  - Exemplo proibido: `'data' => ['user' => $payload]`.
+- `meta` vazio não deve ser retornado (`'meta' => []` proibido). Só incluir `meta` quando houver conteúdo real.
 
 ## 2. Multi-Tenancy Resolution
 O sistema suportará a resolução do tenant de duas formas, nessa ordem de prioridade (Middleware customizado):

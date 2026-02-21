@@ -4,17 +4,18 @@ namespace App\Http\Controllers\Api\V1\Learning\Catalog;
 
 use App\Actions\Learning\Catalog\ListCoursesAction;
 use App\Actions\Learning\Catalog\ShowCourseAction;
+use App\Http\Controllers\Concerns\InteractsWithApiContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\Catalog\ListCatalogCoursesRequest;
 use App\Http\Resources\Learning\Catalog\CourseCatalogResource;
 use App\Http\Resources\Learning\Catalog\CourseDetailResource;
-use App\Models\Tenant;
-use App\Models\User;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 class CourseController extends Controller
 {
+    use InteractsWithApiContext;
+
     public function __construct(
         private readonly ListCoursesAction $listCoursesAction,
         private readonly ShowCourseAction $showCourseAction,
@@ -22,9 +23,8 @@ class CourseController extends Controller
 
     public function index(ListCatalogCoursesRequest $request): Response
     {
-        $tenant = $this->resolveTenant($request);
-        /** @var User|null $authenticatedUser */
-        $authenticatedUser = $request->user('sanctum');
+        $tenant = $this->currentTenant();
+        $authenticatedUser = $this->authenticatedUser($request);
 
         if ($authenticatedUser !== null) {
             Gate::forUser($authenticatedUser)->authorize('learning.catalog.courses.list', [$tenant]);
@@ -37,9 +37,8 @@ class CourseController extends Controller
 
     public function show(string $slug, ListCatalogCoursesRequest $request): Response
     {
-        $tenant = $this->resolveTenant($request);
-        /** @var User|null $authenticatedUser */
-        $authenticatedUser = $request->user('sanctum');
+        $tenant = $this->currentTenant();
+        $authenticatedUser = $this->authenticatedUser($request);
 
         if ($authenticatedUser !== null) {
             Gate::forUser($authenticatedUser)->authorize('learning.catalog.courses.show', [$tenant]);
@@ -50,7 +49,6 @@ class CourseController extends Controller
         if ($course === null) {
             return response([
                 'data' => null,
-                'meta' => [],
                 'errors' => [
                     [
                         'code' => 'not_found',
@@ -61,18 +59,7 @@ class CourseController extends Controller
         }
 
         return response([
-            'data' => [
-                'course' => CourseDetailResource::make($course)->resolve(),
-            ],
-            'meta' => [],
+            'data' => CourseDetailResource::make($course)->resolve(),
         ]);
-    }
-
-    private function resolveTenant(ListCatalogCoursesRequest $request): Tenant
-    {
-        /** @var Tenant $tenant */
-        $tenant = $request->attributes->get('tenant');
-
-        return $tenant;
     }
 }

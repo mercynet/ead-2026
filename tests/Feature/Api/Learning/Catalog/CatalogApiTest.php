@@ -211,10 +211,10 @@ it('shows published course by slug with modules and lessons', function (): void 
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('data.course.slug', 'course-detail')
-        ->assertJsonPath('data.course.modules.0.title', 'Module 1')
-        ->assertJsonPath('data.course.modules.0.lessons.0.title', 'Lesson 1')
-        ->assertJsonPath('data.course.categories.0.slug', 'tech');
+        ->assertJsonPath('data.slug', 'course-detail')
+        ->assertJsonPath('data.modules.0.title', 'Module 1')
+        ->assertJsonPath('data.modules.0.lessons.0.title', 'Lesson 1')
+        ->assertJsonPath('data.categories.0.slug', 'tech');
 });
 
 it('does not show draft course detail for catalog endpoint', function (): void {
@@ -239,4 +239,61 @@ it('does not show draft course detail for catalog endpoint', function (): void {
     $this->getJson('/api/v1/learning/catalog/courses/draft-course', [
         'X-Tenant-ID' => (string) $tenant->id,
     ])->assertNotFound();
+});
+
+it('allows developer to list courses without tenant context', function (): void {
+    $tenantA = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $tenantB = Tenant::query()->create([
+        'name' => 'Tenant B',
+        'domain' => 'tenant-b.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    Role::query()->firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Developer',
+        'email' => 'developer-courses-no-tenant@platform.test',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    Course::query()->create([
+        'tenant_id' => $tenantA->id,
+        'title' => 'Curso Tenant A',
+        'slug' => 'curso-tenant-a',
+        'description' => 'A',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    Course::query()->create([
+        'tenant_id' => $tenantB->id,
+        'title' => 'Curso Tenant B',
+        'slug' => 'curso-tenant-b',
+        'description' => 'B',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $token = $developer->createToken('developer-courses-no-tenant-token')->plainTextToken;
+
+    $this->getJson('/api/v1/learning/catalog/courses', [
+        'Authorization' => 'Bearer '.$token,
+    ])
+        ->assertSuccessful()
+        ->assertJsonFragment(['slug' => 'curso-tenant-a'])
+        ->assertJsonFragment(['slug' => 'curso-tenant-b']);
 });

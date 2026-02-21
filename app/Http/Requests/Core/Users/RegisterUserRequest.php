@@ -2,15 +2,20 @@
 
 namespace App\Http\Requests\Core\Users;
 
+use App\Http\Controllers\Concerns\InteractsWithApiContext;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterUserRequest extends FormRequest
 {
+    use InteractsWithApiContext;
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
+        $this->requiredTenant();
+
         return true;
     }
 

@@ -32,10 +32,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         return response([
-            'data' => [
-                'user' => $this->meAction->handle($user),
-            ],
-            'meta' => [],
+            'data' => $this->meAction->handle($user),
         ]);
     }
 
@@ -50,7 +47,6 @@ class AuthController extends Controller
             'data' => [
                 'logged_out' => true,
             ],
-            'meta' => [],
         ]);
     }
 }

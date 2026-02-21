@@ -2,12 +2,20 @@
 
 namespace App\Http\Requests\Learning\Catalog;
 
+use App\Exceptions\TenantContextRequiredException;
+use App\Http\Controllers\Concerns\InteractsWithApiContext;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ListCatalogCoursesRequest extends FormRequest
 {
+    use InteractsWithApiContext;
+
     public function authorize(): bool
     {
+        if ($this->currentTenant() === null && $this->authenticatedUser() === null) {
+            throw TenantContextRequiredException::make();
+        }
+
         return true;
     }
 

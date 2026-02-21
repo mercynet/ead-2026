@@ -7,17 +7,21 @@ use App\Models\Tenant;
 
 class ShowCourseAction
 {
-    public function handle(Tenant $tenant, string $slug): ?Course
+    public function handle(?Tenant $tenant, string $slug): ?Course
     {
-        return Course::query()
-            ->where('tenant_id', $tenant->id)
+        $query = Course::query()
             ->where('slug', $slug)
             ->where('status', 'published')
             ->with([
                 'categories:id,name,slug',
                 'modules' => fn ($query) => $query->orderBy('sort_order'),
                 'modules.lessons' => fn ($query) => $query->orderBy('sort_order'),
-            ])
-            ->first();
+            ]);
+
+        if ($tenant !== null) {
+            $query->where('tenant_id', $tenant->id);
+        }
+
+        return $query->first();
     }
 }

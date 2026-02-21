@@ -11,13 +11,16 @@ use Illuminate\Pagination\CursorPaginator;
 
 class ListCoursesAction
 {
-    public function handle(Request $request, Tenant $tenant, ?User $authenticatedUser): CursorPaginator
+    public function handle(Request $request, ?Tenant $tenant, ?User $authenticatedUser): CursorPaginator
     {
         $coursesQuery = Course::query()
-            ->where('tenant_id', $tenant->id)
             ->where('status', 'published')
             ->with(['categories:id,name,slug'])
             ->orderBy('id');
+
+        if ($tenant !== null) {
+            $coursesQuery->where('tenant_id', $tenant->id);
+        }
 
         $categorySlug = $request->query('category');
         if (is_string($categorySlug) && $categorySlug !== '') {

@@ -23,7 +23,6 @@ class LoginAction
                 'status' => 401,
                 'payload' => [
                     'data' => null,
-                    'meta' => [],
                     'errors' => [
                         [
                             'code' => 'invalid_credentials',
@@ -39,7 +38,6 @@ class LoginAction
                 'status' => 422,
                 'payload' => [
                     'data' => null,
-                    'meta' => [],
                     'errors' => [
                         [
                             'code' => 'tenant_not_resolved',
@@ -55,7 +53,6 @@ class LoginAction
                 'status' => 401,
                 'payload' => [
                     'data' => null,
-                    'meta' => [],
                     'errors' => [
                         [
                             'code' => 'invalid_credentials',
@@ -77,7 +74,6 @@ class LoginAction
                         'email' => $user->email,
                     ],
                 ],
-                'meta' => [],
             ],
         ];
     }

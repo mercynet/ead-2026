@@ -30,7 +30,7 @@ it('registers a user within the resolved tenant', function (): void {
 
     $response
         ->assertCreated()
-        ->assertJsonPath('data.user.email', 'jane@example.com');
+        ->assertJsonPath('data.email', 'jane@example.com');
 
     $user = User::query()->where('email', 'jane@example.com')->first();
 
@@ -73,8 +73,8 @@ it('updates own profile in the same tenant', function (): void {
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('data.user.name', 'John Updated')
-        ->assertJsonPath('data.user.headline', 'Instructor');
+        ->assertJsonPath('data.name', 'John Updated')
+        ->assertJsonPath('data.headline', 'Instructor');
 });
 
 it('forbids profile update for tenant mismatch', function (): void {

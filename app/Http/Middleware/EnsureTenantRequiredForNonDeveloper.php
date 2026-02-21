@@ -2,13 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Exceptions\TenantContextRequiredException;
 use App\Models\Tenant;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureTenantAccess
+class EnsureTenantRequiredForNonDeveloper
 {
     /**
      * Handle an incoming request.
@@ -22,22 +23,14 @@ class EnsureTenantAccess
         /** @var Tenant|null $tenant */
         $tenant = $request->attributes->get('tenant');
 
-        if ($authenticatedUser === null || $tenant === null) {
+        if ($tenant !== null) {
             return $next($request);
         }
 
-        if (! $authenticatedUser->isDeveloper() && ! $authenticatedUser->belongsToTenant($tenant)) {
-            return response([
-                'data' => null,
-                'errors' => [
-                    [
-                        'code' => 'forbidden',
-                        'message' => 'User does not belong to tenant.',
-                    ],
-                ],
-            ], 403);
+        if ($authenticatedUser !== null && $authenticatedUser->isDeveloper()) {
+            return $next($request);
         }
 
-        return $next($request);
+        throw TenantContextRequiredException::make();
     }
 }

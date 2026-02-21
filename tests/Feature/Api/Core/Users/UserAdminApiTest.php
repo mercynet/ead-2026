@@ -120,7 +120,7 @@ it('allows tenant admin to view user detail from own tenant', function (): void 
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('data.user.email', 'target@tenant-a.test');
+        ->assertJsonPath('data.email', 'target@tenant-a.test');
 });
 
 it('returns not found when tenant admin tries to view user from another tenant', function (): void {
@@ -253,7 +253,7 @@ it('allows developer to view user from another tenant', function (): void {
         'X-Tenant-ID' => (string) $tenantA->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('data.user.email', 'b@tenant-b.test');
+        ->assertJsonPath('data.email', 'b@tenant-b.test');
 });
 
 it('hides developer users from tenant admin list and detail endpoints', function (): void {
@@ -296,4 +296,39 @@ it('hides developer users from tenant admin list and detail endpoints', function
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
     ])->assertNotFound();
+});
+
+it('allows developer to list users without tenant context', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    Role::query()->firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Developer',
+        'email' => 'developer-no-tenant-users@platform.test',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    User::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Tenant User',
+        'email' => 'tenant-user@tenant-a.test',
+        'password' => Hash::make('password123'),
+    ]);
+
+    $token = $developer->createToken('developer-no-tenant-users-token')->plainTextToken;
+
+    $this->getJson('/api/v1/core/users', [
+        'Authorization' => 'Bearer '.$token,
+    ])
+        ->assertSuccessful()
+        ->assertJsonFragment(['email' => 'developer-no-tenant-users@platform.test'])
+        ->assertJsonFragment(['email' => 'tenant-user@tenant-a.test']);
 });

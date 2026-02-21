@@ -134,8 +134,8 @@ it('allows developer to create system category', function (): void {
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertCreated()
-        ->assertJsonPath('data.category.is_system', true)
-        ->assertJsonPath('data.category.tenant_id', null);
+        ->assertJsonPath('data.is_system', true)
+        ->assertJsonPath('data.tenant_id', null);
 });
 
 it('forbids tenant admin from creating system category', function (): void {
@@ -206,4 +206,85 @@ it('allows same tenant category name in different tenants when not system reserv
         'Authorization' => 'Bearer '.$adminBToken,
         'X-Tenant-ID' => (string) $tenantB->id,
     ])->assertCreated();
+});
+
+it('allows developer to list all categories without tenant context', function (): void {
+    $tenantA = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $tenantB = Tenant::query()->create([
+        'name' => 'Tenant B',
+        'domain' => 'tenant-b.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Developer',
+        'email' => 'developer-no-tenant@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+    $token = $developer->createToken('developer-token')->plainTextToken;
+
+    Category::query()->create([
+        'tenant_id' => null,
+        'parent_id' => null,
+        'name' => 'Categoria Sistema',
+        'slug' => 'categoria-sistema',
+        'normalized_name' => 'categoria sistema',
+        'is_system' => true,
+    ]);
+
+    Category::query()->create([
+        'tenant_id' => $tenantA->id,
+        'parent_id' => null,
+        'name' => 'Categoria A',
+        'slug' => 'categoria-a',
+        'normalized_name' => 'categoria a',
+        'is_system' => false,
+    ]);
+
+    Category::query()->create([
+        'tenant_id' => $tenantB->id,
+        'parent_id' => null,
+        'name' => 'Categoria B',
+        'slug' => 'categoria-b',
+        'normalized_name' => 'categoria b',
+        'is_system' => false,
+    ]);
+
+    $this->getJson('/api/v1/learning/catalog/categories', [
+        'Authorization' => 'Bearer '.$token,
+    ])
+        ->assertSuccessful()
+        ->assertJsonFragment(['slug' => 'categoria-sistema'])
+        ->assertJsonFragment(['slug' => 'categoria-a'])
+        ->assertJsonFragment(['slug' => 'categoria-b']);
+});
+
+it('requires tenant for non developer when tenant context is missing', function (): void {
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Tenant Admin',
+        'email' => 'tenant-admin-no-context@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('tenant_admin');
+    $token = $admin->createToken('tenant-admin-token')->plainTextToken;
+
+    $this->getJson('/api/v1/learning/catalog/categories', [
+        'Authorization' => 'Bearer '.$token,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'tenant_not_resolved');
 });

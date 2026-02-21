@@ -114,8 +114,26 @@ _Nota técnica_: Utilizaremos `spatie/laravel-multitenancy` nos mesmos moldes at
 
 ### Entidade: `Tenant`
 - **Tabela:** `tenants` (tabela landlord).
-- **Atributos Principais:** id, name, domain, database (se houver isolamento físico), is_active.
+- **Atributos Principais:** id, name, slug, domain, database (se houver isolamento físico), is_active, data (json config).
 - Suporta relacionamentos para personalizações e integrações visuais do Tenant (`TenantCustomization`, `TenantIntegration`).
+
+### Entidade: `TenantCustomization`
+- **Tabela:** `tenant_customizations`
+- **Propósito:** Configurações visuais e de brand do tenant (white-label).
+- **Atributos:** tenant_id, logo, banner, primary_color, secondary_color, custom_css, terms_url, privacy_url, support_email.
+- **Uso:** Retornado em `GET /tenant/config` para renderização do frontend antes do login.
+
+### Entidade: `TenantIntegration`
+- **Tabela:** `tenant_integrations`
+- **Propósito:** Credenciais de integrações externas por tenant (gateways, analytics, etc).
+- **Atributos:** tenant_id, integration_type, credentials (encrypted json), is_active.
+- **Segurança:** Credenciais sempre cifradas via Eloquent Cast (`encrypted:json`).
+
+### Entidade: `SystemSetting`
+- **Tabela:** `system_settings`
+- **Propósito:** Configurações globais da plataforma (landlord only).
+- **Atributos:** key, value, tenant_id (null para globais).
+- **Acesso:** Apenas `developer` pode ler/escrever configurações globais.
 
 ## 4. Endpoints (JSON)
 *Base URL: `api/v1/core`*

@@ -10,15 +10,60 @@ O EAD opera em um modelo sofisticado de Plugins, cobrados como Assinaturas SaaS-
 - **Separação Landlord vs Tenant:** Endpoints desse domínio terão forte verificação: `isDeveloper()` pode ver catálogo completo, modificar preços; `TenantAdmin()` apenas enxerga a vitrine, adere via pagamento (ou ativação de gratuitos), e usa. Administradores podem, inclusive, escolher desabilitar plugins gratuitos da plataforma caso não queiram usar (ex: Desligar o plugin default de "Carrinho de Compras").
 
 ## 2. Entidades Principais
-### Catálogo de Plugins (`Plugin`, `PluginVersion`, `PluginPricing`)
-- **Plugin:** Modelo raiz com info de mercado (`long_description`, `support_url`, `status`). Agrega versões do software e preços.
-- **PluginPricing:** Estrutura preços recorrentes ou avulsos (tier base) criados pela master.
+### Catálogo de Plugins (`Plugin`, `PluginCategory`, `PluginSubgroup`, `PluginVersion`, `PluginPricing`, `PluginFeature`)
+- **Plugin:** Modelo raiz com info de mercado (`name`, `slug`, `short_description`, `long_description`, `support_url`, `status`, `logo`, `screenshots`). Agrega versões, categorias e preços.
+- **PluginCategory:** Agrupamento principal (ex: Pagamentos, Mídia, Analytics, Pedagógico).
+- **PluginSubgroup:** Subcategoria dentro de cada categoria.
+- **PluginVersion:** Controle de versões do plugin com changelog.
+- **PluginPricing:** Estrutura preços recorrentes ou avulsos (tier: free, basic, premium) criados pela master.
+- **PluginFeature:** Lista de features/capabilities de cada plugin para exibição na vitrine.
 
-### Consumo do Tenant (`PluginSubscription`, `PluginBilling`, `PluginUsageLog`)
-- **PluginSubscription:** Similar ao histórico de um SaaS. Tem `status`, limites de `metadata` e a data de recorrência (`next_billing_date`). Suportará períodos de Teste Grátis (`is_trial`, `trial_ends_at`).
+### Consumo do Tenant (`PluginInstallation`, `PluginActivation`, `PluginSubscription`, `PluginBilling`, `PluginUsageLog`, `PluginLicense`, `PluginSetting`)
+- **PluginInstallation:** Registro de instalação do plugin em um tenant.
+- **PluginActivation:** Histórico de ativações/desativações.
+- **PluginSubscription:** Similar ao histórico de um SaaS. Tem `status` (active, suspended, cancelled), limites de `metadata` e a data de recorrência (`next_billing_date`). Suportará períodos de Teste Grátis (`is_trial`, `trial_ends_at`).
 - **PluginBilling:** O extrato recorrente das mensalidades pagas pelo Tenant Admin ao Master. Possui lógica complexa de refugo (`retry_count`, `next_retry_at`) para estorno automático.
-- **Cupons de Desconto (`PluginCoupon`):** Suporte a cupons fixos ou percentuais aplicáveis nativamente à cobrança SaaS.
+- **PluginUsageLog:** Log de uso de recursos premium (quota tracking).
+- **PluginLicense:** Licenças de uso para plugins específicos.
+- **PluginSetting:** Configurações específicas do plugin por tenant.
 - **TenantIntegration:** Para os plugins que exigem Tokens externos da mão do lojista/Tenant. A injeção dessas integrações é *Event-Driven* (ex: o plugin VIMEO dispara evento registrando seus campos de auth na tab do tenant). As chaves ficarão cifradas via Eloquent Casts Estritos (`encrypted:json`).
+- **Cupons de Desconto (`PluginCoupon`):** Suporte a cupons fixos ou percentuais aplicáveis nativamente à cobrança SaaS.
+
+## 2.1 Plugins Disponíveis (First-Party)
+
+### Plugins de Pagamento
+| Plugin | Status | Descrição |
+|--------|--------|-----------|
+| **Stripe** | Funcional | Gateway de pagamento internacional. Webhooks, checkout redirect. |
+| **PixPayments** | Parcial | Pagamentos via PIX brasileiro. |
+
+### Plugins de E-commerce
+| Plugin | Status | Descrição |
+|--------|--------|-----------|
+| **Cart** | Funcional | Carrinho de compras. Gratuito, incluído por padrão. |
+| **DiscountCoupons** | Estrutura | Cupons de desconto para checkout. |
+| **Subscriptions** | Estrutura | Planos de assinatura recorrente para cursos. |
+| **Affiliates** | Estrutura | Sistema de afiliados com tracking de comissões. |
+
+### Plugins de Mídia e Conteúdo
+| Plugin | Status | Descrição |
+|--------|--------|-----------|
+| **Comments** | Estrutura | Comentários em aulas. |
+| **Community** | Estrutura | Fórum/comunidade por curso. Fóruns, Tópicos, Posts. |
+| **CourseReviews** | Estrutura | Reviews/avaliações detalhadas de cursos. |
+| **CustomCertificates** | Estrutura | Templates customizados de certificado por tenant. |
+
+### Plugins de Analytics e Marketing
+| Plugin | Status | Descrição |
+|--------|--------|-----------|
+| **EmailMarketing** | Estrutura | Automação de emails, logs de envio. |
+| **SalesIntelligence** | Parcial | Analytics de vendas avançado. |
+| **PerformanceReportsEnterprise** | Vazio | Relatórios enterprise de performance. |
+
+### Plugins de Gamificação
+| Plugin | Status | Descrição |
+|--------|--------|-----------|
+| **GamificationRewards** | Vazio | Sistema de pontos, badges, conquistas. |
 
 ## 3. Endpoints Principais (JSON)
 *Base URL: `api/v1/ecosystem`*

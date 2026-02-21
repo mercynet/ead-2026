@@ -10,12 +10,19 @@ Domínio focado na monetização da plataforma. O Financial cuidará das intenç
 - **Auditoria de Transações:** Toda matrícula, *mesmo em cursos gratuitos*, deverá originar um registro espelho na tabela financeira explicitando o método (ex: "Automático/Gratuito") para fins de consistência e metrificação de LTV/Auditoria nos Relatórios. Extrema atenção ao `RelationNotFoundException` ao carregar orders antigas, mantendo polimorfismo (`itemable`) sempre válido.
 
 ## 2. Entidades Principais
-### Order (`Order`, `OrderItem`)
-- **Order:** Agregação de compra. Possui `subtotal`, taxas, `metadata` e um `origin_type` (Direct, Cart, Subscription, Renewal).
+### Order (`Order`, `OrderItem`, `PriceHistory`)
+- **Order:** Agregação de compra. Possui `order_number`, `subtotal`, taxas, `metadata` e um `origin_type` (Direct, Cart, Subscription, Renewal). Status: pending, paid, failed, cancelled, refunded.
 - **OrderItem:** Linha da fatura. Extremamente flexível via polimorfismo (`itemable_type` e `itemable_id`), sendo capaz de apontar para um Curso, um Plano Fixo ou um Plugin do Tenant. Salva um `item_snapshot` (json) para manter o histórico caso o nome/preço do produto mude depois de anos.
+- **PriceHistory:** Histórico de alterações de preço de cursos para auditoria.
 
-### Payment (`Payment`)
-- **Payment:** Transação atrelada a uma `Order` e respondendo via Webhook. Contém Payload cru do Gateway em `gateway_response`. Status: pending, completed, failed.
+### Payment (`Payment`, `TenantPaymentGateway`)
+- **Payment:** Transação atrelada a uma `Order` e respondendo via Webhook. Contém Payload cru do Gateway em `gateway_response`, `external_id` do gateway. Status: pending, completed, failed.
+- **TenantPaymentGateway:** Configuração de gateway de pagamento por tenant. Armazena credenciais cifradas para múltiplos gateways (Stripe, MercadoPago, Pagarme, etc).
+
+### Carrinho e Cupons (Plugins)
+- **Cart:** Carrinho de compras por usuário (sessão ou autenticado). Plugin gratuito incluído.
+- **CartItem:** Itens do carrinho. Polimórfico (cursos, planos).
+- **Coupon:** Cupons de desconto (percentual ou valor fixo). Validade configurável, limite de uso.
 
 ## 3. Endpoints Principais (JSON)
 *Base URL: `api/v1/financial`*

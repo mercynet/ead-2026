@@ -80,13 +80,24 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
     - categoria do mesmo `tenant_id` do curso.
   - Nunca permitir vínculo com categoria de outro tenant.
 
-### Learning (`Lesson`, `CourseMaterial`)
-- **Lesson:** Conteúdo da aula. Mídia vinculada (`LessonMedia`).
-- **CourseMaterial:** Arquivos auxiliares (PDFs, PPTXs).
+### Learning (`Lesson`, `LessonMedia`, `LessonProgress`, `CourseMaterial`)
+- **Lesson:** Conteúdo da aula. Suporta múltiplos tipos de mídia.
+- **LessonMedia:** Mídias vinculadas à aula (vídeo, áudio, documento). Suporta múltiplos provedores via Enum `MediaType` (YouTube, Vimeo, AWS S3, Live Streaming).
+- **LessonMediaProgress:** Tracking granular de progresso por mídia (tempo assistido, completed).
+- **LessonProgress:** Tracking geral de progresso por aula.
+- **CourseMaterial:** Arquivos auxiliares (PDFs, PPTXs) vinculados a aulas ou cursos.
+- **MaterialDownload:** Registro de downloads com tracking de uso.
+- **MaterialStats:** Estatísticas agregadas de uso de materiais.
+- **InstructorAnnouncement:** Anúncios de instrutores para alunos matriculados.
 
-### Progresso e Matrícula (`Enrollment`, `LessonProgress`)
-- **Enrollment:** Matrícula de um usuário (Student) a um curso. Registra expiração de acesso, progresso total (0-100%). Funciona como Agreggate Root para cálculos de conclusão.
-- **LessonProgress:** Tracking granular por vídeo/aula.
+### Progresso e Matrícula (`Enrollment`, `LessonProgress`, `LessonMediaProgress`)
+- **Enrollment:** Matrícula de um usuário (Student) a um curso. Registra expiração de acesso (`access_expires_at`), progresso total (0-100%), status (active, expired, completed). Funciona como Aggregate Root para cálculos de conclusão.
+- **LessonProgress:** Tracking granular por aula (started_at, completed_at, duration_watched).
+- **LessonMediaProgress:** Tracking ainda mais granular por mídia dentro da aula (para cursos com múltiplos vídeos/áudios).
+
+### Engajamento (`Rating`, `RatingStats`)
+- **Rating:** Avaliações de cursos e aulas (1-5 estrelas). Suporta like/dislike adicional.
+- **RatingStats:** Cache agregado de estatísticas de avaliação por curso (média, total, distribuição).
 
 ## 3. Endpoints Principais (JSON)
 *Base URL: `api/v1/learning`*

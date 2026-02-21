@@ -87,7 +87,7 @@ it('lists only published tenant courses and supports filters', function (): void
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('meta.total', 2)
+        ->assertJsonCount(2, 'data')
         ->assertJsonFragment(['slug' => 'laravel-zero-to-hero'])
         ->assertJsonFragment(['slug' => 'ui-premium'])
         ->assertJsonFragment(['slug' => 'desenvolvimento-de-software'])
@@ -97,7 +97,7 @@ it('lists only published tenant courses and supports filters', function (): void
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('meta.total', 1)
+        ->assertJsonCount(1, 'data')
         ->assertJsonFragment(['slug' => 'laravel-zero-to-hero'])
         ->assertJsonMissing(['slug' => 'ui-premium']);
 });
@@ -159,7 +159,7 @@ it('hides purchased courses for authenticated user', function (): void {
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('meta.total', 1)
+        ->assertJsonCount(1, 'data')
         ->assertJsonMissing(['slug' => 'purchased-course'])
         ->assertJsonFragment(['slug' => $visibleCourse->slug]);
 });

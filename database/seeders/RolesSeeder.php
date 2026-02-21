@@ -20,6 +20,7 @@ class RolesSeeder extends Seeder
                 'core.users.list',
                 'core.users.show',
                 'core.users.update-self',
+                'learning.categories.list',
                 'learning.categories.system.manage',
                 'learning.categories.tenant.create',
                 'learning.categories.tenant.update',
@@ -31,6 +32,7 @@ class RolesSeeder extends Seeder
             'tenant_admin' => [
                 'core.users.list',
                 'core.users.show',
+                'learning.categories.list',
                 'learning.categories.tenant.create',
                 'learning.categories.tenant.update',
                 'learning.categories.tenant.delete',
@@ -40,12 +42,14 @@ class RolesSeeder extends Seeder
             ],
             'instructor' => [
                 'core.users.show',
+                'learning.categories.list',
                 'learning.catalog.courses.attach-categories',
                 'learning.catalog.courses.list',
                 'learning.catalog.courses.show',
             ],
             'student' => [
                 'core.users.show',
+                'learning.categories.list',
                 'learning.catalog.courses.list',
                 'learning.catalog.courses.show',
             ],

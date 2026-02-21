@@ -7,7 +7,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ResolveTenant
+class ResolveTenantOptional
 {
     public function __construct(private readonly ResolveTenantFromRequestAction $resolveTenantFromRequestAction) {}
 
@@ -18,20 +18,7 @@ class ResolveTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $tenant = $this->resolveTenantFromRequestAction->resolveAndBind($request);
-
-        if ($tenant === null) {
-            return response()->json([
-                'data' => null,
-                'meta' => [],
-                'errors' => [
-                    [
-                        'code' => 'tenant_not_resolved',
-                        'message' => 'Tenant context is required.',
-                    ],
-                ],
-            ], 422);
-        }
+        $this->resolveTenantFromRequestAction->resolveAndBind($request);
 
         return $next($request);
     }

@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use App\Models\Tenant;
-use App\Models\User;
+use App\Policies\CategoryPolicy;
+use App\Policies\CoursePolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,58 +23,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('core.users.list', function (User $authenticatedUser, Tenant $tenant): bool {
-            if ($authenticatedUser->isDeveloper()) {
-                return true;
-            }
+        Gate::define('core.users.list', [UserPolicy::class, 'list']);
+        Gate::define('core.users.show', [UserPolicy::class, 'show']);
+        Gate::define('core.users.update-self', [UserPolicy::class, 'updateSelf']);
 
-            return $authenticatedUser->isTenantAdmin() && $authenticatedUser->belongsToTenant($tenant);
-        });
+        Gate::define('learning.catalog.courses.list', [CoursePolicy::class, 'list']);
+        Gate::define('learning.catalog.courses.show', [CoursePolicy::class, 'show']);
 
-        Gate::define('core.users.show', function (User $authenticatedUser, Tenant $tenant, User $targetUser): bool {
-            if ($authenticatedUser->isDeveloper()) {
-                return true;
-            }
+        Gate::define('learning.categories.list', [CategoryPolicy::class, 'list']);
+        Gate::define('learning.categories.tenant.create', [CategoryPolicy::class, 'createTenant']);
+        Gate::define('learning.categories.system.manage', [CategoryPolicy::class, 'manageSystem']);
 
-            if ($authenticatedUser->isTenantAdmin() && $authenticatedUser->belongsToTenant($tenant)) {
-                return $targetUser->belongsToTenant($tenant);
-            }
-
-            if ($authenticatedUser->isInstructor() || $authenticatedUser->isStudent()) {
-                return $authenticatedUser->is($targetUser);
-            }
-
-            return false;
-        });
-
-        Gate::define('core.users.update-self', function (User $authenticatedUser, Tenant $tenant, User $targetUser): bool {
-            if (! $authenticatedUser->is($targetUser)) {
-                return false;
-            }
-
-            if ($authenticatedUser->isDeveloper()) {
-                return true;
-            }
-
-            return $authenticatedUser->belongsToTenant($tenant);
-        });
-
-        Gate::define('learning.catalog.courses.list', function (User $authenticatedUser, Tenant $tenant): bool {
-            if ($authenticatedUser->isDeveloper()) {
-                return true;
-            }
-
-            return $authenticatedUser->belongsToTenant($tenant)
-                && $authenticatedUser->getAllPermissions()->contains('name', 'learning.catalog.courses.list');
-        });
-
-        Gate::define('learning.catalog.courses.show', function (User $authenticatedUser, Tenant $tenant): bool {
-            if ($authenticatedUser->isDeveloper()) {
-                return true;
-            }
-
-            return $authenticatedUser->belongsToTenant($tenant)
-                && $authenticatedUser->getAllPermissions()->contains('name', 'learning.catalog.courses.show');
-        });
+        Gate::define('learning.categories.tenant.update-check', [CategoryPolicy::class, 'update']);
+        Gate::define('learning.categories.tenant.delete-check', [CategoryPolicy::class, 'delete']);
     }
 }

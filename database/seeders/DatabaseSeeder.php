@@ -56,12 +56,12 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($usersByRole as $roleName => $userData) {
-            $user = User::query()->firstOrCreate(
+            $user = User::query()->updateOrCreate(
                 ['email' => $userData['email']],
                 [
                     'tenant_id' => $userData['tenant_id'],
                     'name' => $userData['name'],
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make('password123'),
                 ],
             );
 

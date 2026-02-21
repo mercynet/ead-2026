@@ -5,8 +5,10 @@ Este domínio é responsável pela Autenticação, Identidade do Usuário, Contr
 
 ## 1. Padrões Arquiteturais e API RESTful Estrito
 - **Autenticação:** Tokens opacos gerenciados pelo `Laravel Sanctum`.
-- **Formato da API:** JSON padrão focado no padrão REST (endpoints pragmáticos e semânticos). Todas as respostas seguirão envelopamento previsível (data/meta).
-- **Controladores / Handlers:** Serão usados "Action classes" (Single Action Controllers) para isolar a responsabilidade de requisições. 
+- **Formato da API:** JSON padrão focado no padrão REST (endpoints pragmáticos e semânticos). Para listagens, usar paginação por cursor (`cursorPaginate`) e Resource Collections.
+- **Controladores / Handlers:** Controller HTTP com métodos explícitos (`index`, `show`, `store`, etc.), sem `__invoke` como padrão do domínio.
+- **Command/Query (Action Layer):** Toda regra de negócio deve viver em `app/Actions/<Domain>/<Resource>/...`, separando leitura (Query Actions) e escrita (Command Actions). Controller apenas orquestra request/authorization/response.
+- **Autorização Obrigatória por Endpoint:** Todo método de controller deve validar autorização via Gate/Policy antes de executar a Action.
 - **Validação & Transferência:** `FormRequests` do Laravel para validação estrita, mapeados para `DTOs` (Data Transfer Objects) tipados antes de tocarem os Actions/Services.
 - **Tratamento de Exceções:** Formato unificado de erros de API.
 

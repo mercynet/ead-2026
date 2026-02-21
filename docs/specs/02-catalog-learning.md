@@ -5,6 +5,11 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
 
 ## 1. Padrões Arquiteturais
 - **Divisão DTO:** Os payloads de leitura devem separar "Dados Frios" (Catálogo: Título do curso, Grade Curricular) de "Dados Quentes" (Progresso Pessoal do Aluno logado). Isso permite cachear a camada do modelo (`Course`) no Redis e consultar o progresso via banco.
+- **Command/Query Actions (Obrigatório):**
+  - Controllers de API devem ter métodos explícitos (`index`, `show`, `store`, etc.), sem `__invoke` como padrão.
+  - Regras de negócio devem ser extraídas para `app/Actions/Learning/<Resource>/...`.
+  - Cada método de controller deve aplicar autorização (Gate/Policy) antes de chamar a Action.
+- **Paginação em Listagens:** Toda listagem deve usar `cursorPaginate`, com Resource Collection retornada diretamente no controller.
 - **Media Decentralizada:**
   - Requisições das mídias (Vídeos e Arquivos de Material) resolverão `Pre-signed URLs` apontando para o Storage configurado pelo Tenant (ex: AWS S3 ou integração via Vimeo na API). O back-end não fará *proxy pass* binário de grandes arquivos. Carga aliviada no servidor da API.
 

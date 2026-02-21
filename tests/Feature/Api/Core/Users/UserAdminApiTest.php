@@ -56,7 +56,7 @@ it('allows tenant admin to list users from own tenant only', function (): void {
 
     $response
         ->assertSuccessful()
-        ->assertJsonPath('meta.total', 2)
+        ->assertJsonCount(2, 'data')
         ->assertJsonFragment(['email' => 'admin@tenant-a.test'])
         ->assertJsonFragment(['email' => 'student-a1@tenant-a.test'])
         ->assertJsonMissing(['email' => 'student-b1@tenant-b.test']);
@@ -209,7 +209,7 @@ it('allows developer to list users from all tenants', function (): void {
         'X-Tenant-ID' => (string) $tenantA->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('meta.total', 3)
+        ->assertJsonCount(3, 'data')
         ->assertJsonFragment(['email' => 'a@tenant-a.test'])
         ->assertJsonFragment(['email' => 'b@tenant-b.test']);
 });
@@ -254,4 +254,46 @@ it('allows developer to view user from another tenant', function (): void {
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.user.email', 'b@tenant-b.test');
+});
+
+it('hides developer users from tenant admin list and detail endpoints', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    Role::query()->firstOrCreate(['name' => 'tenant_admin', 'guard_name' => 'web']);
+    Role::query()->firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Tenant Admin',
+        'email' => 'admin-hide-dev@tenant-a.test',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('tenant_admin');
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Platform Dev',
+        'email' => 'hidden-dev@platform.test',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->getJson('/api/v1/core/users', [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonMissing(['email' => 'hidden-dev@platform.test']);
+
+    $this->getJson('/api/v1/core/users/'.$developer->id, [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertNotFound();
 });

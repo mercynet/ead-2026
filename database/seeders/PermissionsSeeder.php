@@ -16,6 +16,7 @@ class PermissionsSeeder extends Seeder
             'core.users.list',
             'core.users.show',
             'core.users.update-self',
+            'learning.categories.list',
             'learning.categories.system.manage',
             'learning.categories.tenant.create',
             'learning.categories.tenant.update',

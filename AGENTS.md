@@ -43,6 +43,8 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
+- API controllers must be resource-style classes with explicit methods (`index`, `show`, `store`, etc.), not `__invoke` controllers.
+- Business rules must live in `app/Actions/<Domain>/<Resource>/...`; controllers should only orchestrate request validation, authorization, and response mapping.
 
 ## Frontend Bundling
 

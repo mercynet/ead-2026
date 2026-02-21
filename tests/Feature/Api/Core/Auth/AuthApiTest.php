@@ -2,6 +2,7 @@
 
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -48,7 +49,21 @@ it('logs in with valid tenant context and credentials', function (): void {
     expect(PersonalAccessToken::query()->where('tokenable_id', $user->id)->exists())->toBeTrue();
 });
 
-it('rejects login when tenant context is missing', function (): void {
+it('rejects login for tenant user when tenant context is missing', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    User::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'password' => Hash::make('password123'),
+    ]);
+
     $response = $this->postJson('/api/v1/core/auth/login', [
         'email' => 'john@example.com',
         'password' => 'password123',
@@ -191,4 +206,34 @@ it('allows developer login regardless of tenant scope', function (): void {
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenantA->id,
     ])->assertSuccessful();
+});
+
+it('allows developer login without tenant context', function (): void {
+    Role::query()->firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'name' => 'Platform Dev',
+        'email' => 'dev-no-tenant@platform.test',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    $this->postJson('/api/v1/core/auth/login', [
+        'email' => 'dev-no-tenant@platform.test',
+        'password' => 'password123',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.user.email', 'dev-no-tenant@platform.test');
+});
+
+it('allows seeded developer login without tenant context', function (): void {
+    $this->seed(DatabaseSeeder::class);
+
+    $this->postJson('/api/v1/core/auth/login', [
+        'email' => 'developer@example.com',
+        'password' => 'password123',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.user.email', 'developer@example.com');
 });

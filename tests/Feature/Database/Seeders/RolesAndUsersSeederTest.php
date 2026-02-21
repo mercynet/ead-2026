@@ -31,6 +31,7 @@ it('seeds catalog permissions and links them to the expected roles', function ()
 
     expect(Permission::query()->where('name', 'learning.catalog.courses.list')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.catalog.courses.show')->exists())->toBeTrue();
+    expect(Permission::query()->where('name', 'learning.categories.list')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.categories.system.manage')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.categories.tenant.create')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.catalog.courses.attach-categories')->exists())->toBeTrue();
@@ -42,6 +43,7 @@ it('seeds catalog permissions and links them to the expected roles', function ()
 
     expect($studentRole?->hasPermissionTo('learning.catalog.courses.list'))->toBeTrue();
     expect($studentRole?->hasPermissionTo('learning.catalog.courses.show'))->toBeTrue();
+    expect($studentRole?->hasPermissionTo('learning.categories.list'))->toBeTrue();
     expect($instructorRole?->hasPermissionTo('learning.catalog.courses.list'))->toBeTrue();
     expect($instructorRole?->hasPermissionTo('learning.catalog.courses.show'))->toBeTrue();
     expect($instructorRole?->hasPermissionTo('learning.catalog.courses.attach-categories'))->toBeTrue();

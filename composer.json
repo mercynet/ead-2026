@@ -54,6 +54,14 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "qa:gate": [
+            "@composer validate --strict",
+            "@php artisan config:clear --ansi",
+            "@php artisan migrate:fresh --env=testing --force --ansi",
+            "vendor/bin/pint --format agent",
+            "git diff --exit-code",
+            "@php artisan test --compact --ansi"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

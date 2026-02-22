@@ -23,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('learning.catalog.courses.list', [CoursePolicy::class, 'list']);
         Gate::define('learning.catalog.courses.show', [CoursePolicy::class, 'show']);
+        Gate::define('learning.courses.update-check', [CoursePolicy::class, 'update']);
+        Gate::define('learning.courses.delete-check', [CoursePolicy::class, 'delete']);
 
         Gate::define('learning.categories.list', [CategoryPolicy::class, 'list']);
 

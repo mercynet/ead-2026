@@ -75,6 +75,11 @@ Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arqui
 - [x] ApiContext Pattern
 - [x] Middleware de Tenant
 - [x] Policies base
+- [x] UserType enum (developer|admin|instructor|student)
+- [x] Coluna `user_type` na tabela users
+- [x] Métodos isDeveloper(), isAdmin(), isInstructor(), isStudent() no User model
+- [x] Gate/policy para verificar UserType
+- [x] Permissions base para tenant admin
 
 #### Core
 - [x] User model + factory
@@ -85,6 +90,7 @@ Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arqui
 
 #### Learning
 - [x] Category model + factory + API
+- [x] Category policy com isSystem check
 - [x] Course model + factory + API
 - [x] CourseModule model + factory
 - [x] Lesson model + factory
@@ -104,6 +110,7 @@ Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arqui
 - [x] QuizQuestionCategory (pivot)
 - [x] QuizAttempt model + factory + API
 - [x] QuizAttemptAnswer model + factory
+- [x] QuizAttemptPolicy (criada)
 - [x] Certificate model + factory + API
 - [x] Score calculation
 - [x] Certificate verification público
@@ -114,11 +121,9 @@ Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arqui
 ### ⏳ Pendente
 
 #### Permissões e Roles
-- [ ] Adicionar coluna `user_type` na tabela users
 - [ ] Adicionar colunas `tenant_id` e `scope` na tabela roles
-- [ ] Atualizar RolesSeeder com UserTypes corretos
-- [ ] Implementar gate/policy UserType
-- [ ] Implementar "teto" de permissions
+- [ ] Implementar "teto" de permissions baseado em UserType
+- [ ] Remover código Spatie não utilizado
 
 #### Core
 - [ ] PATCH /users/{id} (update)

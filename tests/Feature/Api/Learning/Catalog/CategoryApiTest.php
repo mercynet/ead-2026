@@ -303,3 +303,162 @@ it('requires tenant for non developer when tenant context is missing', function 
         ->assertUnprocessable()
         ->assertJsonPath('errors.0.code', 'tenant_not_resolved');
 });
+
+it('updates a tenant category', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-update@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $category = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'parent_id' => null,
+        'name' => 'Categoria Original',
+        'slug' => 'categoria-original',
+        'normalized_name' => 'categoria original',
+        'is_system' => false,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->putJson('/api/v1/learning/catalog/categories/'.$category->id, [
+        'name' => 'Categoria Atualizada',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.name', 'Categoria Atualizada')
+        ->assertJsonPath('data.slug', 'categoria-atualizada');
+});
+
+it('deletes a tenant category', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-delete@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $category = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'parent_id' => null,
+        'name' => 'Categoria para Deletar',
+        'slug' => 'categoria-para-deletar',
+        'normalized_name' => 'categoria para deletar',
+        'is_system' => false,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('message', 'Category deleted successfully.');
+
+    expect(Category::query()->find($category->id))->toBeNull();
+});
+
+it('forbids updating system category by tenant admin', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-sys@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $systemCategory = Category::query()->create([
+        'tenant_id' => null,
+        'parent_id' => null,
+        'name' => 'Sistema Categoria',
+        'slug' => 'sistema-categoria',
+        'normalized_name' => 'sistema categoria',
+        'is_system' => true,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->putJson('/api/v1/learning/catalog/categories/'.$systemCategory->id, [
+        'name' => 'Tentativa de Atualizar',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertForbidden();
+});
+
+it('allows developer to update system category', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'user_type' => UserType::Developer,
+        'name' => 'Developer',
+        'email' => 'dev-update-sys@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    $systemCategory = Category::query()->create([
+        'tenant_id' => null,
+        'parent_id' => null,
+        'name' => 'Sistema Original',
+        'slug' => 'sistema-original',
+        'normalized_name' => 'sistema original',
+        'is_system' => true,
+    ]);
+
+    $token = $developer->createToken('dev-token')->plainTextToken;
+
+    $this->putJson('/api/v1/learning/catalog/categories/'.$systemCategory->id, [
+        'name' => 'Sistema Atualizado',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.name', 'Sistema Atualizado');
+});

@@ -58,6 +58,8 @@ Route::prefix('v1/learning')
                 ->group(function (): void {
                     Route::get('/categories', 'index');
                     Route::post('/categories', 'store');
+                    Route::put('/categories/{id}', 'update');
+                    Route::delete('/categories/{id}', 'destroy');
                 });
         });
 
@@ -65,6 +67,8 @@ Route::prefix('v1/learning')
             Route::controller(CourseController::class)
                 ->group(function (): void {
                     Route::get('/courses/{courseId}/modules', 'modules');
+                    Route::patch('/courses/{id}', 'update');
+                    Route::delete('/courses/{id}', 'destroy');
                 });
 
             Route::controller(EnrollmentController::class)

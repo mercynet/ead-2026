@@ -49,4 +49,38 @@ class CoursePolicy
         return $authenticatedUser->belongsToTenant($tenant)
             && $authenticatedUser->getAllPermissions()->contains('name', 'learning.course.modules');
     }
+
+    public function update(User $authenticatedUser, Tenant $tenant, Course $course): bool
+    {
+        if ($authenticatedUser->isDeveloper()) {
+            return true;
+        }
+
+        if (! $authenticatedUser->belongsToTenant($tenant)) {
+            return false;
+        }
+
+        if ((int) $course->tenant_id !== (int) $tenant->id) {
+            return false;
+        }
+
+        return $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.update');
+    }
+
+    public function delete(User $authenticatedUser, Tenant $tenant, Course $course): bool
+    {
+        if ($authenticatedUser->isDeveloper()) {
+            return true;
+        }
+
+        if (! $authenticatedUser->belongsToTenant($tenant)) {
+            return false;
+        }
+
+        if ((int) $course->tenant_id !== (int) $tenant->id) {
+            return false;
+        }
+
+        return $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.delete');
+    }
 }

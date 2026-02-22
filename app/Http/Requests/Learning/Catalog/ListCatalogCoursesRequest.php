@@ -36,4 +36,25 @@ class ListCatalogCoursesRequest extends FormRequest
             'is_featured.boolean' => 'The is_featured filter must be true or false.',
         ];
     }
+
+    /**
+     * Query parameters for Scribe documentation.
+     */
+    public function queryParameters(): array
+    {
+        return [
+            'category' => [
+                'description' => 'Filtrar cursos por categoria (slug)',
+                'example' => 'programacao',
+            ],
+            'is_free' => [
+                'description' => 'Filtrar cursos gratuitos',
+                'example' => true,
+            ],
+            'is_featured' => [
+                'description' => 'Filtrar cursos em destaque',
+                'example' => true,
+            ],
+        ];
+    }
 }

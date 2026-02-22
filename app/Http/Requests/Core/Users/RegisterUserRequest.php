@@ -22,4 +22,29 @@ class RegisterUserRequest extends FormRequest
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
+
+    /**
+     * Body parameters for Scribe documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'name' => [
+                'description' => 'Nome completo do usuário',
+                'example' => 'John Doe',
+            ],
+            'email' => [
+                'description' => 'Endereço de email do usuário',
+                'example' => 'john@example.com',
+            ],
+            'password' => [
+                'description' => 'Senha do usuário (mínimo 8 caracteres)',
+                'example' => 'password123',
+            ],
+            'password_confirmation' => [
+                'description' => 'Confirmação da senha',
+                'example' => 'password123',
+            ],
+        ];
+    }
 }

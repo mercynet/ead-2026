@@ -12,9 +12,13 @@ use App\Http\Requests\Learning\Lesson\StoreProgressRequest;
 use App\Http\Resources\Learning\Lesson\LessonDetailResource;
 use App\Http\Resources\Learning\Lesson\LessonProgressResource;
 use App\Models\LessonProgress;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * @group Aulas
+ *
+ * Gerenciamento de aulas e progresso
+ */
 class LessonController extends Controller
 {
     public function __construct(
@@ -22,7 +26,14 @@ class LessonController extends Controller
         private readonly UpdateProgressAction $updateProgressAction,
     ) {}
 
-    public function show(int $id, ShowLessonRequest $request, ApiContext $context): JsonResponse
+    /**
+     * Mostrar Aula
+     *
+     * Retorna os detalhes de uma aula específica.
+     *
+     * @urlParam id int required ID da aula
+     */
+    public function show(int $id, ShowLessonRequest $request, ApiContext $context): LessonDetailResource
     {
         Gate::forUser($context->requiredUser())->authorize('learning.lesson.view', [$context->requiredTenant()]);
 
@@ -44,10 +55,17 @@ class LessonController extends Controller
             $progress?->time_spent_seconds,
             $progress?->isCompleted() ?? false,
             $progress?->current_time_seconds
-        )->toResponse(request());
+        );
     }
 
-    public function progress(int $id, StoreProgressRequest $request, ApiContext $context): JsonResponse
+    /**
+     * Atualizar Progresso
+     *
+     * Registra o progresso de visualização da aula.
+     *
+     * @urlParam id int required ID da aula
+     */
+    public function progress(int $id, StoreProgressRequest $request, ApiContext $context): LessonProgressResource
     {
         Gate::forUser($context->requiredUser())->authorize('learning.lesson.progress', [$context->requiredTenant()]);
 
@@ -63,6 +81,6 @@ class LessonController extends Controller
             $request->validated()
         );
 
-        return LessonProgressResource::make($progress)->toResponse(request())->setStatusCode(200);
+        return LessonProgressResource::make($progress);
     }
 }

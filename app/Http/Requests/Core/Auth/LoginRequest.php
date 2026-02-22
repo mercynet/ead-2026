@@ -26,4 +26,21 @@ class LoginRequest extends FormRequest
             'password' => ['required', 'string'],
         ];
     }
+
+    /**
+     * Body parameters for Scribe documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'email' => [
+                'description' => 'Endereço de email do usuário',
+                'example' => 'john@example.com',
+            ],
+            'password' => [
+                'description' => 'Senha do usuário',
+                'example' => 'password123',
+            ],
+        ];
+    }
 }

@@ -39,4 +39,33 @@ class StoreProgressRequest extends FormRequest
             'is_completed.boolean' => 'O status de conclusão deve ser verdadeiro ou falso.',
         ];
     }
+
+    /**
+     * Body parameters for Scribe documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'time_spent_seconds' => [
+                'description' => 'Tempo total assistido em segundos',
+                'example' => 120,
+            ],
+            'current_time_seconds' => [
+                'description' => 'Tempo atual do vídeo em segundos',
+                'example' => 60,
+            ],
+            'total_time_seconds' => [
+                'description' => 'Tempo total do vídeo em segundos',
+                'example' => 600,
+            ],
+            'progress_percentage' => [
+                'description' => 'Porcentagem de progresso (0-100)',
+                'example' => 50,
+            ],
+            'is_completed' => [
+                'description' => 'Se a aula foi concluída',
+                'example' => false,
+            ],
+        ];
+    }
 }

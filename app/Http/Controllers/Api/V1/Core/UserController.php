@@ -12,11 +12,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Users\RegisterUserRequest;
 use App\Http\Requests\Core\Users\UpdatePasswordRequest;
 use App\Http\Requests\Core\Users\UpdateProfileRequest;
-use App\Http\Resources\Core\UserListResource;
+use App\Http\Resources\Core\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * @group Usuários
+ *
+ * Gerenciamento de usuários
+ */
 class UserController extends Controller
 {
     public function __construct(
@@ -27,48 +33,65 @@ class UserController extends Controller
         private readonly UpdatePasswordAction $updatePasswordAction,
     ) {}
 
-    public function index(ApiContext $context): JsonResponse
+    /**
+     * Listar Usuários
+     *
+     * Retorna uma lista paginada de usuários do tenant.
+     */
+    public function index(ApiContext $context): AnonymousResourceCollection
     {
         Gate::forUser($context->user)->authorize('core.users.list', [$context->tenant]);
 
         $paginator = $this->listUsersAction->handle($context);
 
-        return UserListResource::collection($paginator)->toResponse(request());
+        return UserResource::collection($paginator);
     }
 
-    public function store(RegisterUserRequest $request, ApiContext $context): JsonResponse
+    /**
+     * Criar Usuário
+     *
+     * Registra um novo usuário no sistema.
+     *
+     * @unauthenticated
+     */
+    public function store(RegisterUserRequest $request, ApiContext $context): UserResource
     {
         $user = $this->registerUserAction->handle($context->requiredTenant(), $request->validated());
 
-        return (new JsonResponse([
-            'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
-        ]))->setStatusCode(201);
+        return UserResource::make($user);
     }
 
-    public function show(ApiContext $context, User $user): JsonResponse
+    /**
+     * Mostrar Usuário
+     *
+     * Retorna os dados de um usuário específico.
+     */
+    public function show(ApiContext $context, User $user): UserResource
     {
         Gate::forUser($context->user)->authorize('core.users.show', [$context->tenant, $user]);
 
-        return new JsonResponse([
-            'data' => $this->showUserAction->handle($user),
-        ]);
+        return UserResource::make($user);
     }
 
-    public function updateMe(UpdateProfileRequest $request, ApiContext $context): JsonResponse
+    /**
+     * Atualizar Perfil
+     *
+     * Atualiza os dados do próprio usuário autenticado.
+     */
+    public function updateMe(UpdateProfileRequest $request, ApiContext $context): UserResource
     {
         Gate::forUser($context->user)->authorize('core.users.update-self', [$context->tenant, $context->requiredUser()]);
 
         $user = $this->updateProfileAction->handle($context->requiredUser(), $request->validated());
 
-        return new JsonResponse([
-            'data' => $this->showUserAction->handle($user),
-        ]);
+        return UserResource::make($user);
     }
 
+    /**
+     * Atualizar Senha
+     *
+     * Altera a senha do usuário autenticado.
+     */
     public function updatePassword(UpdatePasswordRequest $request, ApiContext $context): JsonResponse
     {
         Gate::forUser($context->user)->authorize('core.users.update-self', [$context->tenant, $context->requiredUser()]);

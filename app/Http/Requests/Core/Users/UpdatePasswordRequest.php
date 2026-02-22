@@ -26,4 +26,25 @@ class UpdatePasswordRequest extends FormRequest
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
+
+    /**
+     * Body parameters for Scribe documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'current_password' => [
+                'description' => 'Senha atual do usuário',
+                'example' => 'oldpassword123',
+            ],
+            'password' => [
+                'description' => 'Nova senha (mínimo 8 caracteres)',
+                'example' => 'newpassword123',
+            ],
+            'password_confirmation' => [
+                'description' => 'Confirmação da nova senha',
+                'example' => 'newpassword123',
+            ],
+        ];
+    }
 }

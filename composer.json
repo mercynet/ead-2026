@@ -22,6 +22,7 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "knuckleswtf/scribe": "^5.7",
         "laradumps/laradumps": "^5.2",
         "larastan/larastan": "*",
         "laravel/boost": "^2.0",
@@ -69,6 +70,9 @@
         ],
         "insights": [
             "vendor/bin/phpinsights --ansi --no-interaction --min-quality=85 --min-complexity=85 --min-architecture=80 --min-style=95"
+        ],
+        "docs": [
+            "php artisan scribe:generate"
         ],
         "qa:gate": [
             "@composer validate --strict",

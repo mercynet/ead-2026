@@ -78,20 +78,68 @@ public function handle(ApiContext $context): CursorPaginator
 
 ### 1.2 Response Pattern (Obrigatório)
 ```php
-// Para Collections paginadas - usar toResponse()
-return Resource::collection($paginator)->toResponse(request());
+// Para collections paginadas - retorna AnonymousResourceCollection
+return UserResource::collection($paginator);
 
-// Para Resource único - usar toResponse()
-return Resource::make($model)->toResponse(request());
+// Para resource único - retorna o tipo do Resource
+return UserResource::make($model);
 
-// Para Resource único com status 201
-return Resource::make($model)->toResponse(request())->setStatusCode(201);
+// Para resource único com status diferente de 200 - usa toResponse
+return UserResource::make($model)->toResponse(request())->setStatusCode(201);
 
 // Para payloads manuais (login, logout, etc.)
 return new JsonResponse(['data' => $payload]);
 ```
 
-### 1.3 Guardrails Obrigatórios (não repetir anti-patterns)
+**Tipos de retorno recomendados:**
+- `UserResource::collection()` → `AnonymousResourceCollection`
+- `UserResource::make()` → `UserResource`
+- `JsonResponse` manual → `JsonResponse`
+- `Resource::make()->toResponse()->setStatusCode(201)` → `JsonResponse`
+
+### 1.3 FormRequests para Filtros (Obrigatório em Listagens)
+Todo endpoint de listagem (`index()`) deve usar uma classe FormRequest para validar os filtros de query string.
+
+```php
+// app/Http/Requests/Core/Users/ListUsersRequest.php
+class ListUsersRequest extends FormRequest
+{
+    public function authorize(): bool { return true; }
+
+    public function rules(): array
+    {
+        return [
+            'search' => ['nullable', 'string', 'max:100'],
+            'role' => ['nullable', 'string', 'in:admin,instructor,student'],
+            'is_active' => ['nullable', 'boolean'],
+        ];
+    }
+
+    // Método obrigatório para documentação Scribe
+    public function queryParameters(): array
+    {
+        return [
+            'search' => [
+                'description' => 'Filtrar por nome ou email',
+                'example' => 'john',
+            ],
+            'role' => [
+                'description' => 'Filtrar por role',
+                'example' => 'student',
+            ],
+        ];
+    }
+}
+
+// Controller
+public function index(ListUsersRequest $request, ApiContext $context): JsonResponse
+{
+    $filters = $request->validated();
+    // ...
+}
+```
+
+### 1.4 Guardrails Obrigatórios (não repetir anti-patterns)
 - Controllers devem injetar `ApiContext` como parâmetro de método, NUNCA acessar tenant/user via request manualmente.
 - `tenant_not_resolved` deve ser emitido por exceção de domínio (`TenantContextRequiredException`) com render centralizado.
 - Controllers devem somente orquestrar: `ApiContext` + `Gate/Policy` + Action + Resource.

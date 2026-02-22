@@ -8,10 +8,15 @@ use App\Http\Context\ApiContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\Catalog\StoreCategoryRequest;
 use App\Http\Resources\Learning\Catalog\CatalogCategoryResource;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @group Categorias
+ *
+ * Gerenciamento de categorias de cursos
+ */
 class CategoryController extends Controller
 {
     public function __construct(
@@ -19,16 +24,26 @@ class CategoryController extends Controller
         private readonly StoreCategoryAction $storeCategoryAction,
     ) {}
 
-    public function index(ApiContext $context): JsonResponse
+    /**
+     * Listar Categorias
+     *
+     * Retorna uma lista de categorias disponíveis.
+     */
+    public function index(ApiContext $context): AnonymousResourceCollection
     {
         Gate::forUser($context->user)->authorize('learning.categories.list', [$context->tenant]);
 
         $paginator = $this->listCategoriesAction->handle($context);
 
-        return CatalogCategoryResource::collection($paginator)->toResponse(request());
+        return CatalogCategoryResource::collection($paginator);
     }
 
-    public function store(StoreCategoryRequest $request, ApiContext $context): JsonResponse
+    /**
+     * Criar Categoria
+     *
+     * Cria uma nova categoria (custom ou de sistema).
+     */
+    public function store(StoreCategoryRequest $request, ApiContext $context): CatalogCategoryResource
     {
         Gate::forUser($context->user)->authorize('learning.categories.create', [$context->tenant, $request->boolean('is_system')]);
 
@@ -38,8 +53,6 @@ class CategoryController extends Controller
             throw $exception;
         }
 
-        return CatalogCategoryResource::make($category)
-            ->toResponse(request())
-            ->setStatusCode(201);
+        return CatalogCategoryResource::make($category);
     }
 }

@@ -31,4 +31,41 @@ class UpdateProfileRequest extends FormRequest
             'twitter_url' => ['sometimes', 'nullable', 'url', 'max:255'],
         ];
     }
+
+    /**
+     * Body parameters for Scribe documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'name' => [
+                'description' => 'Nome completo do usuário',
+                'example' => 'John Doe',
+            ],
+            'headline' => [
+                'description' => 'Título profissional/headline',
+                'example' => 'Desenvolvedor Full Stack',
+            ],
+            'bio' => [
+                'description' => 'Biografia do usuário',
+                'example' => 'Desenvolvedor com 5 anos de experiência...',
+            ],
+            'avatar' => [
+                'description' => 'URL do avatar do usuário',
+                'example' => 'https://example.com/avatar.jpg',
+            ],
+            'cpf' => [
+                'description' => 'CPF do usuário (formato: XXX.XXX.XXX-XX)',
+                'example' => '123.456.789-00',
+            ],
+            'linkedin_url' => [
+                'description' => 'URL do perfil LinkedIn',
+                'example' => 'https://linkedin.com/in/johndoe',
+            ],
+            'twitter_url' => [
+                'description' => 'URL do perfil Twitter/X',
+                'example' => 'https://twitter.com/johndoe',
+            ],
+        ];
+    }
 }

@@ -36,4 +36,25 @@ class StoreCategoryRequest extends FormRequest
             'is_system.boolean' => 'The is_system flag must be true or false.',
         ];
     }
+
+    /**
+     * Body parameters for Scribe documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'name' => [
+                'description' => 'Nome da categoria',
+                'example' => 'Desenvolvimento Web',
+            ],
+            'parent_id' => [
+                'description' => 'ID da categoria pai (opcional)',
+                'example' => null,
+            ],
+            'is_system' => [
+                'description' => 'Se true, cria como categoria de sistema (global). Requer permissão de developer.',
+                'example' => false,
+            ],
+        ];
+    }
 }

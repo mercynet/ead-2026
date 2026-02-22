@@ -10,6 +10,11 @@ use App\Http\Requests\Core\Auth\LoginRequest;
 use App\Http\Resources\Core\Auth\AuthUserResource;
 use Illuminate\Http\JsonResponse;
 
+/**
+ * @group Autenticação
+ *
+ * Endpoints para gerenciamento de autenticação
+ */
 class AuthController extends Controller
 {
     public function __construct(
@@ -17,6 +22,13 @@ class AuthController extends Controller
         private readonly LogoutAction $logoutAction,
     ) {}
 
+    /**
+     * Login
+     *
+     * Autentica o usuário e retorna um token de acesso.
+     *
+     * @unauthenticated
+     */
     public function login(LoginRequest $request, ApiContext $context): JsonResponse
     {
         $result = $this->loginAction->handle($request, $context);
@@ -26,11 +38,21 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Me
+     *
+     * Retorna os dados do usuário autenticado.
+     */
     public function me(ApiContext $context): AuthUserResource
     {
         return AuthUserResource::make($context->requiredUser());
     }
 
+    /**
+     * Logout
+     *
+     * Invalida o token de acesso do usuário.
+     */
     public function logout(ApiContext $context): JsonResponse
     {
         $this->logoutAction->handle($context->requiredUser());

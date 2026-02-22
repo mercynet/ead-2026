@@ -186,6 +186,14 @@ vendor/bin/pint --dirty
 
 # Verificar rotas
 sail artisan route:list --path=api/v1
+
+# Gerar documentação da API (Scribe)
+composer run docs
+# ou
+sail artisan scribe:generate
+
+# Acessar documentação gerada
+# http://localhost:8099/docs
 ```
 
 ---

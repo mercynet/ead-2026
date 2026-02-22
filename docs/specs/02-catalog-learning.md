@@ -52,6 +52,9 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
 - Evitar wrappers redundantes como `data.user`, `data.course`, `data.category` para respostas manuais.
 - Não retornar `meta` vazio (`'meta' => []`). `meta` só existe quando tiver dados reais de metadados.
 
+### 1.2 FormRequests para Filtros (Obrigatório em Listagens)
+Todo endpoint de listagem deve usar FormRequest para validar query parameters. Ver especificação completa em `01-core-identity.md` seção 1.3.
+
 ## 2. Entidades Principais
 
 ### Catalog (`Course`, `Category`, `CourseModule`)

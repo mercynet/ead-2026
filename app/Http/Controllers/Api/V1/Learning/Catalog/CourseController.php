@@ -9,9 +9,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\Catalog\ListCatalogCoursesRequest;
 use App\Http\Resources\Learning\Catalog\CourseCatalogResource;
 use App\Http\Resources\Learning\Catalog\CourseDetailResource;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * @group Catálogo de Cursos
+ *
+ * Endpoints públicos para visualização do catálogo de cursos
+ */
 class CourseController extends Controller
 {
     public function __construct(
@@ -19,7 +24,12 @@ class CourseController extends Controller
         private readonly ShowCourseAction $showCourseAction,
     ) {}
 
-    public function index(ListCatalogCoursesRequest $request, ApiContext $context): JsonResponse
+    /**
+     * Listar Cursos
+     *
+     * Retorna uma lista de cursos disponíveis no catálogo.
+     */
+    public function index(ListCatalogCoursesRequest $request, ApiContext $context): AnonymousResourceCollection
     {
         if ($context->hasUser()) {
             Gate::forUser($context->user)->authorize('learning.catalog.courses.list', [$context->tenant]);
@@ -27,10 +37,17 @@ class CourseController extends Controller
 
         $paginator = $this->listCoursesAction->handle($request, $context);
 
-        return CourseCatalogResource::collection($paginator)->toResponse(request());
+        return CourseCatalogResource::collection($paginator);
     }
 
-    public function show(string $slug, ListCatalogCoursesRequest $request, ApiContext $context): JsonResponse
+    /**
+     * Mostrar Curso
+     *
+     * Retorna os detalhes de um curso específico.
+     *
+     * @urlParam slug string required O slug do curso
+     */
+    public function show(string $slug, ListCatalogCoursesRequest $request, ApiContext $context): CourseDetailResource
     {
         if ($context->hasUser()) {
             Gate::forUser($context->user)->authorize('learning.catalog.courses.show', [$context->tenant]);
@@ -38,6 +55,6 @@ class CourseController extends Controller
 
         $course = $this->showCourseAction->handle($context->tenant, $slug);
 
-        return CourseDetailResource::make($course)->toResponse(request());
+        return CourseDetailResource::make($course);
     }
 }

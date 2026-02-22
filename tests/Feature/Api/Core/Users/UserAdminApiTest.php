@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,15 +24,16 @@ it('allows tenant admin to list users from own tenant only', function (): void {
         'is_active' => true,
     ]);
 
-    Role::query()->firstOrCreate(['name' => 'tenant_admin', 'guard_name' => 'web']);
+    Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
 
     $admin = User::query()->create([
         'tenant_id' => $tenantA->id,
+        'user_type' => UserType::Admin,
         'name' => 'Tenant Admin',
         'email' => 'admin@tenant-a.test',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
 
     User::query()->create([
         'tenant_id' => $tenantA->id,
@@ -96,15 +98,16 @@ it('allows tenant admin to view user detail from own tenant', function (): void 
         'is_active' => true,
     ]);
 
-    Role::query()->firstOrCreate(['name' => 'tenant_admin', 'guard_name' => 'web']);
+    Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
 
     $admin = User::query()->create([
         'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
         'name' => 'Tenant Admin',
         'email' => 'admin@tenant-a.test',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
 
     $targetUser = User::query()->create([
         'tenant_id' => $tenant->id,
@@ -138,15 +141,16 @@ it('returns not found when tenant admin tries to view user from another tenant',
         'is_active' => true,
     ]);
 
-    Role::query()->firstOrCreate(['name' => 'tenant_admin', 'guard_name' => 'web']);
+    Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
 
     $admin = User::query()->create([
         'tenant_id' => $tenantA->id,
+        'user_type' => UserType::Admin,
         'name' => 'Tenant Admin',
         'email' => 'admin@tenant-a.test',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
 
     $otherTenantUser = User::query()->create([
         'tenant_id' => $tenantB->id,
@@ -182,6 +186,7 @@ it('allows developer to list users from all tenants', function (): void {
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'dev@platform.test',
         'password' => Hash::make('password123'),
@@ -233,6 +238,7 @@ it('allows developer to view user from another tenant', function (): void {
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'dev@platform.test',
         'password' => Hash::make('password123'),
@@ -264,19 +270,21 @@ it('hides developer users from tenant admin list and detail endpoints', function
         'is_active' => true,
     ]);
 
-    Role::query()->firstOrCreate(['name' => 'tenant_admin', 'guard_name' => 'web']);
+    Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     Role::query()->firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
 
     $admin = User::query()->create([
         'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
         'name' => 'Tenant Admin',
         'email' => 'admin-hide-dev@tenant-a.test',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Platform Dev',
         'email' => 'hidden-dev@platform.test',
         'password' => Hash::make('password123'),
@@ -310,6 +318,7 @@ it('allows developer to list users without tenant context', function (): void {
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'developer-no-tenant-users@platform.test',
         'password' => Hash::make('password123'),

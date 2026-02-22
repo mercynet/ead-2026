@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -177,6 +178,7 @@ it('allows developer login regardless of tenant scope', function (): void {
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Platform Dev',
         'email' => 'dev@platform.test',
         'password' => Hash::make('password123'),
@@ -212,6 +214,7 @@ it('allows developer login without tenant context', function (): void {
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Platform Dev',
         'email' => 'dev-no-tenant@platform.test',
         'password' => Hash::make('password123'),
@@ -242,6 +245,7 @@ it('allows developer to access me endpoint without tenant context', function ():
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer No Tenant',
         'email' => 'developer-me-no-tenant@platform.test',
         'password' => Hash::make('password123'),

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Category;
 use App\Models\Tenant;
 use App\Models\User;
@@ -28,11 +29,12 @@ it('lists system categories and current tenant categories only', function (): vo
 
     $adminA = User::query()->create([
         'tenant_id' => $tenantA->id,
+        'user_type' => UserType::Admin,
         'name' => 'Admin A',
         'email' => 'admina@test.local',
         'password' => Hash::make('password123'),
     ]);
-    $adminA->assignRole('tenant_admin');
+    $adminA->assignRole('admin');
 
     Category::query()->create([
         'tenant_id' => null,
@@ -92,11 +94,12 @@ it('prevents tenant from creating a category that duplicates a system category',
 
     $admin = User::query()->create([
         'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
         'name' => 'Admin',
         'email' => 'admin@test.local',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
     $token = $admin->createToken('admin-token')->plainTextToken;
 
     $this->postJson('/api/v1/learning/catalog/categories', [
@@ -119,6 +122,7 @@ it('allows developer to create system category', function (): void {
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'dev@test.local',
         'password' => Hash::make('password123'),
@@ -150,11 +154,12 @@ it('forbids tenant admin from creating system category', function (): void {
 
     $admin = User::query()->create([
         'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
         'name' => 'Admin',
         'email' => 'admin2@test.local',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
     $token = $admin->createToken('admin-token')->plainTextToken;
 
     $this->postJson('/api/v1/learning/catalog/categories', [
@@ -193,11 +198,12 @@ it('allows same tenant category name in different tenants when not system reserv
 
     $adminB = User::query()->create([
         'tenant_id' => $tenantB->id,
+        'user_type' => UserType::Admin,
         'name' => 'Admin B',
         'email' => 'admin4@test.local',
         'password' => Hash::make('password123'),
     ]);
-    $adminB->assignRole('tenant_admin');
+    $adminB->assignRole('admin');
     $adminBToken = $adminB->createToken('admin-b-token')->plainTextToken;
 
     $this->postJson('/api/v1/learning/catalog/categories', [
@@ -227,6 +233,7 @@ it('allows developer to list all categories without tenant context', function ()
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'developer-no-tenant@test.local',
         'password' => Hash::make('password123'),
@@ -271,15 +278,23 @@ it('allows developer to list all categories without tenant context', function ()
 });
 
 it('requires tenant for non developer when tenant context is missing', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
     $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
 
     $admin = User::query()->create([
-        'tenant_id' => null,
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
         'name' => 'Tenant Admin',
         'email' => 'tenant-admin-no-context@test.local',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
     $token = $admin->createToken('tenant-admin-token')->plainTextToken;
 
     $this->getJson('/api/v1/learning/catalog/categories', [

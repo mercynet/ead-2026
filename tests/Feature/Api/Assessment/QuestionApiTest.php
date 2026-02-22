@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Questionnaire;
 use App\Models\QuestionnaireQuestion;
 use App\Models\QuizAttempt;
@@ -24,7 +25,8 @@ beforeEach(function (): void {
     ]);
 
     $this->developer = User::query()->create([
-        'tenant_id' => $this->tenant->id,
+        'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'developer@example.com',
         'password' => bcrypt('password'),

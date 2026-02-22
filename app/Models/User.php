@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,6 +23,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'tenant_id',
+        'user_type',
         'name',
         'email',
         'password',
@@ -51,22 +52,50 @@ class User extends Authenticatable
 
     public function isDeveloper(): bool
     {
-        return $this->hasRole('developer');
+        return $this->user_type === UserType::Developer;
     }
 
-    public function isTenantAdmin(): bool
+    public function isAdmin(): bool
     {
-        return $this->hasRole('tenant_admin');
+        return $this->user_type === UserType::Admin;
     }
 
     public function isInstructor(): bool
     {
-        return $this->hasRole('instructor');
+        return $this->user_type === UserType::Instructor;
     }
 
     public function isStudent(): bool
     {
-        return $this->hasRole('student');
+        return $this->user_type === UserType::Student;
+    }
+
+    public function isTenantAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function canAccessAllTenants(): bool
+    {
+        return $this->isDeveloper();
+    }
+
+    public function canAccessTenant(Tenant $tenant): bool
+    {
+        if ($this->isDeveloper()) {
+            return true;
+        }
+
+        return $this->tenant_id === $tenant->id;
+    }
+
+    public function canManageContent(): bool
+    {
+        return in_array($this->user_type, [
+            UserType::Developer,
+            UserType::Admin,
+            UserType::Instructor,
+        ]);
     }
 
     public function attempts(): HasMany
@@ -93,6 +122,7 @@ class User extends Authenticatable
     {
         return [
             'tenant_id' => 'integer',
+            'user_type' => UserType::class,
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];

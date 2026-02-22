@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseModule;
@@ -260,6 +261,7 @@ it('allows developer to list courses without tenant context', function (): void 
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'developer-courses-no-tenant@platform.test',
         'password' => Hash::make('password123'),

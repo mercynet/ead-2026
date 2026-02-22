@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Category;
 use App\Models\Tenant;
 use App\Models\User;
@@ -23,11 +24,12 @@ it('allows tenant admin to update and delete own tenant category', function (): 
 
     $admin = User::query()->create([
         'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
         'name' => 'Tenant Admin',
         'email' => 'auth-admin@test.local',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
 
     $category = Category::query()->create([
         'tenant_id' => $tenant->id,
@@ -54,11 +56,12 @@ it('denies tenant admin update and delete for system category', function (): voi
 
     $admin = User::query()->create([
         'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
         'name' => 'Tenant Admin',
         'email' => 'auth-admin-2@test.local',
         'password' => Hash::make('password123'),
     ]);
-    $admin->assignRole('tenant_admin');
+    $admin->assignRole('admin');
 
     $systemCategory = Category::query()->create([
         'tenant_id' => null,
@@ -85,6 +88,7 @@ it('allows developer to update and delete system categories', function (): void 
 
     $developer = User::query()->create([
         'tenant_id' => null,
+        'user_type' => UserType::Developer,
         'name' => 'Developer',
         'email' => 'auth-dev@test.local',
         'password' => Hash::make('password123'),

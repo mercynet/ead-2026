@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserType;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -37,21 +38,25 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Developer User',
                 'email' => 'developer@example.com',
                 'tenant_id' => null,
+                'user_type' => UserType::Developer,
             ],
-            'tenant_admin' => [
+            'admin' => [
                 'name' => 'Tenant Admin User',
                 'email' => 'tenant_admin@example.com',
                 'tenant_id' => $tenant->id,
+                'user_type' => UserType::Admin,
             ],
             'instructor' => [
                 'name' => 'Instructor User',
                 'email' => 'instructor@example.com',
                 'tenant_id' => $tenant->id,
+                'user_type' => UserType::Instructor,
             ],
             'student' => [
                 'name' => 'Student User',
                 'email' => 'student@example.com',
                 'tenant_id' => $tenant->id,
+                'user_type' => UserType::Student,
             ],
         ];
 
@@ -60,6 +65,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => $userData['email']],
                 [
                     'tenant_id' => $userData['tenant_id'],
+                    'user_type' => $userData['user_type'],
                     'name' => $userData['name'],
                     'password' => Hash::make('password123'),
                 ],

@@ -32,6 +32,10 @@ class Course extends Model
         'duration_hours',
         'access_days',
         'is_featured',
+        'certificate_enabled',
+        'certificate_min_progress',
+        'certificate_requires_quiz',
+        'certificate_min_score',
         'is_active',
         'published_at',
         'vehiculation_started_at',
@@ -65,6 +69,11 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
     public function isFree(): bool
     {
         return (int) $this->price_cents === 0;
@@ -84,6 +93,10 @@ class Course extends Model
             'duration_hours' => 'integer',
             'access_days' => 'integer',
             'is_featured' => 'boolean',
+            'certificate_enabled' => 'boolean',
+            'certificate_min_progress' => 'integer',
+            'certificate_requires_quiz' => 'boolean',
+            'certificate_min_score' => 'integer',
             'is_active' => 'boolean',
             'published_at' => 'datetime',
             'vehiculation_started_at' => 'datetime',

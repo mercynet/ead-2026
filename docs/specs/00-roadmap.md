@@ -5,208 +5,164 @@
 Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arquitetura RESTful pura.
 
 ## Stack Tecnológica
+
 - PHP 8.4 + Laravel 12
 - Laravel Sanctum (autenticação)
 - Spatie Permission (RBAC)
-- MySQL 8.0 (dados principais)
-- MariaDB (estatísticas/BI)
-- Redis (cache/queues)
-- RabbitMQ (filas assíncronas)
+- MySQL 8.0 / MariaDB / Redis / RabbitMQ
 - Pest 4 (testes)
 
-## Arquitetura
-- Actions em `app/Actions/<Domain>/<Resource>/`
-- Controllers lean com `ApiContext` injetado
-- Exceptions centralizadas em `bootstrap/app.php`
-- FormRequests para validação
-- JsonResource para responses
-- Eventos Laravel para captura de estatísticas
+---
+
+## Arquivos de Documentação
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `01-rbac.md` | Roles, Permissions, UserTypes, Plugins |
+| `02-core.md` | Users, Auth, Tenants |
+| `03-learning.md` | Courses, Modules, Lessons, Enrollments |
+| `04-assessment.md` | Questionnaires, Questions, Certificates |
 
 ---
 
-## Regras de Negócio Fundamentais
+## Ordem de Desenvolvimento
 
-### Multi-Tenancy
-- **Developers** (equipe): acesso total, CRUD completo para todos os tenants
-- **Tenant Admins**: mesmo que developer, mas isolado em seu tenant
-- **Instructors**: criam ambiente pedagógico (cursos, módulos, aulas, questionários)
-- **Students**: consomem cursos, vêem tudo que é seu
+### Fase 1: Permissões e Roles (PRIORIDADE)
 
-### Usuários e CPF
-- Usuários identificados por **CPF único** (não para login)
-- **Login via email** (email pode se repetir entre tenants)
-- CPF usado para evitar duplicação de cadastros entre tenants
-- Ao matricular: buscar por CPF primeiro, se existir, reutilizar
+> Antes de qualquer coisa, o sistema de permissions precisa estar completo.
 
-### Categorias
-- **Sistema** (globais): criadas/editadas apenas por developers, todos tenants podem usar
-- **Custom** (do tenant): CRUD livre pelo tenant
-- Categorias custom podem ser duplicadas entre tenants diferentes
-- Categoria de sistema: nunca pode ter nome duplicado por tenant
+1. Adicionar coluna `user_type` na tabela users (enum)
+2. Adicionar colunas `tenant_id` e `scope` na tabela roles
+3. Atualizar RolesSeeder com UserTypes corretos
+4. Implementar gate/policy que verifica UserType
+5. Implementar "teto" de permissions baseado em UserType
 
----
+### Fase 2: Base Administrativa Learning
 
-## Status por Domínio
+1. CRUD Categories (update, delete)
+2. CRUD Courses (update, delete)
+3. CRUD Modules (create, update, delete)
+4. CRUD Lessons (create, update, delete)
+5. CRUD Enrollments (create, update, delete)
+6. Module/Lesson reorder
 
-### 1. Core & Identity (80% completo)
-| Feature | Status | Prioridade |
-|---------|--------|------------|
-| Auth (login/logout/me) | ✅ | P0 |
-| Users CRUD | ✅ | P0 |
-| ApiContext Pattern | ✅ | P0 |
-| Middleware de Tenant | ✅ | P0 |
-| TenantCustomization | ⏳ | P1 |
-| TenantIntegration | ⏳ | P1 |
-| GET /tenant/config | ⏳ | P1 |
-| Impersonação | ⏳ | P2 |
+### Fase 3: Fluxos do Aluno
 
-### 2. Catalog & Learning (80% completo)
-| Feature | Status | Prioridade |
-|---------|--------|------------|
-| Categories CRUD | ✅ | P0 |
-| Courses CRUD | ✅ | P0 |
-| CourseModules CRUD | ✅ | P0 |
-| Lessons CRUD | ✅ | P0 |
-| Enrollments | ✅ | P0 |
-| LessonProgress | ✅ | P0 |
-| LessonViews (estatísticas) | ⏳ | P1 |
-| GET /courses/{id}/enrollment | ✅ | P0 |
-| GET /lessons/{id} | ✅ | P0 |
-| POST /lessons/{id}/progress | ✅ | P0 |
-| GET /courses/{id}/modules | ✅ | P0 |
-| LessonCompletedEvent | ✅ | P0 |
-| Pre-signed URLs | ⏳ | P1 |
-| LessonMedia/MediaProgress | ⏳ | P1 |
-| CourseMaterials | ⏳ | P2 |
-| Ratings | ⏳ | P2 |
+1. Enrollment flow
+2. Lesson access + progress
+3. LessonViews (estatísticas)
 
-### 3. Assessment (0% completo)
-| Feature | Status | Prioridade |
-|---------|--------|------------|
-| Questionário (Quiz) CRUD | ⏳ | P1 |
-| Questionários Vinculados (lesson/course) | ⏳ | P1 |
-| Questionários Avulsos/Simulados | ⏳ | P1 |
-| Questões (banco independente) | ⏳ | P1 |
-| Questões com categorias | ⏳ | P1 |
-| QuizAttempts com snapshot | ⏳ | P1 |
-| QuizAttemptAnswers com snapshot | ⏳ | P1 |
-| Score Calculation | ⏳ | P1 |
-| Certificate Config (em Course) | ⏳ | P1 |
-| Certificates | ⏳ | P2 |
-| Certificate Validation | ⏳ | P2 |
-| PDF Generation | ⏳ | P2 |
+### Fase 4: Assessment Ajustes
 
-### 4. Financial (0% completo)
-| Feature | Status | Prioridade |
-|---------|--------|------------|
-| Orders CRUD | ⏳ | P1 |
-| OrderItems | ⏳ | P1 |
-| Payments | ⏳ | P1 |
-| POST /checkout | ⏳ | P1 |
-| Webhooks | ⏳ | P1 |
-| TenantPaymentGateway | ⏳ | P1 |
-| Cart (plugin) | ⏳ | P2 |
-| Coupons (plugin) | ⏳ | P2 |
-| Asaas Gateway (plugin) | ⏳ | P2 |
-| Stripe Gateway (plugin) | ⏳ | P2 |
+1. Ajustar permissions assessment
+2. Attach questions to questionnaire
+3. Student: attempt flow
 
-### 5. Ecosystem & Plugins (0% completo)
-| Feature | Status | Prioridade |
-|---------|--------|------------|
-| Plugin System | ⏳ | P2 |
-| PluginSubscriptions | ⏳ | P2 |
-| PluginBilling | ⏳ | P2 |
-| Assinaturas (planos) | ⏳ | P2 |
+### Fase 5: Eventos + Extras
+
+1. Disparar eventos para stats
+2. Certificate PDF
+3. Pre-signed URLs
 
 ---
 
-## Eventos para Estatísticas (MariaDB Separado)
+## Status de Implementação
 
-Todos os eventos devem ser Disparados e processados via fila (RabbitMQ) para o MariaDB de stats:
+### ✅ Feito
 
-### Eventos de Usuários
-- `UserCreated` - usuário criado
-- `UserUpdated` - usuário atualizado
-- `UserDeleted` - usuário deletado (soft delete)
-- `UserRoleChanged` - role alterada
+#### Infraestrutura
+- [x] Auth (login/logout/me)
+- [x] ApiContext Pattern
+- [x] Middleware de Tenant
+- [x] Policies base
 
-### Eventos de Cursos
-- `CourseCreated` - curso criado
-- `CoursePublished` - curso publicado
-- `CourseUpdated` - curso atualizado
-- `CourseArchived` - curso arquivado
+#### Core
+- [x] User model + factory
+- [x] POST /users (criar)
+- [x] GET /users (listar)
+- [x] GET /users/{id}
+- [x] PATCH /users/me
 
-### Eventos de Matrículas
-- `EnrollmentCreated` - matrícula criada
-- `EnrollmentCompleted` - curso 100% concluído
-- `EnrollmentExpired` - matrícula expirada
-- `EnrollmentCancelled` - matrícula cancelada
+#### Learning
+- [x] Category model + factory + API
+- [x] Course model + factory + API
+- [x] CourseModule model + factory
+- [x] Lesson model + factory
+- [x] Enrollment model + factory
+- [x] LessonProgress model + factory
+- [x] GET /courses (listar)
+- [x] GET /courses/{id}
+- [x] GET /courses/{id}/modules
+- [x] GET /courses/{id}/enrollment
+- [x] GET /lessons/{id}
+- [x] POST /lessons/{id}/progress
 
-### Eventos de Aulas
-- `LessonViewedEvent` - aula visualizada (para stats de replay)
-- `LessonCompletedEvent` ✅
-
-### Eventos de Questionários
-- `QuizAttemptStarted` - tentativa iniciada
-- `QuizAttemptFinished` - tentativa finalizada
-- `QuizAttemptPassed` - aprovado
-- `QuizAttemptFailed` - reprovado
-
-### Eventos de Certificados
-- `CertificateIssuedEvent` - certificado emitido
-- `CertificateRevokedEvent` - certificado revogado
-
-### Eventos de Pagamentos
-- `OrderCreated` - pedido criado
-- `OrderPaidEvent` - pagamento confirmado
-- `OrderFailedEvent` - pagamento falhou
-- `OrderRefundedEvent` - pagamento estornado
-
-### Eventos de Plugins
-- `PluginSubscribedEvent` - plugin assinado
-- `PluginUnsubscribedEvent` - assinatura cancelada
-- `PluginActivatedEvent` - plugin ativado
-- `PluginDeactivatedEvent` - plugin desativado
+#### Assessment
+- [x] Questionnaire model + factory + API
+- [x] QuizQuestion model + factory + API
+- [x] QuestionnaireQuestion (pivot)
+- [x] QuizQuestionCategory (pivot)
+- [x] QuizAttempt model + factory + API
+- [x] QuizAttemptAnswer model + factory
+- [x] Certificate model + factory + API
+- [x] Score calculation
+- [x] Certificate verification público
+- [x] Certificate config em Course
 
 ---
 
-## Próximos Passos (Recomendado)
+### ⏳ Pendente
 
-### Fase 1: Completar Learning (P0)
-1. ~~Implementar `Enrollment` model e migrações~~ ✅
-2. ~~Implementar `LessonProgress` model e migrações~~ ✅
-3. ~~`GET /courses/{id}/enrollment` - Status da matrícula~~ ✅
-4. ~~`GET /lessons/{id}` - Acesso à aula~~ ✅
-5. ~~`POST /lessons/{id}/progress` - Heartbeat de progresso~~ ✅
-6. ~~`GET /courses/{id}/modules` - Árvore do curso com tracking~~ ✅
-7. ~~Evento `LessonCompletedEvent`~~ ✅
-8. `LessonViews` - tabela para estatísticas de replay
-9. Pre-signed URLs para mídias (AWS S3, Vimeo)
+#### Permissões e Roles
+- [ ] Adicionar coluna `user_type` na tabela users
+- [ ] Adicionar colunas `tenant_id` e `scope` na tabela roles
+- [ ] Atualizar RolesSeeder com UserTypes corretos
+- [ ] Implementar gate/policy UserType
+- [ ] Implementar "teto" de permissions
 
-### Fase 2: Assessment (P1)
-1. Models de Questionário e Questões
-2. Questionários vinculados (morph: lesson/course/standalone)
-3. Questões com banco independente e categorias
-4. QuizAttempts com snapshot
-5. Cálculo de score
-6. Certificate config na tabela Course
-7. Certificados
+#### Core
+- [ ] PATCH /users/{id} (update)
+- [ ] DELETE /users/{id}
+- [ ] PATCH /users/me/password
 
-### Fase 3: Financial (P1)
-1. Orders e Payments
-2. Checkout endpoint
-3. Webhooks de gateway
-4. Matrícula automática pós-pagamento
+#### Learning
+- [ ] CRUD Categories (update, delete)
+- [ ] CRUD Courses (update, delete)
+- [ ] CRUD Modules (create, update, delete)
+- [ ] CRUD Lessons (create, update, delete)
+- [ ] CRUD Enrollments (create, update, delete)
+- [ ] Module reorder
+- [ ] Attach categories to courses
+- [ ] Course publish/unpublish
+- [ ] Lesson reorder
+
+#### Assessment
+- [ ] CRUD Questionnaires (ajustar permissions)
+- [ ] CRUD Questions (ajustar permissions)
+- [ ] Attach questions to questionnaire
+- [ ] List questions in questionnaire
+- [ ] CRUD Certificates (ajustar permissions)
+
+#### Fluxos
+- [ ] Student: enrollment (matricular-se)
+- [ ] Student: access lessons
+- [ ] LessonViews (estatísticas de replay)
+- [ ] Student: start attempt
+- [ ] Student: submit answers
+- [ ] Student: finish attempt
+
+#### Extras
+- [ ] Certificate PDF Generation
+- [ ] Eventos: QuizAttemptFinished, CourseCompleted, CertificateIssued
 
 ---
 
 ## Fonte de Referência
 
-O projeto `eadIA` em `/home/paulo/www/eadIA` contém a implementação completa de referência:
+Projeto `eadIA` em `/home/paulo/www/eadIA`:
 - 49 models
 - 97 migrations
 - 5 painéis Filament
 - 140+ testes
-- Sistema de plugins completo
 
 Usar como referência para regras de negócio e estrutura de dados.

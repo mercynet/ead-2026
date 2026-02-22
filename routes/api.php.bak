@@ -84,7 +84,7 @@ Route::prefix('v1/assessment')
     ->middleware(['resolve.tenant.optional', 'api.context'])
     ->group(function (): void {
         Route::prefix('questionnaires')
-            ->controller(\App\Http\Controllers\Api\V1\Assessment\QuestionnaireController::class)
+            ->controller(QuestionnaireController::class)
             ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access'])
             ->group(function (): void {
                 Route::get('/', 'index');
@@ -95,7 +95,7 @@ Route::prefix('v1/assessment')
             });
 
         Route::prefix('questions')
-            ->controller(\App\Http\Controllers\Api\V1\Assessment\QuestionController::class)
+            ->controller(QuestionController::class)
             ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access'])
             ->group(function (): void {
                 Route::get('/', 'index');
@@ -105,7 +105,7 @@ Route::prefix('v1/assessment')
             });
 
         Route::prefix('attempts')
-            ->controller(\App\Http\Controllers\Api\V1\Assessment\AttemptController::class)
+            ->controller(AttemptController::class)
             ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access'])
             ->group(function (): void {
                 Route::post('/questionnaires/{questionnaireId}', 'store');
@@ -115,7 +115,7 @@ Route::prefix('v1/assessment')
             });
 
         Route::prefix('certificates')
-            ->controller(\App\Http\Controllers\Api\V1\Assessment\CertificateController::class)
+            ->controller(CertificateController::class)
             ->group(function (): void {
                 Route::get('/verify/{certificateNumber}', 'verify');
 

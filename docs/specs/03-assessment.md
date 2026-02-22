@@ -1,235 +1,454 @@
-# Domain Spec: Assessment (API-First)
+# Assessment - Questionários, Questões e Certificados
 
-## Visão Geral
-Gerenciará formas de validação de conhecimento (Questionários/Quizzes) dentro de aulas e a emissão formal de certificados com base nos critérios configurados no curso.
-
-## Status de Implementação
-
-### ✅ Implementado
-- [x] Evento LessonCompletedEvent para cálculo de progresso
-
-### ⏳ Pendente
-- [ ] Questionário CRUD
-- [ ] Banco de Questões independente
-- [ ] QuizAttempts com snapshot
-- [ ] QuizAttemptAnswers com snapshot
-- [ ] Certificate config na tabela Course
-- [ ] Certificates
+> **Este documento contém todas as regras de negócio do domínio Assessment.**
+> Para LLM: Leia este arquivo antes de implementar anything em Assessment.
 
 ---
 
-## 1. Estrutura de Questionários
+## 1. Visão Geral
 
-### 1.1 Questionário (Quiz)
-- **Tabela**: `questionnaires`
-- **Tipos** (via morph):
-  - `lesson` - questionário vinculado a uma aula
-  - `course` - prova final do curso
-  - `standalone` - simulado/questionário avulso
-- **Campos**:
-  - `tenant_id`
-  - `title` - título (ex: "Simulado Pré-Vestibular")
-  - `description` - descrição
-  - `type` - lesson | course | standalone
-  - `quizable_id` - id do morph (lesson_id ou course_id)
-  - `quizable_type` - tipo do morph
-  - `passing_score` - nota mínima para aprovação (%)
-  - `time_limit_minutes` - tempo limite em minutos (opcional)
-  - `is_active` - está ativo
-  - `show_results` - mostra resultado ao aluno
-
-### 1.2 Questão (QuizQuestion)
-- **Tabela**: `quiz_questions`
-- **Características**:
-  - Banco de questões independente (não vinculada diretamente a questionário)
-  - Pode ter **múltiplas categorias** (opcional)
-  - Pode aparecer em múltiplos questionários
-  - **一旦 usada em tentativa, não pode mais editar** (gera snapshot)
-- **Campos**:
-  - `tenant_id`
-  - `question` - texto da questão (longtext)
-  - `type` - single_choice | multiple_choice | true_false
-  - `options` - JSON array de opções
-  - `correct_options` - JSON array de índices corretos
-  - `explanation` - explicação da resposta (para feedback)
-  - `points` - pontuação da questão (default: 1)
-  - `is_active`
-
-### 1.3 Questão-Categoria (Pivot)
-- **Tabela**: `quiz_question_categories`
-- **Características**:
-  - Relacionamento many-to-many
-  - Kategorias = mesmas do sistema de cursos
-  - Opcional (questão pode não ter categoria)
-- **Campos**:
-  - `quiz_question_id`
-  - `category_id`
-
-### 1.4 Questionário-Questão (Pivot)
-- **Tabela**: `questionnaire_questions`
-- **Características**:
-  - Ordem das questões no questionário
-  - Questões podem ser reutilizadas
-- **Campos**:
-  - `questionnaire_id`
-  - `quiz_question_id`
-  - `sort_order`
+O módulo Assessment gerencia:
+- **Questionnaires**: Questionários/Quizzes
+- **QuizQuestions**: Banco de questões
+- **QuizAttempts**: Tentativas de alunos
+- **Certificates**: Certificados emitidos
 
 ---
 
-## 2. Tentativas e Snapshots
+## 2. Questionnaires
 
-### 2.1 Attempt (QuizAttempt)
-- **Tabela**: `quiz_attempts`
-- **Características**:
-  - Snapshot de toda a estrutura no momento da tentativa
-  - Dados imutáveis após finalização
-- **Campos**:
-  - `tenant_id`
-  - `user_id`
-  - `questionnaire_id`
-  - `status` - in_progress | completed
-  - **Snapshot**:
-    - `questionnaire_snapshot` - JSON com dados do questionário
-    - `course_snapshot` - JSON com dados do curso (se course quiz)
-    - `module_snapshot` - JSON com dados do módulo (se lesson quiz)
-  - `started_at`
-  - `finished_at`
-  - `score` - nota final (0-100)
-  - `passed` - aprovado ou não
-  - `time_spent_seconds`
+### Modelo
 
-### 2.2 AttemptAnswer (QuizAttemptAnswer)
-- **Tabela**: `quiz_attempt_answers`
-- **Características**:
-  - Cada resposta com snapshot da questão original
-  - Dados imutáveis
-- **Campos**:
-  - `tenant_id`
-  - `quiz_attempt_id`
-  - **Snapshot**:
-    - `question_snapshot` - JSON com dados da questão original
-    - `selected_options` - JSON array de índices selecionados
-  - `is_correct` - está correta
-  - `points_earned` - pontuação obtida
-  - `answered_at`
+```
+questionnaires
+- id
+- tenant_id              // FK
+- instructor_id          // FK (criador)
+- title
+- description
+- type                   // enum: lesson | course | standalone
+- quizable_id            // FK (morph)
+- quizable_type          // morph type
+- passing_score          // % mínima para aprovação
+- time_limit_minutes     // tempo limite (opcional)
+- is_active
+- show_results           // mostra resultado ao aluno
+- created_at
+- updated_at
+```
 
----
+### Tipos de Questionário
 
-## 3. Certificates
+| Tipo | Descrição | Vinculação |
+|------|-----------|-----------|
+| `lesson` | Questionário de aula | Morph → Lesson |
+| `course` | Prova final do curso | Morph → Course |
+| `standalone` | Simulado/avulso | Sem vinculação |
 
-### 3.1 Configuração (na tabela Courses)
-O certificado é configurado na tabela `courses`:
-- `certificate_enabled` (boolean) - emite certificado?
-- `certificate_min_progress` (integer) - % mínima de conclusão de aulas
-- `certificate_requires_quiz` (boolean) - requer quiz aprovado?
-- `certificate_min_score` (integer) - % mínima no quiz
+### Endpoints
 
-### 3.2 Certificate
-- **Tabela**: `certificates`
-- **Características**:
-  - Gerado automaticamente ou manualmente
-  - Imutável após emissão (não muda se course mudar)
-- **Campos**:
-  - `tenant_id`
-  - `user_id`
-  - `enrollment_id`
-  - `course_id`
-  - `certificate_number` - código único (ex: CERT-2026-XXXXX)
-  - `issued_at`
-  - `status` - issued | revoked
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/v1/assessment/questionnaires` | Listar questionários |
+| POST | `/api/v1/assessment/questionnaires` | Criar questionário |
+| GET | `/api/v1/assessment/questionnaires/{id}` | Ver questionário |
+| PATCH | `/api/v1/assessment/questionnaires/{id}` | Atualizar questionário |
+| DELETE | `/api/v1/assessment/questionnaires/{id}` | Deletar questionário |
+| GET | `/api/v1/assessment/questionnaires/{id}/questions` | Listar questões |
+| POST | `/api/v1/assessment/questionnaires/{id}/questions` | Adicionar questões |
+
+### Permissions
+
+```
+assessment.questionnaires.list
+assessment.questionnaires.create
+assessment.questionnaires.view
+assessment.questionnaires.update
+assessment.questionnaires.delete
+```
 
 ---
 
-## 4. Endpoints Principais (JSON)
+## 3. QuizQuestions
 
-### Questionários (Assessment)
-*Base URL: `api/v1/assessment`*
+### Modelo
 
-#### Questionários
-- `GET /questionnaires` - lista questionários (filtro por type)
-- `POST /questionnaires` - cria questionário
-- `GET /questionnaires/{id}` - detalhe
-- `PATCH /questionnaires/{id}` - atualiza
-- `DELETE /questionnaires/{id}` - remove
-- `POST /questionnaires/{id}/questions` - adiciona questões
-- `GET /questionnaires/{id}/questions` - lista questões do questionário
+```
+quiz_questions
+- id
+- tenant_id              // FK
+- instructor_id          // FK (criador)
+- question               // texto da questão (longtext)
+- type                   // enum: single_choice | multiple_choice | true_false
+- options                // JSON array
+- correct_options        // JSON array de índices corretos
+- explanation            // explicação da resposta
+- points                 // pontuação (default: 1)
+- is_active
+- created_at
+- updated_at
+```
 
-#### Questões (Banco)
-- `GET /questions` - lista questões (filtro por categoria)
-- `POST /questions` - cria questão
-- `GET /questions/{id}` - detalhe
-- `PATCH /questions/{id}` - atualiza (apenas se não usada em tentativas)
-- `POST /questions/{id}/categories` - associa categorias
+### Tipos de Questão
 
-#### Tentativas
-- `POST /questionnaires/{id}/attempts` - inicia tentativa
-- `GET /attempts/{id}` - detalhe da tentativa
-- `GET /attempts/{id}/questions` - questões da tentativa (com snapshot)
-- `POST /attempts/{id}/answers` - responde questão(ões)
-- `POST /attempts/{id}/finish` - finaliza tentativa
+| Tipo | Descrição | Resposta |
+|------|-----------|----------|
+| `single_choice` | Uma única opção correta | 1 índice |
+| `multiple_choice` | Múltiplas opções corretas | múltiplos índices |
+| `true_false` | Verdadeiro ou falso | 1 índice |
 
-#### Certificados
-- `GET /certificates` - lista certificados do aluno
-- `GET /certificates/{code}` - detalhe do certificado
-- `GET /certificates/{code}/verify` - endpoint público de validação
+### Estrutura de Options
 
----
+```json
+[
+  { "text": "Opção A", "correct": false },
+  { "text": "Opção B", "correct": true },
+  { "text": "Opção C", "correct": false },
+  { "text": "Opção D", "correct": false }
+]
+```
 
-## 5. Regras de Negócio
+### Regras Importantes (para LLM)
 
-### Questões Imutáveis
-- Uma questão que já foi usada em uma tentativa **não pode ser editada**
-- Instrutor precisa criar nova versão se quiser mudar
+```
+⚠️ IMPORTANTE:
+- Questões usadas em tentativas NÃO PODEM ser editadas
 - Isso garante integridade dos relatórios e estatísticas
+- Se precisar mudar → criar nova questão
+```
 
-### Snapshots
-- Ao iniciar tentativa, fazer snapshot de:
-  - Questionário (título, descrição, passing_score)
-  - Curso (se for course quiz)
-  - Módulo (se for lesson quiz)
-  - Cada questão respondida (texto, opções, resposta correta)
+### Endpoints
 
-### Reassistir Aulas
-- Aula concluída pode ser reassistida
-- Não muda status de "concluída"
-- Cada visualização gera registro em `lesson_views`
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/v1/assessment/questions` | Listar questões |
+| POST | `/api/v1/assessment/questions` | Criar questão |
+| GET | `/api/v1/assessment/questions/{id}` | Ver questão |
+| PATCH | `/api/v1/assessment/questions/{id}` | Atualizar questão |
+| DELETE | `/api/v1/assessment/questions/{id}` | Deletar questão |
 
-### Categorias de Questões
-- Mesmo tabela de categorias dos cursos
-- Relacionamento many-to-many opcional
-- Apenas para facilitar busca ao montar questionário
+### Permissions
 
-### Certificate
-- Por curso, não por aula
-- Critérios configuráveis no curso
-- Plugin de certificados avançados pode ter mais opções
-- Dados do certificado são snapshots (não mudam se curso mudar)
+```
+assessment.questions.list
+assessment.questions.create
+assessment.questions.view
+assessment.questions.update
+assessment.questions.delete
+```
 
 ---
 
-## 6. Eventos para Estatísticas
+## 4. QuizAttempts
+
+### Modelo
+
+```
+quiz_attempts
+- id
+- tenant_id              // FK
+- user_id                // FK (aluno)
+- questionnaire_id       // FK
+- status                 // enum: in_progress | completed
+- questionnaire_snapshot // JSON
+- course_snapshot       // JSON (se course quiz)
+- module_snapshot       // JSON (se lesson quiz)
+- started_at
+- finished_at
+- score                  // nota final (0-100)
+- passed                 // aprovado ou não
+- time_spent_seconds
+- created_at
+- updated_at
+```
+
+### Snapshots (IMPORTANTE)
+
+Ao iniciar uma tentativa, o sistema faz snapshot de:
+
+```
+- Questionário: title, description, passing_score
+- Curso (se course quiz): id, title
+- Módulo (se lesson quiz): id, title
+- Cada questão respondida: texto, opções, resposta correta
+```
+
+Isso garante que a tentativa permanece igual mesmo se o questionário for alterado depois.
+
+### Fluxo do Aluno
+
+```
+1. Iniciar tentativa
+   POST /api/v1/assessment/attempts/questionnaires/{id}
+
+2. Ver tentativa atual
+   GET /api/v1/assessment/attempts/{id}
+
+3. Responder questão
+   PATCH /api/v1/assessment/attempts/{id}
+   Body: { question_snapshot, selected_options }
+
+4. Finalizar tentativa
+   POST /api/v1/assessment/attempts/{id}/finish
+
+5. Ver resultado
+   GET /api/v1/assessment/attempts/{id}
+   (retorna score, passed)
+```
+
+### Cálculo de Score
+
+```
+score = (pontos_obtidos / pontos_totais) * 100
+
+passed = score >= questionnaire.passing_score
+```
+
+### Endpoints
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/api/v1/assessment/attempts/questionnaires/{id}` | Iniciar tentativa |
+| GET | `/api/v1/assessment/attempts/{id}` | Ver tentativa |
+| PATCH | `/api/v1/assessment/attempts/{id}` | Responder questão |
+| POST | `/api/v1/assessment/attempts/{id}/finish` | Finalizar tentativa |
+
+### Permissions
+
+```
+assessment.attempts.create
+assessment.attempts.view
+assessment.attempts.answer
+assessment.attempts.finish
+```
+
+---
+
+## 5. Certificates
+
+### Configuração no Course
+
+O certificado é configurado na tabela `courses`:
+
+```
+certificate_enabled          // boolean - emite certificado?
+certificate_min_progress     // integer - % mínima de conclusão
+certificate_requires_quiz   // boolean - requer quiz aprovado?
+certificate_min_score       // integer - % mínima no quiz
+```
+
+### Emissão Automática
+
+O certificado é emitido automaticamente quando:
+1. Progresso >= certificate_min_progress
+2. Se certificate_requires_quiz: quiz aprovado com >= certificate_min_score
+
+### Modelo
+
+```
+certificates
+- id
+- tenant_id              // FK
+- user_id                // FK (aluno)
+- enrollment_id          // FK
+- course_id              // FK
+- certificate_number     // único: CERT-2026-XXXXX
+- issued_at
+- status                 // enum: issued | revoked
+- created_at
+- updated_at
+```
+
+### Certificate Number
+
+Formato: `CERT-{ANO}-{CODIGO_HEX}`
+
+Exemplo: `CERT-2026-A1B2C3D4`
+
+### Verificação Pública
+
+```
+GET /api/v1/assessment/certificates/verify/{certificateNumber}
+```
+
+Retorna:
+```json
+{
+  "valid": true,
+  "certificate": {
+    "certificate_number": "CERT-2026-A1B2C3D4",
+    "status": "issued",
+    "issued_at": "2026-01-15T10:00:00Z",
+    "course_title": "Curso de Laravel",
+    "user_name": "João Silva"
+  }
+}
+```
+
+### Endpoints
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/v1/assessment/certificates` | Listar certificados |
+| GET | `/api/v1/assessment/certificates/{id}` | Ver certificado |
+| GET | `/api/v1/assessment/certificates/verify/{code}` | Verificar (público) |
+
+### Permissions
+
+```
+assessment.certificates.list
+assessment.certificates.view
+assessment.certificates.revoke
+```
+
+---
+
+## 6. Pivot Tables
+
+### QuestionnaireQuestion
+
+```
+questionnaire_questions
+- id
+- questionnaire_id      // FK
+- quiz_question_id      // FK
+- sort_order            // ordem no questionário
+```
+
+### QuizQuestionCategory
+
+```
+quiz_question_categories
+- id
+- quiz_question_id      // FK
+- category_id           // FK
+```
+
+---
+
+## 7. Eventos para Estatísticas
 
 ### Eventos Necessários
-- `QuizAttemptFinished` - quando aluno termina tentativa
-- `CourseCompletedEvent` - quando curso 100%
-- `CertificateIssuedEvent` - quando certificado emitido
+
+```
+QuizAttemptStarted   - quando aluno inicia tentativa
+QuizAttemptFinished  - quando aluno termina tentativa
+QuizAttemptPassed    - quando aprovado
+QuizAttemptFailed    - quando reprovado
+CourseCompletedEvent - quando curso 100%
+CertificateIssuedEvent - quando certificado emitido
+CertificateRevokedEvent - quando certificado revogado
+```
 
 ### Processamento
-- Todos eventos vão para fila (RabbitMQ)
-- Processed by consumer → MariaDB de stats
-- Dados históricos nunca se perdem
+
+```
+1. Evento é disparado
+2. Vai para fila (RabbitMQ)
+3. Consumer processa → MariaDB de stats
+4. Dados históricos preservados
+```
 
 ---
 
-## 7. Permissions
+## 8. Fluxos
 
-### Roles
-- `developer`: acesso total
-- `tenant_admin`: CRUD em todos os questionários do tenant
-- `instructor`: CRUD em seus próprios questionários
-- `student`: fazer tentativas, ver seus resultados
+### Fluxo do Instrutor
 
-### Instructor Scope
-- Instrutor pode ver todos os cursos do tenant OU só os seus
-- Configurável via `tenant_settings`
+```
+1. Criar questões
+   POST /api/v1/assessment/questions
+
+2. Criar questionário
+   POST /api/v1/assessment/questionnaires
+
+3. Adicionar questões ao questionário
+   POST /api/v1/assessment/questionnaires/{id}/questions
+
+4. Configurar certificado no curso
+   PATCH /api/v1/learning/courses/{id}
+   Body: { certificate_enabled: true, certificate_min_score: 70 }
+
+5. Acompanhar tentativas
+   GET /api/v1/assessment/attempts/{id}
+```
+
+### Fluxo do Aluno
+
+```
+1. Ver questionário disponível
+   GET /api/v1/assessment/questionnaires/{id}
+
+2. Iniciar tentativa
+   POST /api/v1/assessment/attempts/questionnaires/{id}
+
+3. Responder questões
+   PATCH /api/v1/assessment/attempts/{id}
+   Body: { question_snapshot, selected_options }
+
+4. Finalizar tentativa
+   POST /api/v1/assessment/attempts/{id}/finish
+
+5. Ver certificado (se aprovado)
+   GET /api/v1/assessment/certificates/{id}
+```
+
+---
+
+## 9. Status de Implementação
+
+### ✅ Feito
+
+- [x] Questionnaire CRUD
+- [x] QuizQuestion (banco de questões)
+- [x] QuizAttempts com snapshot
+- [x] QuizAttemptAnswers com snapshot
+- [x] Score Calculation
+- [x] Certificate config na tabela Course
+- [x] Certificates
+- [x] Certificate Validation (público)
+- [x] Evento LessonCompletedEvent
+
+### ⚠️ Precisa Revisão
+
+- [ ] Permissions para roles corretas (tenant_admin, instructor)
+- [ ] Attach questions to questionnaire (endpoint)
+- [ ] List questions in questionnaire
+
+### ⏳ Pendente
+
+- [ ] Fluxo do aluno (start/finish attempt)
+- [ ] Certificate PDF Generation
+- [ ] Eventos: QuizAttemptFinished, CertificateIssued
+
+---
+
+## 10. Permissions por UserType
+
+| Permissão | Developer | Admin | Instructor | Student |
+|-----------|:---------:|:-----:|:----------:|:-------:|
+| assessment.questionnaires.* | ✅ | ✅ | ✅ | ❌ |
+| assessment.questions.* | ✅ | ✅ | ✅ | ❌ |
+| assessment.attempts.list | ✅ | ✅ | view | ❌ |
+| assessment.attempts.view | ✅ | ✅ | view | own |
+| assessment.attempts.create | ✅ | ✅ | ❌ | ✅ |
+| assessment.attempts.answer | ✅ | ✅ | ❌ | ✅ |
+| assessment.attempts.finish | ✅ | ✅ | ❌ | ✅ |
+| assessment.certificates.* | ✅ | ✅ | view | own |
+
+---
+
+## 11. Referência Rápida
+
+| Recurso | Endpoint | Permissão |
+|---------|----------|----------|
+| Listar questionários | GET /questionnaires | assessment.questionnaires.list |
+| Criar questionário | POST /questionnaires | assessment.questionnaires.create |
+| Listar questões | GET /questions | assessment.questions.list |
+| Criar questão | POST /questions | assessment.questions.create |
+| Atualizar questão | PATCH /questions/{id} | assessment.questions.update |
+| Iniciar tentativa | POST /attempts/questionnaires/{id} | assessment.attempts.create |
+| Responder | PATCH /attempts/{id} | assessment.attempts.answer |
+| Finalizar | POST /attempts/{id}/finish | assessment.attempts.finish |
+| Ver certificados | GET /certificates | assessment.certificates.list |
+| Verificar | GET /certificates/verify/{code} | público |

@@ -1,42 +1,235 @@
 # Domain Spec: Assessment (API-First)
 
 ## Visão Geral
-Gerenciará formas de validação de conhecimento (Quizzes/Provas) dentro de aulas e também a emissão formal, revogação e validação de diplomas/certificados com base nos critérios de conclusão das Trilhas de Catalogo (Domínio isolado, conversando via Event Driven com Catalog).
+Gerenciará formas de validação de conhecimento (Questionários/Quizzes) dentro de aulas e a emissão formal de certificados com base nos critérios configurados no curso.
 
-## 1. Entidades Principais
-### Quizzes (`Quiz`, `QuizQuestion`, `QuizQuestionOption`)
-- **Quiz:** Anexado a uma Lesson (Aula tipo "Prova"). Configurações de expiração, shuffle (randomize_questions) ativadas. Suportará nota de corte (`passing_score`) e tempo limite.
-  - **Quizzes Intermediários:** Podem ser posicionados em qualquer parte da trilha do curso (ex: após as 5 primeiras aulas), não se limitando apenas ao final do curso.
-- **QuizQuestion:** Alternativas variadas e ativas/inativas. A estrutura deve prever escalabilidade para plugins pagos (ex: Múltipla escolha com várias corretas, V/F, dissertativas, ordenação, hotspots).
-- **Banco de Questões:** Questões poderão ser construídas num "Pool" e reaproveitadas para gerar simulados dinâmicos (randomizados de um banco maior).
+## Status de Implementação
 
-### Execução de Prova (`QuizAttempt`, `QuizAttemptAnswer`)
-- **QuizAttempt:** A prova que um aluno começou a fazer. Guarda Score Final e um *Snapshot* gigante da hora que o aluno começou/terminou a prova, travando o nome do curso e lições para não invalidar tentativas passadas caso um Admin mude o nome do curso amanhã.
-  - Guarda o status de progressão (e.g., `paused`, `finished`) permitindo ao aluno "Salvar Rascunho".
-  - Validações "Anti-cheating": Controle estrito de `attempt_count` limitando X vezes por dia.
-- **QuizAttemptAnswer:** Resposta isolada ativando correções automáticas. Registra o tempo (`time_spent_seconds`) por questão para métricas/heatmaps da turma.
+### ✅ Implementado
+- [x] Evento LessonCompletedEvent para cálculo de progresso
 
-### Documentos (`Certificate`, `CertificateTemplate`)
-- **CertificateTemplate:** Metadados, HTML configurável e lista de variáveis ativas (student_name, course_name).
-- **Certificate:** O documento gerado, contendo número único de rastreio (`CERT-2026-XYZ`), Hashes MD5/SHA256, Status (issued, revoked) e UUID.
+### ⏳ Pendente
+- [ ] Questionário CRUD
+- [ ] Banco de Questões independente
+- [ ] QuizAttempts com snapshot
+- [ ] QuizAttemptAnswers com snapshot
+- [ ] Certificate config na tabela Course
+- [ ] Certificates
 
-## 2. Endpoints Principais (JSON)
+---
+
+## 1. Estrutura de Questionários
+
+### 1.1 Questionário (Quiz)
+- **Tabela**: `questionnaires`
+- **Tipos** (via morph):
+  - `lesson` - questionário vinculado a uma aula
+  - `course` - prova final do curso
+  - `standalone` - simulado/questionário avulso
+- **Campos**:
+  - `tenant_id`
+  - `title` - título (ex: "Simulado Pré-Vestibular")
+  - `description` - descrição
+  - `type` - lesson | course | standalone
+  - `quizable_id` - id do morph (lesson_id ou course_id)
+  - `quizable_type` - tipo do morph
+  - `passing_score` - nota mínima para aprovação (%)
+  - `time_limit_minutes` - tempo limite em minutos (opcional)
+  - `is_active` - está ativo
+  - `show_results` - mostra resultado ao aluno
+
+### 1.2 Questão (QuizQuestion)
+- **Tabela**: `quiz_questions`
+- **Características**:
+  - Banco de questões independente (não vinculada diretamente a questionário)
+  - Pode ter **múltiplas categorias** (opcional)
+  - Pode aparecer em múltiplos questionários
+  - **一旦 usada em tentativa, não pode mais editar** (gera snapshot)
+- **Campos**:
+  - `tenant_id`
+  - `question` - texto da questão (longtext)
+  - `type` - single_choice | multiple_choice | true_false
+  - `options` - JSON array de opções
+  - `correct_options` - JSON array de índices corretos
+  - `explanation` - explicação da resposta (para feedback)
+  - `points` - pontuação da questão (default: 1)
+  - `is_active`
+
+### 1.3 Questão-Categoria (Pivot)
+- **Tabela**: `quiz_question_categories`
+- **Características**:
+  - Relacionamento many-to-many
+  - Kategorias = mesmas do sistema de cursos
+  - Opcional (questão pode não ter categoria)
+- **Campos**:
+  - `quiz_question_id`
+  - `category_id`
+
+### 1.4 Questionário-Questão (Pivot)
+- **Tabela**: `questionnaire_questions`
+- **Características**:
+  - Ordem das questões no questionário
+  - Questões podem ser reutilizadas
+- **Campos**:
+  - `questionnaire_id`
+  - `quiz_question_id`
+  - `sort_order`
+
+---
+
+## 2. Tentativas e Snapshots
+
+### 2.1 Attempt (QuizAttempt)
+- **Tabela**: `quiz_attempts`
+- **Características**:
+  - Snapshot de toda a estrutura no momento da tentativa
+  - Dados imutáveis após finalização
+- **Campos**:
+  - `tenant_id`
+  - `user_id`
+  - `questionnaire_id`
+  - `status` - in_progress | completed
+  - **Snapshot**:
+    - `questionnaire_snapshot` - JSON com dados do questionário
+    - `course_snapshot` - JSON com dados do curso (se course quiz)
+    - `module_snapshot` - JSON com dados do módulo (se lesson quiz)
+  - `started_at`
+  - `finished_at`
+  - `score` - nota final (0-100)
+  - `passed` - aprovado ou não
+  - `time_spent_seconds`
+
+### 2.2 AttemptAnswer (QuizAttemptAnswer)
+- **Tabela**: `quiz_attempt_answers`
+- **Características**:
+  - Cada resposta com snapshot da questão original
+  - Dados imutáveis
+- **Campos**:
+  - `tenant_id`
+  - `quiz_attempt_id`
+  - **Snapshot**:
+    - `question_snapshot` - JSON com dados da questão original
+    - `selected_options` - JSON array de índices selecionados
+  - `is_correct` - está correta
+  - `points_earned` - pontuação obtida
+  - `answered_at`
+
+---
+
+## 3. Certificates
+
+### 3.1 Configuração (na tabela Courses)
+O certificado é configurado na tabela `courses`:
+- `certificate_enabled` (boolean) - emite certificado?
+- `certificate_min_progress` (integer) - % mínima de conclusão de aulas
+- `certificate_requires_quiz` (boolean) - requer quiz aprovado?
+- `certificate_min_score` (integer) - % mínima no quiz
+
+### 3.2 Certificate
+- **Tabela**: `certificates`
+- **Características**:
+  - Gerado automaticamente ou manualmente
+  - Imutável após emissão (não muda se course mudar)
+- **Campos**:
+  - `tenant_id`
+  - `user_id`
+  - `enrollment_id`
+  - `course_id`
+  - `certificate_number` - código único (ex: CERT-2026-XXXXX)
+  - `issued_at`
+  - `status` - issued | revoked
+
+---
+
+## 4. Endpoints Principais (JSON)
+
+### Questionários (Assessment)
 *Base URL: `api/v1/assessment`*
 
-### Endpoint de Exames (Aluno)
-- `GET /quizzes/{id}`: Metadados globais da Prova (quantas questões, title).
-- `POST /quizzes/{id}/attempts`: Inicia a prova e gera um State de Draft no banco (Grava Snapshot das tabelas base para integridade). Gera o ID da sessão da Prova.
-- `GET /attempts/{attempt_id}/questions`: Puxa a lista randômica do escopo.
-- `POST /attempts/{attempt_id}/answers`: Envia em bulk ou singular as marcações do usuário na prova, salva na base da *Attempt*.
-- `POST /attempts/{attempt_id}/finish`: Encerra a prova, calcula Score e avalia Aprovado/Reprovado via Action.
+#### Questionários
+- `GET /questionnaires` - lista questionários (filtro por type)
+- `POST /questionnaires` - cria questionário
+- `GET /questionnaires/{id}` - detalhe
+- `PATCH /questionnaires/{id}` - atualiza
+- `DELETE /questionnaires/{id}` - remove
+- `POST /questionnaires/{id}/questions` - adiciona questões
+- `GET /questionnaires/{id}/questions` - lista questões do questionário
 
-### Diplomas e Validações
-- `GET /certificates`: Lista carteira de certificados do usuário logado.
-- `GET /certificates/{code}/pdf`: Faz o stream binário ou redirecionamento do S3 do Certificado gerado em PDF/Imagem.
-- `GET /public/verification/{validation_hash}`: **Endpoint 100% público** (Sem Auth) onde RHs de empresas batem para checar se o link/QR Code do certificado do aluno EAD de fato existe e está Ativo (Não `revoked`).
+#### Questões (Banco)
+- `GET /questions` - lista questões (filtro por categoria)
+- `POST /questions` - cria questão
+- `GET /questions/{id}` - detalhe
+- `PATCH /questions/{id}` - atualiza (apenas se não usada em tentativas)
+- `POST /questions/{id}/categories` - associa categorias
 
-## 3. Regras Críticas e Padrões de Arquitetura
-- **Imutabilidade de Avaliações:** Todas as tentativas (`Attempt`) são *Append-Only* / Imutáveis. Uma vez finalizado o Quiz, Snapshot guardará se alterarem perguntas amanhã.
-- **Sincronia Assíncrona de Emissão:** 
-  - Ao finalizar 100% do progresso de Cursos (Detectado no Evento `EnrollmentCompletedEvent` escutado de fora), despachamos o Observer Assíncrono para fila (Horizon/Redis) para invocar o Action `IssueCertificateAction`. Ele gerará a tela Base64/PDF e armazenará via AWS, batendo na master. Não bloqueia a navegação de quem acabou de bater 100% do vídeo.
-- **Revogação de Diplomas:** Status de Certificados poderão ser atualizados de `issued` para `revoked` pelo `Tenant_Admin` se fraude for detectada, inviabilizando na hora o Endpoint de `verification`.
+#### Tentativas
+- `POST /questionnaires/{id}/attempts` - inicia tentativa
+- `GET /attempts/{id}` - detalhe da tentativa
+- `GET /attempts/{id}/questions` - questões da tentativa (com snapshot)
+- `POST /attempts/{id}/answers` - responde questão(ões)
+- `POST /attempts/{id}/finish` - finaliza tentativa
+
+#### Certificados
+- `GET /certificates` - lista certificados do aluno
+- `GET /certificates/{code}` - detalhe do certificado
+- `GET /certificates/{code}/verify` - endpoint público de validação
+
+---
+
+## 5. Regras de Negócio
+
+### Questões Imutáveis
+- Uma questão que já foi usada em uma tentativa **não pode ser editada**
+- Instrutor precisa criar nova versão se quiser mudar
+- Isso garante integridade dos relatórios e estatísticas
+
+### Snapshots
+- Ao iniciar tentativa, fazer snapshot de:
+  - Questionário (título, descrição, passing_score)
+  - Curso (se for course quiz)
+  - Módulo (se for lesson quiz)
+  - Cada questão respondida (texto, opções, resposta correta)
+
+### Reassistir Aulas
+- Aula concluída pode ser reassistida
+- Não muda status de "concluída"
+- Cada visualização gera registro em `lesson_views`
+
+### Categorias de Questões
+- Mesmo tabela de categorias dos cursos
+- Relacionamento many-to-many opcional
+- Apenas para facilitar busca ao montar questionário
+
+### Certificate
+- Por curso, não por aula
+- Critérios configuráveis no curso
+- Plugin de certificados avançados pode ter mais opções
+- Dados do certificado são snapshots (não mudam se curso mudar)
+
+---
+
+## 6. Eventos para Estatísticas
+
+### Eventos Necessários
+- `QuizAttemptFinished` - quando aluno termina tentativa
+- `CourseCompletedEvent` - quando curso 100%
+- `CertificateIssuedEvent` - quando certificado emitido
+
+### Processamento
+- Todos eventos vão para fila (RabbitMQ)
+- Processed by consumer → MariaDB de stats
+- Dados históricos nunca se perdem
+
+---
+
+## 7. Permissions
+
+### Roles
+- `developer`: acesso total
+- `tenant_admin`: CRUD em todos os questionários do tenant
+- `instructor`: CRUD em seus próprios questionários
+- `student`: fazer tentativas, ver seus resultados
+
+### Instructor Scope
+- Instrutor pode ver todos os cursos do tenant OU só os seus
+- Configurável via `tenant_settings`

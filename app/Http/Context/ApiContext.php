@@ -2,6 +2,7 @@
 
 namespace App\Http\Context;
 
+use App\Exceptions\TenantContextRequiredException;
 use App\Models\Tenant;
 use App\Models\User;
 
@@ -25,7 +26,7 @@ final readonly class ApiContext
     public function requiredUser(): User
     {
         if ($this->user === null) {
-            throw new \RuntimeException('Authenticated user is required.');
+            throw TenantContextRequiredException::make('Authenticated user is required.');
         }
 
         return $this->user;
@@ -34,7 +35,7 @@ final readonly class ApiContext
     public function requiredTenant(): Tenant
     {
         if ($this->tenant === null) {
-            throw new \RuntimeException('Tenant context is required.');
+            throw TenantContextRequiredException::make('Tenant context is required.');
         }
 
         return $this->tenant;

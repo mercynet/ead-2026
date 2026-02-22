@@ -3,11 +3,11 @@
 
 # Laravel Boost Guidelines
 
-The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
+The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. You MUST follow them closely to ensure the best experience when building Laravel applications.
 
 ## Foundational Context
 
-This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
+This application is a Laravel application and its main Laravel ecosystems package & versions are below:
 
 - php - 8.4.18
 - laravel/framework (LARAVEL) - v12
@@ -25,29 +25,25 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 ## Skills Activation
 
-This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
+This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain:
 
-- `pest-testing` — Tests applications using the Pest 4 PHP framework. Activates when writing tests, creating unit or feature tests, adding assertions, testing Livewire components, browser testing, debugging test failures, working with datasets or mocking; or when the user mentions test, spec, TDD, expects, assertion, coverage, or needs to verify functionality works.
-- `tailwindcss-development` — Styles applications using Tailwind CSS v4 utilities. Activates when adding styles, restyling components, working with gradients, spacing, layout, flex, grid, responsive design, dark mode, colors, typography, or borders; or when the user mentions CSS, styling, classes, Tailwind, restyle, hero section, cards, buttons, or any visual/UI changes.
+- `pest-testing` — Tests applications using the Pest 4 PHP framework.
+- `tailwindcss-development` — Styles applications using Tailwind CSS v4 utilities.
 
 ## Conventions
 
-- You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
-- Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
+- You must follow all existing code conventions used in this application.
+- Use descriptive names for variables and methods.
 - Check for existing components to reuse before writing a new one.
 
 ## Verification Scripts
 
-- Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
+- Do not create verification scripts or tinker when tests cover that functionality and prove they work.
 
 ## Application Structure & Architecture
 
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
-
-## Frontend Bundling
-
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
 
 ## Documentation Files
 
@@ -80,22 +76,11 @@ This project has domain-specific skills available. You MUST activate the relevan
 ## Reading Browser Logs With the `browser-logs` Tool
 
 - You can read browser logs, errors, and exceptions using the `browser-logs` tool from Boost.
-- Only recent browser logs will be useful - ignore old logs.
 
-## Searching Documentation (Critically Important)
+## Searching Documentation
 
-- Boost comes with a powerful `search-docs` tool you should use before trying other approaches when working with Laravel or Laravel ecosystem packages. This tool automatically passes a list of installed packages and their versions to the remote Boost API, so it returns only version-specific documentation for the user's circumstance. You should pass an array of packages to filter on if you know you need docs for particular packages.
+- Boost comes with a powerful `search-docs` tool you should use before trying other approaches when working with Laravel ecosystem packages.
 - Search the documentation before making code changes to ensure we are taking the correct approach.
-- Use multiple, broad, simple, topic-based queries at once. For example: `['rate limiting', 'routing rate limiting', 'routing']`. The most relevant results will be returned first.
-- Do not add package names to queries; package information is already shared. For example, use `test resource table`, not `filament 4 test resource table`.
-
-### Available Search Syntax
-
-1. Simple Word Searches with auto-stemming - query=authentication - finds 'authenticate' and 'auth'.
-2. Multiple Words (AND Logic) - query=rate limit - finds knowledge containing both "rate" AND "limit".
-3. Quoted Phrases (Exact Position) - query="infinite scroll" - words must be adjacent and in that order.
-4. Mixed Queries - query=middleware "rate limit" - "middleware" AND exact phrase "rate limit".
-5. Multiple Queries - queries=["authentication", "middleware"] - ANY of these terms.
 
 === php rules ===
 
@@ -106,7 +91,6 @@ This project has domain-specific skills available. You MUST activate the relevan
 ## Constructors
 
 - Use PHP 8 constructor property promotion in `__construct()`.
-    - `public function __construct(public GitHub $github) { }`
 - Do not allow empty `__construct()` methods with zero parameters unless the constructor is private.
 
 ## Type Declarations
@@ -114,17 +98,9 @@ This project has domain-specific skills available. You MUST activate the relevan
 - Always use explicit return type declarations for methods and functions.
 - Use appropriate PHP type hints for method parameters.
 
-<!-- Explicit Return Types and Method Params -->
-```php
-protected function isAccessible(User $user, ?string $path = null): bool
-{
-    ...
-}
-```
-
 ## Enums
 
-- Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.
+- Typically, keys in an Enum should be TitleCase.
 
 ## Comments
 
@@ -145,34 +121,31 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 # Do Things the Laravel Way
 
-- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using the `list-artisan-commands` tool.
+- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.).
 - If you're creating a generic PHP class, use `php artisan make:class`.
-- Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
+- Pass `--no-interaction` to all Artisan commands to ensure they work without user input.
 
 ## Database
 
-- Always use proper Eloquent relationship methods with return type hints. Prefer relationship methods over raw queries or manual joins.
+- Always use proper Eloquent relationship methods with return type hints.
 - Use Eloquent models and relationships before suggesting raw database queries.
-- Avoid `DB::`; prefer `Model::query()`. Generate code that leverages Laravel's ORM capabilities rather than bypassing them.
+- Avoid `DB::`; prefer `Model::query()`.
 - Generate code that prevents N+1 query problems by using eager loading.
 - Use Laravel's query builder for very complex database operations.
 
 ### Model Creation
 
-- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `list-artisan-commands` to check the available options to `php artisan make:model`.
+- When creating new models, create useful factories and seeders for them too.
 
 ### APIs & Eloquent Resources
 
-- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
+- For APIs, default to using Eloquent API Resources and API versioning.
 
 ## Controllers & Validation
 
-- Always create Form Request classes for validation rather than inline validation in controllers. Include both validation rules and custom error messages.
-- Check sibling Form Requests to see if the application uses array or string based validation rules.
+- Always create Form Request classes for validation rather than inline validation in controllers.
 - Tenant preconditions must be validated in FormRequest / middleware, not with inline `if` blocks in controller methods.
-- Reuse shared API context trait methods for tenant/user context access instead of manual request parsing in each controller method.
-- For manual JSON payloads (when not returning a JsonResource / ResourceCollection), return `data` directly and avoid redundant wrappers like `data.user`, `data.course`, or `data.category`.
-- Do not return empty `meta` blocks (`'meta' => []`). Include `meta` only when it has meaningful fields.
+- Reuse shared API context trait methods for tenant/user context access instead of manual request parsing.
 
 ## Authentication & Authorization
 
@@ -188,49 +161,46 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 ## Configuration
 
-- Use environment variables only in configuration files - never use the `env()` function directly outside of config files. Always use `config('app.name')`, not `env('APP_NAME')`.
+- Use environment variables only in configuration files - never use the `env()` function directly outside of config files.
 
 ## Testing
 
-- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
-- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
+- When creating models for tests, use the factories for the models.
+- When creating tests, make use of `php artisan make:test --pest {name}` to create a feature test.
 
 ## Vite Error
 
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
+- If you receive a Vite error, run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
 
 === laravel/v12 rules ===
 
 # Laravel 12
 
-- CRITICAL: ALWAYS use `search-docs` tool for version-specific Laravel documentation and updated code examples.
+- CRITICAL: ALWAYS use `search-docs` tool for version-specific Laravel documentation.
 - Since Laravel 11, Laravel has a new streamlined file structure which this project uses.
 
 ## Laravel 12 Structure
 
 - In Laravel 12, middleware are no longer registered in `app/Http/Kernel.php`.
-- Middleware are configured declaratively in `bootstrap/app.php` using `Application::configure()->withMiddleware()`.
+- Middleware are configured declaratively in `bootstrap/app.php`.
 - `bootstrap/app.php` is the file to register middleware, exceptions, and routing files.
 - `bootstrap/providers.php` contains application specific service providers.
-- The `app\Console\Kernel.php` file no longer exists; use `bootstrap/app.php` or `routes/console.php` for console configuration.
-- Console commands in `app/Console/Commands/` are automatically available and do not require manual registration.
+- The `app\Console\Kernel.php` file no longer exists; use `bootstrap/app.php` or `routes/console.php`.
 
 ## Database
 
-- When modifying a column, the migration must include all of the attributes that were previously defined on the column. Otherwise, they will be dropped and lost.
-- Laravel 12 allows limiting eagerly loaded records natively, without external packages: `$query->latest()->limit(10);`.
+- When modifying a column, the migration must include all of the attributes that were previously defined on the column.
+- Laravel 12 allows limiting eagerly loaded records natively.
 
 ### Models
 
-- Casts can and likely should be set in a `casts()` method on a model rather than the `$casts` property. Follow existing conventions from other models.
+- Casts can and should be set in a `casts()` method on a model rather than the `$casts` property.
 
 === pint/core rules ===
 
 # Laravel Pint Code Formatter
 
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
-- Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
 
 === pest/core rules ===
 
@@ -238,17 +208,13 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 - This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
 - Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
-- Do NOT delete tests without approval.
-- CRITICAL: ALWAYS use `search-docs` tool for version-specific Pest documentation and updated code examples.
-- IMPORTANT: Activate `pest-testing` every time you're working with a Pest or testing-related task.
+- DO NOT delete tests without approval.
 
 === tailwindcss/core rules ===
 
 # Tailwind CSS
 
 - Always use existing Tailwind conventions; check project patterns before adding new ones.
-- IMPORTANT: Always use `search-docs` tool for version-specific Tailwind CSS documentation and updated code examples. Never rely on training data.
-- IMPORTANT: Activate `tailwindcss-development` every time you're working with a Tailwind CSS or styling-related task.
 
 === project/architecture rules ===
 
@@ -256,12 +222,56 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 This is a multi-tenant EAD (E-learning) platform with specific architectural patterns that MUST be followed.
 
+## REGRAS DE NEGÓCIO FUNDAMENTAIS
+
+### Multi-Tenancy e Usuários
+
+- **Developers** (equipe): acesso total, CRUD completo para todos os tenants
+- **Tenant Admins**: mesmo que developer, mas isolado em seu tenant, sem saber da existência de outros
+- **Instructors**: criam ambiente pedagógico (cursos, módulos, aulas, questionários)
+- **Students**: consomem cursos, vêem tudo que é seu
+- **REGRA CRÍTICA**: Usuários são identificados por CPF único, mas login é por email
+- Ao matricular: buscar por CPF primeiro, se existir em outro tenant, reutilizar
+- Instrutor só vê alunos matrículados em seus cursos
+
+### Categorias
+
+- **Sistema** (globais): criadas/editadas apenas por developers, todos tenants podem usar
+- **Custom** (do tenant): CRUD livre pelo tenant
+- Categoria de sistema: nunca pode ter nome duplicado por tenant
+- Categorias custom podem ser duplicadas entre tenants diferentes
+
+### Questionários e Questões
+
+- Questões são banco independente, reaproveitáveis em múltiplos questionários
+- Questões podem ter múltiplas categorias (opcional)
+- Uma questão usada em tentativa **não pode mais ser editada** (gera snapshot)
+- Cada tentativa gera snapshot de todas as questões respondidas
+
+### Certificados
+
+- Por curso, não por aula
+- Critérios configuráveis na tabela courses:
+  - certificate_enabled
+  - certificate_min_progress (%)
+  - certificate_requires_quiz
+  - certificate_min_score (%)
+
+### Reassistir Aulas
+
+- Aula concluída pode ser reassistida
+- Não muda status de "concluída"
+- Cada visualização gera registro em lesson_views (para estatísticas)
+
+### Eventos para Estatísticas
+
+- Todos os eventos significativos devem ser Disparados via Laravel Events
+- Processados por Queue (RabbitMQ) para MariaDB de estatísticas
+- Dados históricos nunca se perdem
+
 ## Specs
 
-Read `docs/specs/*.md` for detailed domain specifications before implementing features. These specs define:
-- API endpoints and their behavior
-- Business rules and validation
-- Data structures and relationships
+Read `docs/specs/*.md` for detailed domain specifications before implementing features.
 
 ## ApiContext Pattern
 
@@ -274,13 +284,6 @@ public function index(ApiContext $context): JsonResponse
     Gate::forUser($context->user)->authorize('permission', [$context->tenant]);
     return Resource::collection($this->action->handle($context))->toResponse(request());
 }
-
-// WRONG - Manual access
-public function index(Request $request): Response
-{
-    $user = $request->user();
-    $tenant = $request->attributes->get('tenant');
-}
 ```
 
 ## Middleware Order
@@ -289,80 +292,24 @@ The middleware order matters for ApiContext to work correctly:
 1. `resolve.tenant.optional` - Resolves tenant from header/host FIRST
 2. `api.context` - Injects ApiContext with resolved tenant and user
 
-```php
-// CORRECT order in routes
-Route::middleware(['resolve.tenant.optional', 'api.context'])
-
-// WRONG - api.context before tenant resolution
-Route::middleware(['api.context', 'resolve.tenant.optional'])
-```
-
 ## Response Pattern
 
-- Use `->toResponse(request())` for Resources, NOT `->response()->getData(true)` wrapped in `response()`.
-- Do NOT use `->resolve()` on Resources.
+- Use `->toResponse(request())` for Resources
 - For manual payloads (login, logout), use `new JsonResponse(['data' => ...])`.
-- Laravel includes `links` in paginated responses by default - this is expected behavior.
-
-```php
-// CORRECT - Collection
-return Resource::collection($paginator)->toResponse(request());
-
-// CORRECT - Single resource
-return Resource::make($model)->toResponse(request());
-
-// CORRECT - Single resource with 201
-return Resource::make($model)->toResponse(request())->setStatusCode(201);
-
-// CORRECT - Manual payload
-return new JsonResponse(['data' => ['token' => $token]]);
-
-// WRONG
-return response(Resource::collection($paginator)->response()->getData(true));
-return response(['data' => Resource::make($model)->resolve()]);
-```
+- Do NOT use `->resolve()` on Resources.
+- Do not return empty `meta` blocks (`'meta' => []`).
 
 ## Actions
 
 Actions receive `ApiContext` as parameter, not individual User/Tenant objects.
 
-```php
-// CORRECT
-public function handle(ApiContext $context): CursorPaginator
-{
-    if ($context->user->isDeveloper()) { ... }
-}
-
-// WRONG
-public function handle(User $user, ?Tenant $tenant): CursorPaginator
-```
-
 ## Exceptions
 
 Domain exceptions are rendered centrally in `bootstrap/app.php`. Throw exceptions, do NOT return error payloads inline.
 
-```php
-// CORRECT
-throw InvalidCredentialsException::make();
-throw ResourceNotFoundException::course($slug);
-throw TenantContextRequiredException::make();
-
-// WRONG
-return ['status' => 401, 'payload' => ['errors' => [...]]];
-```
-
 ## Artisan Commands
 
 This project uses Laravel Sail. Always use `sail artisan` instead of `php artisan`.
-
-```bash
-# CORRECT
-sail artisan test --compact
-sail artisan make:class ...
-
-# WRONG
-php artisan test --compact
-```
 
 ## Directory Structure
 
@@ -372,6 +319,7 @@ php artisan test --compact
 - Requests: `app/Http/Requests/<Domain>/...`
 - Policies: `app/Policies/...`
 - Exceptions: `app/Exceptions/...`
+- Events: `app/Events/...`
 - Context: `app/Http/Context/ApiContext.php`
 - Middleware: `app/Http/Middleware/...`
 - Specs: `docs/specs/*.md`
@@ -379,7 +327,7 @@ php artisan test --compact
 ## Authentication
 
 - Login uses rate limiting: `throttle:5,1` (5 attempts per minute)
-- Token names include device type: `auth-web-20260221` or `auth-mobile-20260221`
+- Token names include device type
 - Inactive tenants cannot authenticate
 
 </laravel-boost-guidelines>

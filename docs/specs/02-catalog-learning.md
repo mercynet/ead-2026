@@ -10,6 +10,7 @@
 - [x] Pivot `category_course` tenant-aware
 - [x] Policies: `CategoryPolicy`, `CoursePolicy`, `CourseModulePolicy`, `EnrollmentPolicy`, `LessonPolicy`
 - [x] Validação de categoria duplicada no `StoreCategoryAction`
+- [x] LessonCompletedEvent
 
 ### ✅ Endpoints Implementados
 - [x] `GET /api/v1/learning/catalog/courses` - Lista cursos publicados com filtros (category, is_free, is_featured)
@@ -23,8 +24,7 @@
 
 ### ⏳ Pendente
 - [ ] `CourseMaterial` model e download tracking
-- [ ] Eventos de domínio (`LessonCompletedEvent`)
-- [ ] Job de cálculo assíncrono de progresso
+- [ ] LessonViews (estatísticas de visualização/replay)
 - [ ] Ratings (1-5 estrelas, like/dislike)
 - [ ] Pre-signed URLs para mídias (AWS S3, Vimeo)
 - [ ] Preview de cursos draft para instrutores/admins
@@ -53,9 +53,15 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
 - Não retornar `meta` vazio (`'meta' => []`). `meta` só existe quando tiver dados reais de metadados.
 
 ## 2. Entidades Principais
+
 ### Catalog (`Course`, `Category`, `CourseModule`)
-- **Course:** Agrupador raiz. Status (`published`, `draft`, `archived`), `price`, `access_days`. Soft deletes globais. Atrelado a Categorias. Multiplos relacionamentos com Módulos.
-  - O `access_days` deve prover uma lista fechada de presets (30 dias, 90 dias, 180 dias, 365 dias, e 0 para Vitalício). 
+- **Course:** Agrupador raiz. Status (`published`, `draft`, `archived`), `price_cents`, `access_days`. Soft deletes globais. Atrelado a Categorias. Múltiplos relacionamentos com Módulos.
+  - O `access_days` deve prover uma lista fechada de presets (30 dias, 90 dias, 180 dias, 365 dias, e 0 para Vitalício).
+  - **Certificate Config** (campos adicionados):
+    - `certificate_enabled` (boolean)
+    - `certificate_min_progress` (integer %)
+    - `certificate_requires_quiz` (boolean)
+    - `certificate_min_score` (integer %)
 - **CourseModule:** Organiza a ordem das Aulas. Quando um Instrutor for criar um módulo, o filtro de Categorias exibirá apenas categorias onde o instrutor já possui cursos.
 - **Category:** Estrutura hierárquica (aninhamento infinito via `parent_id`), com dois tipos de ownership:
   - **Categoria Padrão do Sistema** (`tenant_id = null`, `is_system = true`): disponível para todos os tenants e **editável somente por `developer`**.
@@ -69,6 +75,7 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
   - Exemplo: `Desenvolvimento de Programas` pode ser criada por um tenant.
 - O isolamento entre tenants permanece: categorias próprias iguais entre tenants diferentes são permitidas, desde que não conflitem com categorias padrão globais.
 - A validação de duplicidade deve usar nome normalizado (case-insensitive, sem espaços excedentes e sem acentuação para comparação).
+- **Categorias custom podem ser duplicadas entre tenants diferentes**: dois tenants podem ter "Tipos de bolo" cada um.
 
 #### Relação Curso x Categoria
 - A relação entre cursos e categorias deve ser feita em tabela pivô tenant-aware contendo `tenant_id`, `course_id`, `category_id`.
@@ -79,20 +86,21 @@ Domínio responsável por organizar o vitrine de cursos (Catálogo), a montagem 
     - categoria do mesmo `tenant_id` do curso.
   - Nunca permitir vínculo com categoria de outro tenant.
 
-### Learning (`Lesson`, `LessonMedia`, `LessonProgress`, `CourseMaterial`)
+### Learning (`Lesson`, `LessonMedia`, `LessonProgress`, `LessonView`)
 - **Lesson:** Conteúdo da aula. Suporta múltiplos tipos de mídia.
 - **LessonMedia:** Mídias vinculadas à aula (vídeo, áudio, documento). Suporta múltiplos provedores via Enum `MediaType` (YouTube, Vimeo, AWS S3, Live Streaming).
 - **LessonMediaProgress:** Tracking granular de progresso por mídia (tempo assistido, completed).
 - **LessonProgress:** Tracking geral de progresso por aula.
-- **CourseMaterial:** Arquivos auxiliares (PDFs, PPTXs) vinculados a aulas ou cursos.
-- **MaterialDownload:** Registro de downloads com tracking de uso.
-- **MaterialStats:** Estatísticas agregadas de uso de materiais.
-- **InstructorAnnouncement:** Anúncios de instrutores para alunos matriculados.
+- **LessonView:** **ESTATÍSTICA** - registro de cada visualização da aula, mesmo após concluída (para analytics de replay).
 
-### Progresso e Matrícula (`Enrollment`, `LessonProgress`, `LessonMediaProgress`)
+#### Regra: Reassistir Aulas
+- Uma aula pode ser assistida múltiplas vezes
+- Quando `is_completed = true`, permanece true mesmo com novos acessos
+- Cada acesso gera registro em `lesson_views` para estatísticas
+
+### Progresso e Matrícula (`Enrollment`, `LessonProgress`)
 - **Enrollment:** Matrícula de um usuário (Student) a um curso. Registra expiração de acesso (`access_expires_at`), progresso total (0-100%), status (active, expired, completed). Funciona como Aggregate Root para cálculos de conclusão.
 - **LessonProgress:** Tracking granular por aula (started_at, completed_at, duration_watched).
-- **LessonMediaProgress:** Tracking ainda mais granular por mídia dentro da aula (para cursos com múltiplos vídeos/áudios).
 
 ### Engajamento (`Rating`, `RatingStats`)
 - **Rating:** Avaliações de cursos e aulas (1-5 estrelas). Suporta like/dislike adicional.
@@ -122,7 +130,7 @@ _Acessíveis de forma pública ou apenas usuários logados (depende da flag do t
   - O cálculo de tempo assistido obedece a uma `ProgressStrategy` configurável por aula (ex: `80_percent`, `full_duration`, `manual` ou `time_based`). O Back-end guarda sessões de visualização e emite Evento ao bater a meta.
 - **Engajamento e Materiais Extras:**
   - **Ratings:** Alunos podem dar estrelas (1-5) e like/dislikes para Cursos e Aulas. O sistema fará "rollup" das notas agregando num cache `RatingStats` global e também mapeando o top ranking por Tenant.
-  - **Materiais Opcionistas:** Cada `CourseMaterial` que o instrutor subir (limitado a 50MB, guardado nas pastas do tenant) terá rastreamento granular de downloads (`MaterialDownload`), alimentando a agregação de uso (`MaterialStats`).
+  - **Materiais Opcionais:** Cada `CourseMaterial` que o instrutor subir (limitado a 50MB, guardado nas pastas do tenant) terá rastreamento granular de downloads (`MaterialDownload`), alimentando a agregação de uso (`MaterialStats`).
 - **Matrículas Manuais por Instrutores:**
   - Uma flexibilidade concedida por um switch ativado pelo Tenant Admin. Instrutores podem pesquisar e matricular alunos em seus próprios cursos manualmente.
   - Se configurada a cobrança como `external` (Ex: aluno pagou PIX na conta física do instrutor), a matrícula pode cair como `pending` e notificar o Tenant Admin para aprovação, mantendo controle de evasão de receitas centralizadas.
@@ -130,3 +138,17 @@ _Acessíveis de forma pública ou apenas usuários logados (depende da flag do t
   - Ao atualizar `is_completed: true` de um `Lesson`, disparamos um evento de Domínio no Laravel (`LessonCompletedEvent`).
   - Um `Job` / *Listener* roda em background para recalcular em tempo real a grade baseada em count de Módulos (se o aluno fez 2 de 4 aulas, 50% `Enrollment`), ativando a Flag de Complete (via Eventos, engatilhando o módulo de Certificado posteriormente).
 - **Decoupled Media:** Integrações de VIMEO ou AWS devolvem IDs, e a camada do App Laravel irá envelopar transformando em um Player URL configurável de acordo com as chaves globais da plataforma ou chaves do Tenant caso este tenha pago o recurso Adicional "Private External Storage" nos Plugins.
+
+---
+
+## 5. Eventos para Estatísticas (MariaDB)
+
+### Eventos Disparados
+- `LessonCompletedEvent` ✅
+- `EnrollmentCreated` (pendente)
+- `LessonViewedEvent` (pendente) - cada acesso à aula
+
+### Processamento
+- Eventos são processados por Laravel Queue
+- Queue configurada para RabbitMQ
+- Dados vão para MariaDB de estatísticas

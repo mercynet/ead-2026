@@ -48,7 +48,7 @@ Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arqui
 | GET /lessons/{id} | ✅ | P0 |
 | POST /lessons/{id}/progress | ✅ | P0 |
 | GET /courses/{id}/modules | ✅ | P0 |
-| LessonCompletedEvent | ⏳ | P0 |
+| LessonCompletedEvent | ✅ | P0 |
 | Pre-signed URLs | ⏳ | P1 |
 | LessonMedia/MediaProgress | ⏳ | P1 |
 | CourseMaterials | ⏳ | P2 |

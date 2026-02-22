@@ -2,10 +2,12 @@
 
 namespace App\Actions\Learning\Lesson;
 
+use App\Events\Learning\LessonCompletedEvent;
 use App\Http\Context\ApiContext;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
+use Illuminate\Support\Facades\Event;
 
 class UpdateProgressAction
 {
@@ -18,6 +20,14 @@ class UpdateProgressAction
             ->where('user_id', $context->requiredUser()->id)
             ->where('course_id', $course->id)
             ->firstOrFail();
+
+        $wasCompleted = LessonProgress::query()
+            ->where('tenant_id', $context->requiredTenant()->id)
+            ->where('user_id', $context->requiredUser()->id)
+            ->where('course_id', $course->id)
+            ->where('enrollment_id', $enrollment->id)
+            ->where('lesson_id', $lesson->id)
+            ->value('is_completed') ?? false;
 
         $isCompleted = $data['is_completed'] ?? false;
 
@@ -43,6 +53,14 @@ class UpdateProgressAction
             );
 
         $this->updateEnrollmentProgress($enrollment);
+
+        if ($isCompleted && ! $wasCompleted) {
+            Event::dispatch(new LessonCompletedEvent(
+                $lesson,
+                $context->requiredUser(),
+                $course
+            ));
+        }
 
         return $progress;
     }

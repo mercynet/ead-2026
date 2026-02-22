@@ -35,18 +35,20 @@ Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arqui
 | GET /tenant/config | ⏳ | P1 |
 | Impersonação | ⏳ | P2 |
 
-### 2. Catalog & Learning (40% completo)
+### 2. Catalog & Learning (80% completo)
 | Feature | Status | Prioridade |
 |---------|--------|------------|
 | Categories CRUD | ✅ | P0 |
 | Courses CRUD | ✅ | P0 |
 | CourseModules CRUD | ✅ | P0 |
 | Lessons CRUD | ✅ | P0 |
-| Enrollments | ⏳ | P0 |
-| LessonProgress | ⏳ | P0 |
-| GET /courses/{id}/enrollment | ⏳ | P0 |
-| GET /lessons/{id} | ⏳ | P0 |
-| POST /lessons/{id}/progress | ⏳ | P0 |
+| Enrollments | ✅ | P0 |
+| LessonProgress | ✅ | P0 |
+| GET /courses/{id}/enrollment | ✅ | P0 |
+| GET /lessons/{id} | ✅ | P0 |
+| POST /lessons/{id}/progress | ✅ | P0 |
+| GET /courses/{id}/modules | ✅ | P0 |
+| LessonCompletedEvent | ⏳ | P0 |
 | Pre-signed URLs | ⏳ | P1 |
 | LessonMedia/MediaProgress | ⏳ | P1 |
 | CourseMaterials | ⏳ | P2 |
@@ -92,12 +94,14 @@ Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arqui
 ## Próximos Passos (Recomendado)
 
 ### Fase 1: Completar Learning (P0)
-1. Implementar `Enrollment` model e migrações
-2. Implementar `LessonProgress` model e migrações
-3. `GET /courses/{id}/enrollment` - Status da matrícula
-4. `GET /lessons/{id}` - Acesso à aula com pre-signed URL
-5. `POST /lessons/{id}/progress` - Heartbeat de progresso
-6. Evento `LessonCompletedEvent` + cálculo de progresso
+1. ~~Implementar `Enrollment` model e migrações~~ ✅
+2. ~~Implementar `LessonProgress` model e migrações~~ ✅
+3. ~~`GET /courses/{id}/enrollment` - Status da matrícula~~ ✅
+4. ~~`GET /lessons/{id}` - Acesso à aula~~ ✅
+5. ~~`POST /lessons/{id}/progress` - Heartbeat de progresso~~ ✅
+6. ~~`GET /courses/{id}/modules` - Árvore do curso com tracking~~ ✅
+7. Evento `LessonCompletedEvent` + cálculo de progresso assíncrono
+8. Pre-signed URLs para mídias (AWS S3, Vimeo)
 
 ### Fase 2: Assessment (P1)
 1. Models de Quiz e Questions

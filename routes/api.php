@@ -3,7 +3,8 @@
 use App\Http\Controllers\Api\V1\Core\AuthController;
 use App\Http\Controllers\Api\V1\Core\UserController;
 use App\Http\Controllers\Api\V1\Learning\Catalog\CategoryController;
-use App\Http\Controllers\Api\V1\Learning\Catalog\CourseController;
+use App\Http\Controllers\Api\V1\Learning\Catalog\CourseController as CatalogCourseController;
+use App\Http\Controllers\Api\V1\Learning\Course\CourseController;
 use App\Http\Controllers\Api\V1\Learning\Enrollment\EnrollmentController;
 use App\Http\Controllers\Api\V1\Learning\Lesson\LessonController;
 use Illuminate\Support\Facades\Route;
@@ -45,7 +46,7 @@ Route::prefix('v1/learning')
     ->middleware(['resolve.tenant.optional', 'api.context', 'tenant.required.unless.developer'])
     ->group(function (): void {
         Route::prefix('catalog')->group(function (): void {
-            Route::controller(CourseController::class)
+            Route::controller(CatalogCourseController::class)
                 ->middleware('tenant.access')
                 ->group(function (): void {
                     Route::get('/courses', 'index');
@@ -61,6 +62,11 @@ Route::prefix('v1/learning')
         });
 
         Route::middleware(['auth:sanctum', 'tenant.access'])->group(function (): void {
+            Route::controller(CourseController::class)
+                ->group(function (): void {
+                    Route::get('/courses/{courseId}/modules', 'modules');
+                });
+
             Route::controller(EnrollmentController::class)
                 ->group(function (): void {
                     Route::get('/courses/{courseId}/enrollment', 'show');

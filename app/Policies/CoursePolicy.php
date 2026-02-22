@@ -35,4 +35,18 @@ class CoursePolicy
         return $authenticatedUser->belongsToTenant($tenant)
             && $authenticatedUser->getAllPermissions()->contains('name', 'learning.catalog.courses.show');
     }
+
+    public function modules(User $authenticatedUser, ?Tenant $tenant): bool
+    {
+        if ($authenticatedUser->isDeveloper()) {
+            return true;
+        }
+
+        if ($tenant === null) {
+            return false;
+        }
+
+        return $authenticatedUser->belongsToTenant($tenant)
+            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.course.modules');
+    }
 }

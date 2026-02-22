@@ -16,14 +16,13 @@
 - [x] `GET /api/v1/learning/catalog/courses/{slug}` - Detalhe do curso com módulos e aulas
 - [x] `GET /api/v1/learning/catalog/categories` - Lista categorias (sistema + tenant)
 - [x] `POST /api/v1/learning/catalog/categories` - Cria categoria (tenant ou sistema se developer)
+- [x] `GET /api/v1/learning/courses/{id}/enrollment` - Situação da matrícula
+- [x] `GET /api/v1/learning/courses/{id}/modules` - Árvore do curso com tracking
+- [x] `GET /api/v1/learning/lessons/{id}` - Aula com pre-signed URL
+- [x] `POST /api/v1/learning/lessons/{id}/progress` - Heartbeat de progresso
 
 ### ⏳ Pendente
-- [ ] `GET /api/v1/learning/courses/{id}/enrollment` - Situação da matrícula
-- [ ] `GET /api/v1/learning/courses/{id}/modules` - Árvore do curso com tracking
-- [ ] `GET /api/v1/learning/lessons/{id}` - Aula com pre-signed URL
-- [ ] `POST /api/v1/learning/lessons/{id}/progress` - Heartbeat de progresso
 - [ ] `CourseMaterial` model e download tracking
-- [ ] `LessonProgress` model e cálculo de progresso
 - [ ] Eventos de domínio (`LessonCompletedEvent`)
 - [ ] Job de cálculo assíncrono de progresso
 - [ ] Ratings (1-5 estrelas, like/dislike)

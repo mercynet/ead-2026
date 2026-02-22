@@ -31,7 +31,7 @@ class CategoryController extends Controller
      */
     public function index(ApiContext $context): AnonymousResourceCollection
     {
-        Gate::forUser($context->user)->authorize('learning.categories.list', [$context->tenant]);
+        Gate::authorize('learning.categories.list', [$context->tenant]);
 
         $paginator = $this->listCategoriesAction->handle($context);
 
@@ -45,7 +45,9 @@ class CategoryController extends Controller
      */
     public function store(StoreCategoryRequest $request, ApiContext $context): CatalogCategoryResource
     {
-        Gate::forUser($context->user)->authorize('learning.categories.create', [$context->tenant, $request->boolean('is_system')]);
+        if (! Gate::check('learning.categories.create-category', [$context->tenant, $request->boolean('is_system')], $context->user)) {
+            abort(403);
+        }
 
         try {
             $category = $this->storeCategoryAction->handle($context->requiredTenant(), $request->validated());

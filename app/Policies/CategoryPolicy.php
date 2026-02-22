@@ -25,7 +25,7 @@ class CategoryPolicy
     public function create(User $user, ?Tenant $tenant = null, bool $isSystem = false): bool
     {
         if ($isSystem) {
-            return $this->manageSystem($user);
+            return $user->isDeveloper();
         }
 
         return $this->createTenant($user, $tenant);

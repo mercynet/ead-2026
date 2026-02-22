@@ -13,7 +13,7 @@ it('seeds one user for each base role and assigns role correctly', function (): 
 
     $expectedUsersByRole = [
         'developer' => 'developer@example.com',
-        'tenant_admin' => 'tenant_admin@example.com',
+        'admin' => 'tenant_admin@example.com',
         'instructor' => 'instructor@example.com',
         'student' => 'student@example.com',
     ];
@@ -29,25 +29,23 @@ it('seeds one user for each base role and assigns role correctly', function (): 
 it('seeds catalog permissions and links them to the expected roles', function (): void {
     $this->seed(DatabaseSeeder::class);
 
-    expect(Permission::query()->where('name', 'learning.catalog.courses.list')->exists())->toBeTrue();
-    expect(Permission::query()->where('name', 'learning.catalog.courses.show')->exists())->toBeTrue();
+    expect(Permission::query()->where('name', 'learning.courses.list')->exists())->toBeTrue();
+    expect(Permission::query()->where('name', 'learning.courses.show')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.categories.list')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.categories.system.manage')->exists())->toBeTrue();
-    expect(Permission::query()->where('name', 'learning.categories.tenant.create')->exists())->toBeTrue();
-    expect(Permission::query()->where('name', 'learning.catalog.courses.attach-categories')->exists())->toBeTrue();
+    expect(Permission::query()->where('name', 'learning.categories.create')->exists())->toBeTrue();
 
     $studentRole = Role::query()->where('name', 'student')->first();
     $instructorRole = Role::query()->where('name', 'instructor')->first();
-    $tenantAdminRole = Role::query()->where('name', 'tenant_admin')->first();
+    $adminRole = Role::query()->where('name', 'admin')->first();
     $developerRole = Role::query()->where('name', 'developer')->first();
 
-    expect($studentRole?->hasPermissionTo('learning.catalog.courses.list'))->toBeTrue();
-    expect($studentRole?->hasPermissionTo('learning.catalog.courses.show'))->toBeTrue();
+    expect($studentRole?->hasPermissionTo('learning.courses.list'))->toBeTrue();
+    expect($studentRole?->hasPermissionTo('learning.courses.show'))->toBeTrue();
     expect($studentRole?->hasPermissionTo('learning.categories.list'))->toBeTrue();
-    expect($instructorRole?->hasPermissionTo('learning.catalog.courses.list'))->toBeTrue();
-    expect($instructorRole?->hasPermissionTo('learning.catalog.courses.show'))->toBeTrue();
-    expect($instructorRole?->hasPermissionTo('learning.catalog.courses.attach-categories'))->toBeTrue();
-    expect($tenantAdminRole?->hasPermissionTo('learning.categories.tenant.create'))->toBeTrue();
+    expect($instructorRole?->hasPermissionTo('learning.courses.list'))->toBeTrue();
+    expect($instructorRole?->hasPermissionTo('learning.courses.view'))->toBeTrue();
+    expect($adminRole?->hasPermissionTo('learning.categories.create'))->toBeTrue();
     expect($developerRole?->hasPermissionTo('learning.categories.system.manage'))->toBeTrue();
-    expect($tenantAdminRole?->hasPermissionTo('learning.categories.system.manage'))->toBeFalse();
+    expect($adminRole?->hasPermissionTo('learning.categories.system.manage'))->toBeFalse();
 });

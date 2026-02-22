@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\AccessDeniedException;
 use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Exceptions\TenantContextRequiredException;
@@ -59,5 +60,17 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ],
             ], 404);
+        });
+
+        $exceptions->render(function (AccessDeniedException $exception, Request $request) {
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'access_denied',
+                        'message' => $exception->getMessage(),
+                    ],
+                ],
+            ], 403);
         });
     })->create();

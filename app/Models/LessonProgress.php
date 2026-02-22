@@ -5,9 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Enrollment extends Model
+class LessonProgress extends Model
 {
     use HasFactory;
 
@@ -15,11 +14,16 @@ class Enrollment extends Model
         'tenant_id',
         'user_id',
         'course_id',
-        'status',
-        'access_expires_at',
-        'enrolled_at',
+        'enrollment_id',
+        'lesson_id',
+        'started_at',
         'completed_at',
+        'time_spent_seconds',
         'progress_percentage',
+        'is_completed',
+        'current_time_seconds',
+        'total_time_seconds',
+        'last_watched_at',
     ];
 
     public function tenant(): BelongsTo
@@ -37,32 +41,19 @@ class Enrollment extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function lessonProgress(): HasMany
+    public function enrollment(): BelongsTo
     {
-        return $this->hasMany(LessonProgress::class);
+        return $this->belongsTo(Enrollment::class);
     }
 
-    public function isActive(): bool
+    public function lesson(): BelongsTo
     {
-        if ($this->status !== 'active') {
-            return false;
-        }
-
-        if ($this->access_expires_at === null) {
-            return true;
-        }
-
-        return $this->access_expires_at->isFuture();
-    }
-
-    public function isExpired(): bool
-    {
-        return ! $this->isActive();
+        return $this->belongsTo(Lesson::class);
     }
 
     public function isCompleted(): bool
     {
-        return $this->status === 'completed' || $this->completed_at !== null;
+        return $this->is_completed || $this->completed_at !== null;
     }
 
     protected function casts(): array
@@ -71,10 +62,16 @@ class Enrollment extends Model
             'tenant_id' => 'integer',
             'user_id' => 'integer',
             'course_id' => 'integer',
-            'progress_percentage' => 'integer',
-            'enrolled_at' => 'datetime',
+            'enrollment_id' => 'integer',
+            'lesson_id' => 'integer',
+            'started_at' => 'datetime',
             'completed_at' => 'datetime',
-            'access_expires_at' => 'datetime',
+            'time_spent_seconds' => 'integer',
+            'progress_percentage' => 'integer',
+            'is_completed' => 'boolean',
+            'current_time_seconds' => 'integer',
+            'total_time_seconds' => 'integer',
+            'last_watched_at' => 'datetime',
         ];
     }
 }

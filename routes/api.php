@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\Core\AuthController;
 use App\Http\Controllers\Api\V1\Core\UserController;
 use App\Http\Controllers\Api\V1\Learning\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Learning\Catalog\CourseController;
+use App\Http\Controllers\Api\V1\Learning\Enrollment\EnrollmentController;
+use App\Http\Controllers\Api\V1\Learning\Lesson\LessonController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/core')
@@ -55,6 +57,19 @@ Route::prefix('v1/learning')
                 ->group(function (): void {
                     Route::get('/categories', 'index');
                     Route::post('/categories', 'store');
+                });
+        });
+
+        Route::middleware(['auth:sanctum', 'tenant.access'])->group(function (): void {
+            Route::controller(EnrollmentController::class)
+                ->group(function (): void {
+                    Route::get('/courses/{courseId}/enrollment', 'show');
+                });
+
+            Route::controller(LessonController::class)
+                ->group(function (): void {
+                    Route::get('/lessons/{id}', 'show');
+                    Route::post('/lessons/{id}/progress', 'progress');
                 });
         });
     });

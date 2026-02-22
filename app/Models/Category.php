@@ -20,6 +20,11 @@ class Category extends Model
         'slug',
         'normalized_name',
         'is_system',
+        'color',
+        'description',
+        'icon',
+        'status',
+        'is_featured',
     ];
 
     public function tenant(): BelongsTo
@@ -44,12 +49,18 @@ class Category extends Model
             ->withTimestamps();
     }
 
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
     protected function casts(): array
     {
         return [
             'tenant_id' => 'integer',
             'parent_id' => 'integer',
             'is_system' => 'boolean',
+            'is_featured' => 'boolean',
         ];
     }
 }

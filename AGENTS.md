@@ -4,6 +4,14 @@ Fonte única de verdade para **qualquer agente** (Claude Code, OpenCode, etc.) t
 repositório. Tool-agnóstico de propósito: outros agentes validam o trabalho lendo este contrato e
 rodando os invariantes. Prefira config executável a prosa quando houver conflito.
 
+## Princípio central: 100% API-first
+
+> Este repositório é **somente backend** — uma API REST JSON. **Não existe frontend de produto
+> aqui** (nada de Blade/SPA do produto). Qualquer consumidor — SPA, app mobile, integração de
+> terceiro — constrói o próprio frontend como quiser. **A superfície do produto é a API e o seu
+> contrato**: versionado em `/api/v1`, documentado via Scribe. Toda decisão favorece o consumidor de
+> API — respostas consistentes (envelope/Resource), versionamento estável, contrato sempre documentado.
+
 ## Fontes de verdade (nesta ordem)
 
 1. Este arquivo — contrato do projeto.
@@ -70,6 +78,8 @@ o código é realinhado por slice e a dívida fica rastreada nos invariantes (co
 9. **PII/LGPD**: campos sensíveis (`cpf`, `email`, …) auditados via activitylog; registrar novo PII (`config/lgpd.php`). Ver `00-architecture/security-privacy-lgpd.md`.
 10. **Scribe `@unauthenticated`** bate com o middleware real da rota.
 11. **Cross-module só via Domain Events ou Contracts** — um módulo não importa interno de outro.
+12. **API-first**: nenhuma rota de produto renderiza view/HTML; toda saída é JSON (Resource/envelope).
+    O contrato `/api/v1` é versionado e documentado (Scribe) — frontend é externo, não vive neste repo.
 
 Cada invariante tem (ou terá) um teste em `tests/Architecture` como árbitro executável.
 
@@ -101,7 +111,9 @@ O git é o árbitro. Ao reportar progresso:
 - Em checkpoints (antes de commit/PR ou fim de stage), vale uma tabela selada
   (confirmado / parcial / não confirmado / enganoso) com `arquivo:linha` — não a cada mensagem.
 
-## Frontend
+## Frontend / clientes
 
-Vite compila `resources/css/app.css` + `resources/js/app.js`; Tailwind v4 via `@tailwindcss/vite`.
-`composer dev` = server + queue + pail + vite. Mudança não refletida → `npm run build`.
+**Não há frontend de produto neste repo** (ver *Princípio central*). Consumidores são externos e
+independentes (SPA, mobile, terceiros). Vite + Tailwind são scaffolding vestigial do Laravel —
+**não são superfície de produto; não invista neles**. O "frontend" que importa é o **contrato da
+API**: mantenha Scribe atualizado (`composer docs`) e o versionamento `/api/v1` estável e consistente.

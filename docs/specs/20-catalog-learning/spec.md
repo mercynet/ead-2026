@@ -1,0 +1,118 @@
+---
+domain: catalog-learning
+maturity: implemented
+last-reviewed: 2026-06-10
+owners: [paulo]
+related:
+  - ../00-architecture/api-conventions.md
+  - ../00-architecture/rbac.md
+  - ../00-architecture/performance-scalability.md
+  - subspecs/catalog.md
+  - subspecs/courses-modules-lessons.md
+  - subspecs/enrollment-progress.md
+  - subspecs/media-ratings.md
+---
+
+# Catalog & Learning
+
+## Intent / Why
+
+É o coração do produto: organiza a vitrine de cursos (catálogo), a montagem estrutural do
+conteúdo (cursos → módulos → aulas → materiais) e a jornada do aluno (matrícula, consumo,
+progresso). O objetivo é entregar uma experiência de aprendizado fluida, com catálogo rico para
+landing pages e tracking confiável de progresso que alimenta certificação e estatísticas.
+
+## Overview
+
+Padrões transversais (Command/Query Actions, cursorPaginate, controller lean, error envelope,
+guardrails de payload) estão em
+[`../00-architecture/api-conventions.md`](../00-architecture/api-conventions.md). A mecânica
+assíncrona de eventos/estatísticas e a estratégia de cache (frio vs. quente) e mídia (pre-signed
+URLs) estão em [`../00-architecture/performance-scalability.md`](../00-architecture/performance-scalability.md).
+
+Recursos detalhados nas subspecs:
+
+- [`subspecs/catalog.md`](subspecs/catalog.md) — categorias, vitrine de cursos.
+- [`subspecs/courses-modules-lessons.md`](subspecs/courses-modules-lessons.md) — estrutura e CRUD admin.
+- [`subspecs/enrollment-progress.md`](subspecs/enrollment-progress.md) — matrícula e progresso.
+- [`subspecs/media-ratings.md`](subspecs/media-ratings.md) — mídia, materiais, avaliações.
+
+## Entities
+
+| Model | Tabela | Invariantes |
+|-------|--------|-------------|
+| `Category` | `categories` | Hierárquica (`parent_id`); system (`tenant_id=null,is_system=true`, só developer edita) vs. tenant; nome não pode colidir (normalizado) com categoria padrão global. |
+| `Course` | `courses` | Agrupador raiz; soft deletes; status publicação; preço em centavos; config de certificado. |
+| `CourseModule` | `course_modules` | Pertence a um único curso; reordenável (`sort_order`). |
+| `Lesson` | `lessons` | Conteúdo da aula; pode ser gratuita (`is_free`); reordenável. |
+| `Enrollment` | `enrollments` | Aggregate root de conclusão; uma matrícula ativa por aluno/curso. |
+| `LessonProgress` | `lesson_progress` | Tracking granular por aula. |
+| `LessonView` | `lesson_views` | Estatística: 1 registro por acesso (replay). |
+| `Rating` / `RatingStats` | `ratings` / `rating_stats` | Avaliação 1-5 + like/dislike; rollup agregado em cache. |
+| `CourseMaterial` / `MaterialDownload` | — | Materiais extras (≤50MB) com tracking de download. |
+| `category_course` (pivot) | `category_course` | Tenant-aware: `tenant_id, course_id, category_id`; nunca cruza tenants. |
+
+## Business Rules
+
+- **Catálogo vs. progresso (dados frios vs. quentes):** payloads de leitura separam catálogo
+  (cacheável) do progresso pessoal (banco). Ver
+  [`../00-architecture/performance-scalability.md`](../00-architecture/performance-scalability.md).
+- **Categorias padrão globais + antiduplicação:** tenant usa, mas não cria/edita categorias
+  padrão; não pode criar categoria com mesmo nome normalizado de uma padrão global. Detalhe em
+  [`subspecs/catalog.md`](subspecs/catalog.md).
+- **Catálogo esconde cursos já comprados** pelo aluno logado.
+- **Access control na lição:** acesso à mídia se o curso for gratuito, ou a aula for degustação
+  (`is_free`), ou houver `Enrollment` ativo não expirado. Matrícula expirada ainda vê a vitrine
+  (`canViewCourse`), mas não consome conteúdo pago (`canAccessPaidContent`).
+- **Drafts:** cursos `draft` só acessíveis em rota de preview por instrutor dono, tenant_admin ou developer.
+- **Reassistir:** aula concluída permanece `is_completed=true`; cada acesso gera `LessonView`.
+- **Progresso assíncrono:** `LessonCompletedEvent` recalcula a grade em background e pode
+  engatilhar certificado.
+- **Matrículas manuais por instrutor** (switch do tenant_admin); cobrança `external` pode cair
+  como `pending` para aprovação.
+- **Auditoria financeira:** toda matrícula (mesmo gratuita) origina registro espelho no Financial.
+
+## Domain Boundaries
+
+- **Consome:** `OrderPaidEvent` (Financial) → matrícula automática via `EnrollService`.
+- **Emite:** `LessonCompletedEvent` (recalcula progresso; pode engatilhar Assessment/Certificate),
+  `EnrollmentCreated`, `LessonViewedEvent`.
+- Mecânica de transporte (RabbitMQ → MariaDB stats) em
+  [`../00-architecture/performance-scalability.md`](../00-architecture/performance-scalability.md).
+
+## Authorization
+
+Matriz completa em [`../00-architecture/rbac.md`](../00-architecture/rbac.md) §4 (Learning).
+Permissions do domínio:
+
+```
+learning.categories.{list,create,view,update,delete} · learning.categories.system.manage
+learning.courses.{list,create,view,update,delete,publish}
+learning.modules.{list,create,view,update,delete,reorder}
+learning.lessons.{list,create,view,update,delete}
+learning.enrollments.{list,create,view,update,delete}
+learning.progress.view
+```
+
+## Events
+
+- `LessonCompletedEvent` — aula concluída (recalcula progresso, engatilha certificado).
+- `EnrollmentCreated` — matrícula criada.
+- `LessonViewedEvent` — cada acesso à aula (estatística de replay).
+
+## Quick Reference
+
+| Recurso | Endpoint | Permission |
+|---------|----------|------------|
+| Listar catálogo | `GET /api/v1/learning/catalog/courses` | público/auth (flag do tenant) |
+| Ver curso (landing) | `GET /api/v1/learning/catalog/courses/{slug}` | público/auth |
+| Listar categorias | `GET /api/v1/learning/catalog/categories` | `learning.categories.list` |
+| Criar categoria | `POST /api/v1/learning/catalog/categories` | `learning.categories.create` |
+| Atualizar categoria | `PUT /api/v1/learning/catalog/categories/{id}` | `learning.categories.update` |
+| Deletar categoria | `DELETE /api/v1/learning/catalog/categories/{id}` | `learning.categories.delete` |
+| Atualizar curso | `PATCH /api/v1/learning/courses/{id}` | `learning.courses.update` |
+| Deletar curso | `DELETE /api/v1/learning/courses/{id}` | `learning.courses.delete` |
+| Módulos do curso | `GET /api/v1/learning/courses/{id}/modules` | `learning.courses.view` |
+| Minha matrícula | `GET /api/v1/learning/courses/{id}/enrollment` | auth (own) |
+| Ver aula | `GET /api/v1/learning/lessons/{id}` | `learning.lessons.view` / acesso |
+| Progresso (heartbeat) | `POST /api/v1/learning/lessons/{id}/progress` | auth (own) |

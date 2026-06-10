@@ -1,37 +1,17 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
 use App\Models\Lesson;
-use App\Models\Tenant;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 it('shows lesson with can_access true for free lesson', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.view', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.lesson.view');
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -61,12 +41,7 @@ it('shows lesson with can_access true for free lesson', function (): void {
         'is_free' => true,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
-    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.id', $lesson->id)
         ->assertJsonPath('data.title', 'Free Lesson')
@@ -75,24 +50,8 @@ it('shows lesson with can_access true for free lesson', function (): void {
 });
 
 it('denies access to paid lesson without enrollment', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student-paid@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.view', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.lesson.view');
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -122,36 +81,14 @@ it('denies access to paid lesson without enrollment', function (): void {
         'is_free' => false,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
-    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.can_access', false);
 });
 
 it('allows access to paid lesson with active enrollment', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student-enrolled@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.view', 'guard_name' => 'web']);
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.progress', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo(['learning.lesson.view', 'learning.lesson.progress']);
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -191,36 +128,14 @@ it('allows access to paid lesson with active enrollment', function (): void {
         'progress_percentage' => 0,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
-    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.can_access', true);
 });
 
 it('updates lesson progress', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student-progress@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.view', 'guard_name' => 'web']);
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.progress', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo(['learning.lesson.view', 'learning.lesson.progress']);
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -260,18 +175,13 @@ it('updates lesson progress', function (): void {
         'progress_percentage' => 0,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
     $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
         'time_spent_seconds' => 120,
         'current_time_seconds' => 60,
         'total_time_seconds' => 300,
         'progress_percentage' => 20,
         'is_completed' => false,
-    ], [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    ], $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.time_spent_seconds', 120)
         ->assertJsonPath('data.is_completed', false);
@@ -288,25 +198,8 @@ it('updates lesson progress', function (): void {
 });
 
 it('marks lesson as completed and updates enrollment progress', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student-complete@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.view', 'guard_name' => 'web']);
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.progress', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo(['learning.lesson.view', 'learning.lesson.progress']);
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -346,18 +239,13 @@ it('marks lesson as completed and updates enrollment progress', function (): voi
         'progress_percentage' => 0,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
     $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
         'time_spent_seconds' => 300,
         'current_time_seconds' => 300,
         'total_time_seconds' => 300,
         'progress_percentage' => 100,
         'is_completed' => true,
-    ], [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    ], $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.is_completed', true);
 

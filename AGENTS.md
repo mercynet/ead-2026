@@ -59,10 +59,11 @@ docker exec ead2026-laravel.test-1 php artisan scribe:generate
 - Ports/adapters **só** em 3 costuras: `PaymentGateway`, `MediaProvider`, `Plugin`. Resto: Eloquent direto.
 
 **Estado atual vs alvo (honesto):** o código hoje é flat (`app/Models/*`, `app/Actions/<Domain>`,
-`app/Http/Controllers/Api/V1/<Domain>`) e **ainda não cumpre todas as invariantes**. São **alvo a
-construir** (não existem ainda): a estrutura `app/Modules/*`, `config/permissions.php`,
-`config/lgpd.php` e a suite `tests/Architecture`. As invariantes abaixo são o **contrato vinculante**;
-o código é realinhado por slice e a dívida fica rastreada nos invariantes (como `todo`/`skip`).
+`app/Http/Controllers/Api/V1/<Domain>`) e **ainda não cumpre todas as invariantes**. Já existem:
+`config/permissions.php` e a suite `tests/Architecture` (invariantes executáveis; dívidas como
+`skip`). Ainda **alvo a construir**: a estrutura `app/Modules/*` e `config/lgpd.php`. As invariantes
+abaixo são o **contrato vinculante**; o código é realinhado por slice e a dívida fica rastreada nos
+invariantes (como `todo`/`skip`).
 
 ## Invariantes não-negociáveis
 

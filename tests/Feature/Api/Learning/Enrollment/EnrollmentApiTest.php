@@ -1,35 +1,15 @@
 <?php
 
+use App\Enums\UserType;
 use App\Models\Course;
 use App\Models\Enrollment;
-use App\Models\Tenant;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 it('returns null when user has no enrollment for course', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.enrollment.view', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.enrollment.view');
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -42,35 +22,14 @@ it('returns null when user has no enrollment for course', function (): void {
         'is_featured' => false,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
-    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", $headers)
         ->assertSuccessful()
         ->assertJsonPath('data', null);
 });
 
 it('returns enrollment status for enrolled user', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.enrollment.view', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.enrollment.view');
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -93,12 +52,7 @@ it('returns enrollment status for enrolled user', function (): void {
         'progress_percentage' => 45,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
-    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.status', 'active')
         ->assertJsonPath('data.is_active', true)
@@ -107,24 +61,8 @@ it('returns enrollment status for enrolled user', function (): void {
 });
 
 it('returns expired status when enrollment is expired', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $student = User::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Student',
-        'email' => 'student-expired@tenant-a.test',
-        'password' => Hash::make('password123'),
-    ]);
-
-    Permission::query()->firstOrCreate(['name' => 'learning.enrollment.view', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.enrollment.view');
-    $student->assignRole('student');
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -147,24 +85,14 @@ it('returns expired status when enrollment is expired', function (): void {
         'progress_percentage' => 30,
     ]);
 
-    $token = $student->createToken('test-token')->plainTextToken;
-
-    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", [
-        'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])
+    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.status', 'active')
         ->assertJsonPath('data.is_active', false);
 });
 
 it('requires authentication to view enrollment', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -177,7 +105,6 @@ it('requires authentication to view enrollment', function (): void {
         'is_featured' => false,
     ]);
 
-    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", [
-        'X-Tenant-ID' => (string) $tenant->id,
-    ])->assertUnauthorized();
+    $this->getJson("/api/v1/learning/courses/{$course->id}/enrollment", tenantHeaders($tenant))
+        ->assertUnauthorized();
 });

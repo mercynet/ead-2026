@@ -169,7 +169,7 @@ return [
 
     'learning.lessons.view' => [
         'label' => 'Visualizar aula',
-        'user_types' => ['developer', 'admin', 'instructor'],
+        'user_types' => ['developer', 'admin', 'instructor', 'student'],
     ],
 
     'learning.lessons.update' => [
@@ -218,6 +218,11 @@ return [
     'learning.progress.view' => [
         'label' => 'Visualizar progresso',
         'user_types' => ['developer', 'admin', 'instructor'],
+    ],
+
+    'learning.progress.update' => [
+        'label' => 'Registrar progresso de aula',
+        'user_types' => ['developer', 'student'],
     ],
 
     // ─────────────────────────────────────────────

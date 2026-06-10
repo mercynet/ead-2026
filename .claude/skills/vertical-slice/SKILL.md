@@ -28,7 +28,10 @@ Adicione em `config/permissions.php` (formato `domain.resource.action`):
 'assessment.questionnaires.delete' => ['label' => 'Deletar questionário', 'user_types' => ['instructor']],
 ```
 
-`PermissionDriftTest` guarda que config + seeder + gates combinam.
+`RolesSeeder` **deriva** as roles de `user_types` no config (nada a editar no seeder).
+`PermissionDriftTest` guarda que toda string usada em `Gate::forUser()->authorize()`, `->can()`,
+`hasPermissionTo()` etc. em `app/` está declarada no config (ou registrada via `Gate::define`
+no `AppServiceProvider`, para abilities policy-backed).
 
 ### 2. Feature Tests ANTES (TDD)
 
@@ -115,7 +118,7 @@ public function __construct(
 ) {}
 
 public function store(StoreQuestionnaireRequest $request, ApiContext $context): QuestionnaireResource {
-    Gate::forUser($context->user)->authorize('assessment.questionnaires.create', [$context->tenant]);
+    Gate::forUser($context->requiredUser())->authorize('assessment.questionnaires.create', [$context->requiredTenant()]);
     
     $questionnaire = $this->storeAction->handle($request, $context);
     

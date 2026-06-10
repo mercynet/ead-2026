@@ -10,8 +10,6 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -21,10 +19,7 @@ function setupStudentWithCourse(): array
 
     $student = User::factory()->for($tenant)->create();
 
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.view', 'guard_name' => 'web']);
-    Permission::query()->firstOrCreate(['name' => 'learning.lesson.progress', 'guard_name' => 'web']);
-    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo(['learning.lesson.view', 'learning.lesson.progress']);
+    seedRbac();
     $student->assignRole('student');
 
     $course = Course::factory()->for($tenant)->create();

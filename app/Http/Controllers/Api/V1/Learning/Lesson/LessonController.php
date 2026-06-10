@@ -35,7 +35,7 @@ class LessonController extends Controller
      */
     public function show(int $id, ShowLessonRequest $request, ApiContext $context): LessonDetailResource
     {
-        Gate::forUser($context->requiredUser())->authorize('learning.lesson.view', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.view', [$context->requiredTenant()]);
 
         $lesson = $this->getLessonAction->handle($context, $id);
         $canAccess = $this->getLessonAction->canAccess($lesson, $context);
@@ -67,7 +67,7 @@ class LessonController extends Controller
      */
     public function progress(int $id, StoreProgressRequest $request, ApiContext $context): LessonProgressResource
     {
-        Gate::forUser($context->requiredUser())->authorize('learning.lesson.progress', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.progress.update', [$context->requiredTenant()]);
 
         $lesson = $this->getLessonAction->handle($context, $id);
 

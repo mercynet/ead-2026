@@ -30,7 +30,7 @@ class EnrollmentController extends Controller
      */
     public function show(int $courseId, ApiContext $context): JsonResource|JsonResponse
     {
-        Gate::forUser($context->requiredUser())->authorize('learning.enrollment.view', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.enrollments.view', [$context->requiredTenant()]);
 
         $enrollment = $this->getEnrollmentAction->handle($context, $courseId);
 

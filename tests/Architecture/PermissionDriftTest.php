@@ -10,6 +10,17 @@
 it('every permission string used in app/ is declared in config/permissions.php', function (): void {
     $canonicalPermissions = array_keys(config('permissions'));
 
+    /**
+     * Abilities policy-backed registradas via Gate::define também são strings de
+     * autorização legítimas (a policy decide, não a permission spatie) — extraídas
+     * do provider para o scan não exigir declaração duplicada no config.
+     */
+    $providerContents = (string) file_get_contents(app_path('Providers/AppServiceProvider.php'));
+
+    preg_match_all("/Gate::define\(\s*'([^']+)'/", $providerContents, $gateMatches);
+
+    $declaredAbilities = array_merge($canonicalPermissions, $gateMatches[1]);
+
     $patterns = [
         // getAllPermissions()->contains('name', '<X>')
         "/getAllPermissions\(\)\s*->\s*contains\(\s*'name'\s*,\s*'([^']+)'\s*\)/",
@@ -17,6 +28,8 @@ it('every permission string used in app/ is declared in config/permissions.php',
         "/hasPermissionTo\(\s*'([^']+)'\s*\)/",
         // ->can('<X>'  (permission-style strings only — domain.resource.action)
         "/->can\(\s*'([a-z]+\.[a-z_]+\.[a-z_\-]+)'\s*/",
+        // Gate::forUser(...)->authorize('<X>') — estilo canônico (AGENTS.md invariante 2)
+        "/->authorize\(\s*'([a-z]+(?:\.[a-z_\-]+){2,})'/",
         // hasAnyPermission('<X>', '<Y>', ...)
         "/hasAnyPermission\(([^)]+)\)/",
     ];
@@ -71,12 +84,12 @@ it('every permission string used in app/ is declared in config/permissions.php',
 
     $orphans = array_values(array_filter(
         $foundPermissions,
-        fn (string $perm): bool => ! in_array($perm, $canonicalPermissions, true),
+        fn (string $perm): bool => ! in_array($perm, $declaredAbilities, true),
     ));
 
     expect($orphans)
         ->toBeEmpty(
-            'The following permission strings are used in app/ but are NOT declared in config/permissions.php: '
+            'The following permission strings are used in app/ but are NOT declared in config/permissions.php nor defined via Gate::define: '
             .implode(', ', $orphans)
         );
 });

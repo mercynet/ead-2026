@@ -21,7 +21,7 @@ Skill específica do harness deste repo para testes de API em Pest 4.
 
 Cada endpoint Feature test cobre:
 1. **Happy path**: 200/201 + shape do Resource.
-2. **401**: não autenticado (via `actingAsUserType()`).
+2. **401**: não autenticado — request **sem** Bearer token (use só `tenantHeaders($tenant)`).
 3. **403**: autenticado sem permissão.
 4. **422**: validação (FormRequest).
 5. **Tenant isolation**: tenant B não alcança recurso de A.
@@ -91,8 +91,11 @@ it('lists questionnaires as admin', function (): void {
 it('denies student creating questionnaires', function (): void {
     [$student, $headers] = actingAsUserType(UserType::Student);
 
+    // Payload VÁLIDO: o FormRequest valida antes do Gate do controller —
+    // payload inválido devolveria 422, não 403.
     $response = $this->postJson('/api/v1/assessment/questionnaires', [
         'title' => 'x',
+        'type' => 'standalone',
     ], $headers);
 
     assertApiErrorEnvelope($response, 403, 'access_denied');

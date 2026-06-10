@@ -70,7 +70,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Open Questions
 
-- **Conciliar modelos de acesso/conteúdo divergentes:** `enrollment_type (open|invite_only|sales)`
-  + `content_type (video|text|quiz|assignment)` (spec legada) vs. `is_free` + `access_days` (spec
-  atual). Definir o modelo único antes do CRUD completo de courses/lessons. Ver
-  `subspecs/courses-modules-lessons.md`.
+- _(nenhuma)_ — modelo de acesso/conteúdo **resolvido** (2026-06-10): `price_cents`+`access_days`
+  canônicos, `content_type` ortogonal mantido, modos de matrícula só `open` no MVP. Decisão em
+  [`subspecs/courses-modules-lessons.md`](subspecs/courses-modules-lessons.md); CRUD de
+  courses/lessons **desbloqueado**.

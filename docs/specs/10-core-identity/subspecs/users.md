@@ -15,8 +15,8 @@ users
 - tenant_id          // FK, nullable (null para developer/landlord)
 - user_type          // ENUM: developer | admin | instructor | student
 - name
-- email              // login; pode repetir entre tenants
-- cpf                // identificador universal, ÚNICO cross-tenant
+- email              // login; único POR tenant — unique(tenant_id, email)
+- cpf                // identificador da pessoa no tenant; único POR tenant — unique(tenant_id, cpf)
 - password
 - is_active
 - email_verified_at
@@ -34,14 +34,23 @@ PII e tratamento de dados sensíveis em
 
 ## Rules
 
-### Regra de CPF (crítica)
+### Regra de CPF / identidade (resolvido 2026-06-10 — tenant-scoped)
 
-- **CPF é único entre todos os tenants** — é o identificador universal da pessoa.
-- **Login é via email** (email pode se repetir entre tenants distintos).
-- Ao matricular/registrar, **buscar por CPF primeiro**:
-  - CPF já existe em **outro** tenant → erro (CPF em uso) ou reaproveitamento conforme política de pool.
-  - CPF já existe no **mesmo** tenant → atualiza dados.
-  - CPF não existe → cria novo usuário.
+Modelo de identidade **tenant-scoped** (isolamento total; prioriza segurança/LGPD/escalabilidade).
+Cada usuário pertence a um tenant; a mesma pessoa em duas escolas = dois registros independentes
+(controladores de dados distintos).
+
+- **Unicidade por tenant:** `unique(tenant_id, cpf)` e `unique(tenant_id, email)`. CPF e email
+  **podem repetir** entre tenants distintos.
+- **Login via email**, dentro do contexto do tenant resolvido (`X-Tenant-ID`/host).
+- Ao registrar/matricular, buscar **dentro do tenant**:
+  - CPF já existe **no tenant** → atualiza dados.
+  - CPF não existe no tenant → cria novo usuário (ainda que o CPF exista em outro tenant).
+- **Sem identidade global compartilhada.** A visão "pessoa universal" (marketplace — tabela
+  `people` ligando por CPF) fica **diferida** em `docs/ROADMAP.md`, sem precludir.
+
+> **Dívida de schema (corrigir):** hoje as migrations aplicam `unique` **global** em `cpf` e `email`
+> — contradiz o modelo. Trocar por uniques compostos `(tenant_id, cpf)` e `(tenant_id, email)`.
 
 ### Quem pode criar/editar cada UserType
 

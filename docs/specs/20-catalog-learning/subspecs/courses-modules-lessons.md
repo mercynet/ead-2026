@@ -56,16 +56,20 @@ lessons
   → publica (`is_published=true`) → alunos veem e matriculam.
 - **Drafts** não acessíveis por alunos; rota de preview restrita a instrutor dono / tenant_admin / developer.
 
-### Open Question — conciliar modelos divergentes
+### Decisão — modelo de acesso/conteúdo (resolvido 2026-06-10)
 
-As duas fontes de spec divergiram sobre como modelar acesso e tipo de conteúdo. **Decisão
-pendente** (registrada em [`../tasks.md`](../tasks.md)):
+Verificado contra o schema atual **e** o legado `eadIA`: o "conflito" não existia no código.
 
-- Modelo A (catalog-learning, atual): `course.is_free` + `access_days` (presets de expiração).
-- Modelo B (learning legado): `enrollment_type: open | invite_only | sales` e
-  `content_type: video | text | quiz | assignment` na lição.
-
-Conciliar antes de implementar o CRUD completo de courses/lessons.
+- **Acesso/preço (canônico, já implementado):** `course.price_cents` (`0` = grátis) + `access_days`
+  (presets 30/90/180/365/`0`=vitalício). **Não há coluna `course.is_free`** — "grátis" é derivado de
+  `price_cents == 0` (inclusive no filtro do catálogo).
+- **`content_type` (lesson):** mantido — **ortogonal** ao preço (tipo de conteúdo: video/text/quiz).
+  Presente no schema atual e no legado; nunca conflitou com `is_free`/`access_days`.
+- **`lesson.is_free`:** degustação/preview da aula (mantido).
+- **Modos de matrícula:** apenas **`open`** no MVP (matrícula aberta; grátis se `price_cents == 0`,
+  paga via checkout). `enrollment_type: invite_only | sales` nunca existiu (nem código nem legado) →
+  **diferido** (YAGNI), registrado em [`../../../ROADMAP.md`](../../../ROADMAP.md). Vira coluna
+  `enrollment_type` só quando o produto exigir convite/funil de vendas.
 
 ## Endpoints
 

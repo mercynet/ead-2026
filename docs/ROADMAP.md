@@ -37,6 +37,15 @@ pre-signed URLs de mídia. Milestones em `20-catalog-learning/tasks.md` e `30-as
 - **Privacidade/LGPD de produção** — export, erasure, consent, audit trail
   (`00-architecture/security-privacy-lgpd.md`).
 
+## Diferidos (decisão tomada, fora do MVP)
+
+- **Modos de matrícula** `invite_only` / `sales` — MVP só `open`. Adicionar coluna `enrollment_type`
+  + fluxos quando o produto exigir convite/funil. Decisão em
+  `20-catalog-learning/subspecs/courses-modules-lessons.md`.
+- **Upgrade de stack** Laravel 13 + PHP 8.5 + pacotes — bloqueado: hoje todas as deps travam em
+  `^12` (verificado via `composer why-not`). Reavaliar quando spatie/scribe/larastan/sanctum
+  publicarem versões `^13`. Critério de prontidão: `composer why-not laravel/framework ^13` limpo.
+
 ## Estado atual (resumo)
 
 Fundação (Core/RBAC) e leitura de Learning/Assessment implementadas; CRUD administrativo

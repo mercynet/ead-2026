@@ -1,3 +1,28 @@
+# CLAUDE.md
+
+> **O contrato canônico deste repositório é o [`AGENTS.md`](AGENTS.md). Leia-o primeiro.**
+> Este arquivo é só um ponteiro fino — não duplique regras aqui.
+
+## Fontes de verdade (nesta ordem)
+
+1. **[`AGENTS.md`](AGENTS.md)** — contrato do projeto: stack, comandos, arquitetura, invariantes, padrões, testes.
+2. **`docs/specs/`** — regras de negócio por domínio. Comece em [`docs/specs/README.md`](docs/specs/README.md).
+   Cross-cutting em `00-architecture/`; cada domínio tem `spec.md` (contrato, sem status) + `tasks.md` (status) + `subspecs/`.
+3. **Código + `bootstrap/app.php` + `routes/api.php`** — quando a prosa conflitar com o código, o código vence (e a spec deve ser corrigida).
+
+`docs/ROADMAP.md` = fases cross-domain. `docs/STATE.md` = sessão atual / próximos passos.
+
+## Regras de operação
+
+- Use o **Laravel Boost MCP** (`search-docs`, `tinker`, `database-schema`, etc.) para docs e inspeção do app.
+- Carregue **skills sob demanda** — só quando a tarefa entrar no domínio da skill.
+- **Não** trate `CONTEXT.md` nem specs antigas como canônicos se conflitarem com `docs/specs/` + código.
+- Os guardrails do projeto são **executáveis** (suite de invariantes em testes): rode-os para validar, não confie só em prosa.
+
+> O bloco abaixo é gerido pelo Laravel Boost (`boost:update`) — não editar manualmente.
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

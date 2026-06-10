@@ -15,9 +15,22 @@
             "type": "local",
             "enabled": true,
             "command": [
+                "docker",
+                "exec",
+                "-i",
+                "ead2026-laravel.test-1",
                 "php",
-                "artisan",
+                "/var/www/html/artisan",
                 "boost:mcp"
+            ]
+        },
+        "github": {
+            "type": "local",
+            "enabled": true,
+            "command": [
+                "bash",
+                "-c",
+                "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) -e GITHUB_READ_ONLY=1 ghcr.io/github/github-mcp-server"
             ]
         }
     }

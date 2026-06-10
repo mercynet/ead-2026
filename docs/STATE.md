@@ -31,5 +31,4 @@
 ## Último commit
 
 - `59e4e7d` — `test(harness): add 5 architecture invariants` — branch `harness/specs-foundation`.
-  Architecture: 7 passed-equiv (5 pass + 2 todos), 2 skipped (debt). Demais suítes intactas.
-  `harness/specs-foundation` (pushed). Suíte: 97 passed; Architecture 1; E2E vazia.
+  Architecture: 5 pass + 2 todos + 2 skipped (debt). Demais suítes intactas (~97 Feature/Unit).

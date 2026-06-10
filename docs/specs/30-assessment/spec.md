@@ -1,6 +1,6 @@
 ---
 domain: assessment
-maturity: implemented
+maturity: stable
 last-reviewed: 2026-06-10
 owners: [paulo]
 related:

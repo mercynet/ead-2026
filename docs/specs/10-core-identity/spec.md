@@ -1,6 +1,6 @@
 ---
 domain: core-identity
-maturity: implemented
+maturity: stable
 last-reviewed: 2026-06-10
 owners: [paulo]
 related:

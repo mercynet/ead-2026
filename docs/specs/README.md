@@ -56,7 +56,9 @@ domínios entre os existentes (ex.: um futuro `25-` entre learning e assessment)
 
 ### Frontmatter
 
-- `spec.md`: `{domain, maturity: draft|stable|implemented, last-reviewed, owners, related}`
+- `spec.md`: `{domain, maturity: draft|stable|deprecated, last-reviewed, owners, related}`
+  — `maturity` = maturidade do **contrato** (quão estável é a spec em si), **não** status de
+  implementação (esse vive só no `tasks.md`).
 - `tasks.md`: `{domain, last-updated}`
 - `subspecs/*.md`: `{domain, parent, resource, last-reviewed}`
 - `00-architecture/*`: `{layer: architecture, applies-to: all-domains, last-reviewed}`

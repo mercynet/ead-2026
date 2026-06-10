@@ -24,6 +24,10 @@ pest()->extend(Tests\TestCase::class)
     ->in('Feature');
 
 pest()->extend(Tests\TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->in('E2E');
+
+pest()->extend(Tests\TestCase::class)
     ->in('Architecture');
 
 /*

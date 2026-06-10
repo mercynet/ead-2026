@@ -14,10 +14,10 @@
 
 ## Próximos passos (1-3)
 
-1. Skills `spec-task-planning` + `vertical-slice` + `pest-api-tests` (escrita via subagente barato).
-2. Invariantes pendentes do spec (`ModuleBoundaryTest`, `RouteSecuritySurfaceTest`, `PiiAuditTest`)
-   — `ModuleBoundary` depende da migração modular; demais escrevíveis já.
-3. Migração modular `app/` → `app/Modules/*` (item B) → slices TDD (C). RFCs por último.
+1. Invariantes pendentes do spec (`RouteSecuritySurfaceTest`, `PiiAuditTest` escrevíveis já;
+   `ModuleBoundaryTest` depende da migração modular).
+2. Migração modular `app/` → `app/Modules/*` (item B) → slices TDD (C). RFCs por último.
+3. Decidir/corrigir drift do error-envelope (ver Decisões abertas).
 
 ## Decisões abertas
 
@@ -30,5 +30,5 @@
 
 ## Último commit
 
-- `59e4e7d` — `test(harness): add 5 architecture invariants` — branch `harness/specs-foundation`.
-  Architecture: 5 pass + 2 todos + 2 skipped (debt). Demais suítes intactas (~97 Feature/Unit).
+- `70c9582` — `feat(harness): add spec-task-planning, vertical-slice and pest-api-tests skills` —
+  branch `harness/specs-foundation`. Architecture: 5 pass + 2 todos + 2 skipped (debt).

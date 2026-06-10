@@ -2,15 +2,17 @@
 
 namespace Database\Factories;
 
-use App\Models\Tenant;
+use App\Modules\Core\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Category>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Modules\Learning\Models\Category>
  */
 class CategoryFactory extends Factory
 {
+    protected $model = \App\Modules\Learning\Models\Category::class;
+
     /**
      * Define the model's default state.
      *

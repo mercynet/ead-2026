@@ -2,15 +2,17 @@
 
 namespace Database\Factories;
 
-use App\Models\QuizAttempt;
-use App\Models\Tenant;
+use App\Modules\Assessment\Models\QuizAttempt;
+use App\Modules\Core\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\QuizAttemptAnswer>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Modules\Assessment\Models\QuizAttemptAnswer>
  */
 class QuizAttemptAnswerFactory extends Factory
 {
+    protected $model = \App\Modules\Assessment\Models\QuizAttemptAnswer::class;
+
     public function definition(): array
     {
         return [

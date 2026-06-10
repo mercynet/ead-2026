@@ -58,12 +58,12 @@ docker exec ead2026-laravel.test-1 php artisan scribe:generate
 - Fluxo: `Route → Controller (fino) → Action → Model → Resource`.
 - Ports/adapters **só** em 3 costuras: `PaymentGateway`, `MediaProvider`, `Plugin`. Resto: Eloquent direto.
 
-**Estado atual vs alvo (honesto):** o código hoje é flat (`app/Models/*`, `app/Actions/<Domain>`,
-`app/Http/Controllers/Api/V1/<Domain>`) e **ainda não cumpre todas as invariantes**. Já existem:
-`config/permissions.php` e a suite `tests/Architecture` (invariantes executáveis; dívidas como
-`skip`). Ainda **alvo a construir**: a estrutura `app/Modules/*` e `config/lgpd.php`. As invariantes
-abaixo são o **contrato vinculante**; o código é realinhado por slice e a dívida fica rastreada nos
-invariantes (como `todo`/`skip`).
+**Estado atual:** o código vive em `app/Modules/{Core,Learning,Assessment}` + `app/Shared`;
+cada módulo registra gates e rotas no seu `Providers/<M>ServiceProvider` (não há `routes/api.php`
+global). `config/permissions.php`, `config/lgpd.php` e a suite `tests/Architecture` existem e
+rodam **sem skips** — incluindo `ModuleBoundaryTest` (fronteira + shared kernel `Core\Models|Enums`;
+dívida Eloquent cross-module congelada em allowlist) e `ControllerLeannessTest`. Ainda **alvo a
+construir**: `app/Plugins/`, `app/Support/Ports/` (+ adapters) e os módulos `Financial`/`Ecosystem`.
 
 ## Invariantes não-negociáveis
 

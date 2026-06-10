@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Modules\Core\Models\User;
 
 /**
  * Inventário canônico de PII (LGPD): model => campos pessoais auditados.

@@ -1,8 +1,8 @@
 <?php
 
-use App\Enums\UserType;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Core\Enums\UserType;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;

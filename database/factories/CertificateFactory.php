@@ -2,16 +2,18 @@
 
 namespace Database\Factories;
 
-use App\Models\Enrollment;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
+use App\Modules\Learning\Models\Enrollment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Certificate>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Modules\Assessment\Models\Certificate>
  */
 class CertificateFactory extends Factory
 {
+    protected $model = \App\Modules\Assessment\Models\Certificate::class;
+
     public function definition(): array
     {
         return [

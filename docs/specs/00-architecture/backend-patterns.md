@@ -37,8 +37,14 @@ Modules/<Module>/
   Models/         Actions/<Resource>/<Verb>Action.php
   Http/Controllers/  Http/Requests/  Http/Resources/
   Policies/       Routes/api.php     Events/  Listeners/
-  Providers/<Module>ServiceProvider.php   # registra rotas/policies/bindings do módulo
+  Database/Migrations/                    # migrations do domínio (loadMigrationsFrom no provider)
+  Providers/<Module>ServiceProvider.php   # registra rotas/gates/migrations do módulo
 ```
+
+Migrations **sem dono de domínio** (framework: cache/jobs; pacotes: sanctum, spatie permission /
+activitylog / medialibrary) ficam em `database/migrations/` — idem as tabelas de plugins até o
+módulo `Ecosystem` existir. `php artisan make:migration` para tabela de módulo exige
+`--path=app/Modules/<M>/Database/Migrations`.
 
 PSR-4 já cobre (`App\` → `app/`), então `App\Modules\Core\...` funciona sem mudança no composer.
 As rotas de cada módulo são carregadas por um service provider fino (do módulo ou um
@@ -49,13 +55,21 @@ As rotas de cada módulo são carregadas por um service provider fino (do módul
 > Um módulo **nunca** importa Model/Action/interno de outro módulo. Comunicação cross-module
 > só por **Domain Event** ou **Contract** (interface em `Shared/Contracts` ou exposta pelo módulo).
 
+**Exceção — shared kernel:** `Core\Models` e `Core\Enums` (identidade/tenancy: `User`, `Tenant`,
+`UserType`) podem ser importados por qualquer módulo — todo agregado é tenant-scoped e referencia
+usuário; abstrair isso atrás de contract seria cerimônia sem ganho. A contrapartida: **Core não
+importa nada de módulo nenhum** (é a base do grafo).
+
 Exemplo canônico (spec Financial × Learning):
 - `Financial` despacha `OrderPaidEvent`.
 - `Learning` escuta e matricula via seu próprio serviço.
 - `Financial` **não** conhece `Learning\Models\Enrollment`.
 
 Isso mantém os módulos desacoplados e o grafo de dependência acíclico. Enforçado por
-`ModuleBoundaryTest` (ver `testing-strategy.md`).
+`ModuleBoundaryTest` (ver `testing-strategy.md`), que também congela a **dívida herdada** do
+código flat (relações Eloquent cross-module, ex.: `Certificate → Course`,
+`User → QuizAttempt`) numa allowlist que não pode crescer — o alvo é convertê-la em
+Events/Contracts.
 
 ## Ports & Adapters — apenas onde paga (3 costuras)
 
@@ -108,7 +122,10 @@ cross-module (ver acima).
 
 ## Migração do código atual
 
-O código existente é flat (`app/Models/*`, `app/Actions/<Domain>/*`,
-`app/Http/Controllers/Api/V1/<Domain>/*`) e será movido para `app/Modules/*` **após o plano
-completo aprovado**. Como o volume é pequeno, a migração é barata; a partir dela os invariantes
-(fronteira de módulo, controller-lean) passam a valer para todo o código.
+**Concluída.** O código vive em `app/Modules/{Core,Learning,Assessment}` + `app/Shared`
+(`ApiContext`, base `Controller`, exceptions). Cada módulo registra gates e rotas no seu
+`Providers/<M>ServiceProvider` (ver `bootstrap/providers.php`); não existe mais `routes/api.php`
+global. Os invariantes de fronteira de módulo (`ModuleBoundaryTest`) e controller-lean
+(`ControllerLeannessTest`) estão ativos, sem skip. Factories resolvem via
+`protected static string $factory` no model + `protected $model` na factory (models fora de
+`App\Models` não têm descoberta por convenção).

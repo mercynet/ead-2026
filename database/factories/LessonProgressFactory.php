@@ -2,12 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\Course;
-use App\Models\Enrollment;
-use App\Models\Lesson;
-use App\Models\LessonProgress;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
+use App\Modules\Learning\Models\Course;
+use App\Modules\Learning\Models\Enrollment;
+use App\Modules\Learning\Models\Lesson;
+use App\Modules\Learning\Models\LessonProgress;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class LessonProgressFactory extends Factory

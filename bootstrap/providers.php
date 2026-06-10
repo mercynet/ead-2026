@@ -2,4 +2,7 @@
 
 return [
     App\Providers\AppServiceProvider::class,
+    App\Modules\Core\Providers\CoreServiceProvider::class,
+    App\Modules\Learning\Providers\LearningServiceProvider::class,
+    App\Modules\Assessment\Providers\AssessmentServiceProvider::class,
 ];

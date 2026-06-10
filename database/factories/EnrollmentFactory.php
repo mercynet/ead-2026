@@ -2,13 +2,15 @@
 
 namespace Database\Factories;
 
-use App\Models\Course;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
+use App\Modules\Learning\Models\Course;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class EnrollmentFactory extends Factory
 {
+    protected $model = \App\Modules\Learning\Models\Enrollment::class;
+
     public function definition(): array
     {
         return [

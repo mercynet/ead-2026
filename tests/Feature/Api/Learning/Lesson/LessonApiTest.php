@@ -1,10 +1,10 @@
 <?php
 
-use App\Enums\UserType;
-use App\Models\Course;
-use App\Models\CourseModule;
-use App\Models\Enrollment;
-use App\Models\Lesson;
+use App\Modules\Core\Enums\UserType;
+use App\Modules\Learning\Models\Course;
+use App\Modules\Learning\Models\CourseModule;
+use App\Modules\Learning\Models\Enrollment;
+use App\Modules\Learning\Models\Lesson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

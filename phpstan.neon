@@ -8,9 +8,9 @@ parameters:
 
     level: 5
     ignoreErrors:
-        - message: '#Access to an undefined property App\\Http\\Resources\\Learning\\Catalog\\.*#'
+        - message: '#Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Catalog\\.*#'
           paths:
-              - app/Http/Resources/Learning/Catalog/*
-        - message: '#Call to an undefined method App\\Http\\Resources\\Learning\\Catalog\\.*#'
+              - app/Modules/Learning/Http/Resources/Catalog/*
+        - message: '#Call to an undefined method App\\Modules\\Learning\\Http\\Resources\\Catalog\\.*#'
           paths:
-              - app/Http/Resources/Learning/Catalog/*
+              - app/Modules/Learning/Http/Resources/Catalog/*

@@ -1,9 +1,9 @@
 <?php
 
-use App\Exceptions\AccessDeniedException;
-use App\Exceptions\InvalidCredentialsException;
-use App\Exceptions\ResourceNotFoundException;
-use App\Exceptions\TenantContextRequiredException;
+use App\Shared\Exceptions\AccessDeniedException;
+use App\Shared\Exceptions\InvalidCredentialsException;
+use App\Shared\Exceptions\ResourceNotFoundException;
+use App\Shared\Exceptions\TenantContextRequiredException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,19 +13,22 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
+    /*
+     * Rotas da API vivem em app/Modules/<M>/Routes/api.php, carregadas pelo
+     * service provider de cada módulo (prefixo `api` + middleware group `api`).
+     */
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'api.context' => \App\Http\Middleware\InjectApiContext::class,
-            'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
-            'resolve.tenant.optional' => \App\Http\Middleware\ResolveTenantOptional::class,
-            'tenant.access' => \App\Http\Middleware\EnsureTenantAccess::class,
-            'tenant.required.unless.developer' => \App\Http\Middleware\EnsureTenantRequiredForNonDeveloper::class,
+            'api.context' => \App\Modules\Core\Http\Middleware\InjectApiContext::class,
+            'resolve.tenant' => \App\Modules\Core\Http\Middleware\ResolveTenant::class,
+            'resolve.tenant.optional' => \App\Modules\Core\Http\Middleware\ResolveTenantOptional::class,
+            'tenant.access' => \App\Modules\Core\Http\Middleware\EnsureTenantAccess::class,
+            'tenant.required.unless.developer' => \App\Modules\Core\Http\Middleware\EnsureTenantRequiredForNonDeveloper::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

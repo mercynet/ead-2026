@@ -1,7 +1,7 @@
 <?php
 
-use App\Actions\Core\Auth\RequestTenantFinder;
-use App\Models\Tenant;
+use App\Modules\Core\Actions\Auth\RequestTenantFinder;
+use App\Modules\Core\Models\Tenant;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Mail\SendQueuedMailable;

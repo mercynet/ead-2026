@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\UserType;
-use App\Models\Questionnaire;
+use App\Modules\Assessment\Models\Questionnaire;
+use App\Modules\Core\Enums\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**

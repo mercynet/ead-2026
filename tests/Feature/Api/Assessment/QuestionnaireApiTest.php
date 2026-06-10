@@ -1,9 +1,9 @@
 <?php
 
-use App\Enums\UserType;
-use App\Models\Questionnaire;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Assessment\Models\Questionnaire;
+use App\Modules\Core\Enums\UserType;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

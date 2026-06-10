@@ -6,13 +6,9 @@
  * Controllers must authorize + delegate to an Action and return a Resource.
  * They must NOT query models, scope by tenant_id, abort() inline, or wrap
  * logic in try/catch — that belongs in Actions and the exception handler.
- *
- * Current debt: the Learning controllers (Catalog/Course/Lesson) still query
- * inline and abort(403). The assertion is present and will hard-fail the day
- * `skip()` is removed — see docs/specs/00-architecture/backend-patterns.md.
  */
 it('keeps controllers lean — no inline queries, tenant scoping, abort() or try/catch', function (): void {
-    $controllersDirectory = base_path('app/Http/Controllers');
+    $controllersDirectory = base_path('app/Modules');
 
     /** @var array<string> $phpFiles */
     $phpFiles = [];
@@ -20,10 +16,14 @@ it('keeps controllers lean — no inline queries, tenant scoping, abort() or try
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($controllersDirectory));
 
     foreach ($iterator as $file) {
-        if ($file instanceof SplFileInfo && $file->getExtension() === 'php') {
+        if ($file instanceof SplFileInfo
+            && $file->getExtension() === 'php'
+            && str_contains($file->getRealPath(), '/Http/Controllers/')) {
             $phpFiles[] = $file->getRealPath();
         }
     }
+
+    expect($phpFiles)->not->toBeEmpty('Nenhum controller encontrado em app/Modules/*/Http/Controllers — scanner provavelmente quebrou.');
 
     $forbiddenPatterns = [
         'inline query' => '/::query\(\)/',
@@ -52,4 +52,4 @@ it('keeps controllers lean — no inline queries, tenant scoping, abort() or try
     expect($violations)->toBeEmpty(
         'These controllers carry logic that belongs in Actions: '.implode(', ', $violations)
     );
-})->skip('debt: Learning controllers (Catalog/Course/Lesson) still query inline and abort(403)');
+});

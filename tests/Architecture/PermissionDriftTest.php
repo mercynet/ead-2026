@@ -13,13 +13,22 @@ it('every permission string used in app/ is declared in config/permissions.php',
     /**
      * Abilities policy-backed registradas via Gate::define também são strings de
      * autorização legítimas (a policy decide, não a permission spatie) — extraídas
-     * do provider para o scan não exigir declaração duplicada no config.
+     * dos providers (app + módulos) para o scan não exigir declaração duplicada no config.
      */
-    $providerContents = (string) file_get_contents(app_path('Providers/AppServiceProvider.php'));
+    $providerFiles = array_merge(
+        glob(app_path('Providers/*.php')) ?: [],
+        glob(app_path('Modules/*/Providers/*.php')) ?: [],
+    );
 
-    preg_match_all("/Gate::define\(\s*'([^']+)'/", $providerContents, $gateMatches);
+    $declaredAbilities = $canonicalPermissions;
 
-    $declaredAbilities = array_merge($canonicalPermissions, $gateMatches[1]);
+    foreach ($providerFiles as $providerFile) {
+        $providerContents = (string) file_get_contents($providerFile);
+
+        preg_match_all("/Gate::define\(\s*'([^']+)'/", $providerContents, $gateMatches);
+
+        $declaredAbilities = array_merge($declaredAbilities, $gateMatches[1]);
+    }
 
     $patterns = [
         // getAllPermissions()->contains('name', '<X>')

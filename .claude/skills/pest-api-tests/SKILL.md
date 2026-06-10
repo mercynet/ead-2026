@@ -126,6 +126,12 @@ Vide `App\Enums\UserType`:
 
 Até o drift ser corrigido, assertar só o `->assertStatus(401)` ou `->assertStatus(403)` nesses casos. Vide `ErrorEnvelopeShapeTest.php`.
 
+## Economia de modelo
+
+Variantes repetitivas de teste CRUD (mesmo padrão, outro recurso) podem ser rascunhadas por
+subagente de modelo barato (ex.: Haiku) apontando um teste-exemplo real. Revisar contra o repo
+antes de commitar — ver regra em `AGENTS.md`.
+
 ## Execução
 
 ```bash

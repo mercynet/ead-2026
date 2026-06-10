@@ -44,6 +44,10 @@ Disciplina de leitura, planejamento e rastreamento de tarefas alinhadas às espe
 
 ## Regras
 
+- **Economia de modelo** (ver `AGENTS.md`): ao planejar, classifique cada task — mecânica e bem
+  especificada (boilerplate, varredura, rascunho de doc) → delegue a subagente de modelo barato
+  (ex.: Haiku); julgamento (arquitetura, decisão de domínio, debugging) → modelo principal.
+  Barato rascunha, caro revisa — nunca commitar saída de subagente sem revisão.
 - **Spec.md é contrato**: nunca coloque checkbox ou status nela. Status vive só em `tasks.md`.
 - **Código vence prosa**: se a implementação conflitar com spec, corrija a spec (e a task que a testava).
 - **Invariantes como árbitro**: antes de marcar concluída, valide com `tests/Architecture`.

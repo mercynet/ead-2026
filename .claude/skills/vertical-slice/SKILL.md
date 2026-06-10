@@ -180,6 +180,10 @@ tests/Feature/Api/Assessment/QuestionnaireApiTest.php               # Feature te
 
 ## Regras
 
+- **Economia de modelo** (ver `AGENTS.md`): os passos mecânicos da fatia (FormRequest, Resource,
+  factory, seeder, casos repetitivos de teste) podem ser rascunhados por subagente de modelo
+  barato (ex.: Haiku) com prompt apontando os arquivos-exemplo desta skill. Action, controller,
+  rota/middleware e a revisão final ficam no modelo principal. Revisar sempre antes de commitar.
 - **Código vence prosa**: se conflitar com spec, corrija a spec e cite no commit.
 - **Sem repositório sobre Eloquent** — Eloquent já é a camada.
 - **Sem interface de implementação única** — abstração só nas 3 costuras (PaymentGateway, MediaProvider, Plugin).

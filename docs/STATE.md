@@ -24,4 +24,5 @@
 
 ## Último commit
 
-- `3fe7ea0` — `chore(harness): hooks` — branch `harness/specs-foundation` (pushed).
+- `72c7cca` — `fix(harness): scaffold E2E suite + clarify spec maturity` — branch
+  `harness/specs-foundation` (pushed). Suíte: 97 passed; Architecture 1; E2E vazia.

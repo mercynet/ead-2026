@@ -6,23 +6,30 @@
 
 ## Sessão
 
-- 2026-06-10 — Construção do harness. Planejamento (specs/contrato/arquitetura/decisões) travado e
-  pushado. Fundação executável em andamento: `config/permissions.php` canônico + `PermissionDriftTest`,
-  hooks (pint/footguns), skill `context-checkpoint`, GitHub MCP read-only nos 3 agents.
+- 2026-06-10 — Construção do harness. Planejamento travado e pushado. Fundação executável:
+  `config/permissions.php` + `PermissionDriftTest`, hooks (pint/footguns), skill `context-checkpoint`,
+  GitHub MCP read-only. **Invariantes `tests/Architecture` adicionados** (commit `59e4e7d`):
+  MoneyNeverFloat/TenantIsolation/ErrorEnvelope(422,404) verdes; ControllerLeanness + ScribeAuth
+  como `skip('debt')` com asserção presente.
 
 ## Próximos passos (1-3)
 
-1. Invariantes restantes em `tests/Architecture` (TenantIsolation/ErrorEnvelope/MoneyNeverFloat
-   verdes; ControllerLeanness/ScribeAuth como `todo` expondo dívida).
-2. Skills `spec-task-planning` + `vertical-slice` + `pest-api-tests` (escrita via subagente barato).
+1. Skills `spec-task-planning` + `vertical-slice` + `pest-api-tests` (escrita via subagente barato).
+2. Invariantes pendentes do spec (`ModuleBoundaryTest`, `RouteSecuritySurfaceTest`, `PiiAuditTest`)
+   — `ModuleBoundary` depende da migração modular; demais escrevíveis já.
 3. Migração modular `app/` → `app/Modules/*` (item B) → slices TDD (C). RFCs por último.
 
 ## Decisões abertas
 
-- Nenhuma bloqueante. (Identidade tenant-scoped, modelo de acesso Learning e matriz de permissions
-  já resolvidos — ver os `tasks.md` / subspecs.)
+- **Drift do error-envelope (descoberto ao escrever `ErrorEnvelopeShapeTest`):** só as 4 exceptions
+  custom (bootstrap/app.php) emitem `{data,errors}`. Sanctum 401, Gate `AuthorizationException` 403 e
+  `findOrFail` 404 ainda vazam JSON default do Laravel. Os 2 `->todo()` no teste marcam isso. Decidir:
+  registrar render handlers para `AuthenticationException`/`AuthorizationException`/`ModelNotFoundException`
+  e padronizar `findOrFail` → `ResourceNotFoundException`.
+- Sem outras bloqueantes. (Identidade tenant-scoped, acesso Learning e matriz de permissions resolvidos.)
 
 ## Último commit
 
-- `72c7cca` — `fix(harness): scaffold E2E suite + clarify spec maturity` — branch
+- `59e4e7d` — `test(harness): add 5 architecture invariants` — branch `harness/specs-foundation`.
+  Architecture: 7 passed-equiv (5 pass + 2 todos), 2 skipped (debt). Demais suítes intactas.
   `harness/specs-foundation` (pushed). Suíte: 97 passed; Architecture 1; E2E vazia.

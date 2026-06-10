@@ -24,6 +24,8 @@ docs/
     README.md                # este arquivo
     00-architecture/
       overview.md            # visão, stack, princípios, lifecycle, mapa de domínios
+      backend-patterns.md    # modular monolith, ports/adapters seletivo, YAGNI×SOLID, fronteira de módulo
+      testing-strategy.md    # pirâmide unit/feature/e2e/architecture, onde cada nível cabe
       api-conventions.md     # envelope de erro, cursorPaginate, ApiContext, Response, FormRequest, API-DX
       multi-tenancy.md       # resolução, isolamento, stack de middleware
       rbac.md                # UserTypes, roles, plugins, matriz de permissões, golden rules

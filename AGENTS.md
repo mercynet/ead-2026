@@ -1,42 +1,107 @@
-# AGENTS.md
+# AGENTS.md — Contrato Canônico
 
-Compact repo guidance for OpenCode agents. Prefer executable config over prose when anything conflicts.
+Fonte única de verdade para **qualquer agente** (Claude Code, OpenCode, etc.) trabalhando neste
+repositório. Tool-agnóstico de propósito: outros agentes validam o trabalho lendo este contrato e
+rodando os invariantes. Prefira config executável a prosa quando houver conflito.
 
-## Stack & docs
+## Fontes de verdade (nesta ordem)
 
-- Laravel 12 API app; local Boost reports PHP 8.4.1, Pest 4, PHPUnit 12, Pint 1, Sanctum 4, Tailwind CSS 4.
-- Use Laravel Boost MCP tools for Laravel/package docs and app inspection; `opencode.json` starts it with `php artisan boost:mcp`.
-- Domain specs live in `docs/specs/` and are the business source of truth. Start at `docs/specs/README.md` (canonical index). Cross-cutting rules in `00-architecture/`; each domain folder (`10-core-identity`, `20-catalog-learning`, `30-assessment`, `40-financial`, `50-ecosystem-plugins`) has `spec.md` (durable contract — no status) + `tasks.md` (mutable status) + `subspecs/`. Cross-domain roadmap in `docs/ROADMAP.md`; current session in `docs/STATE.md`.
-- `README.md` is mostly upstream Laravel boilerplate; only its QA gate note is project-specific.
+1. Este arquivo — contrato do projeto.
+2. `docs/specs/` — regras de negócio por domínio. Comece em `docs/specs/README.md`.
+   Cross-cutting em `docs/specs/00-architecture/`; cada domínio tem `spec.md` (contrato, sem
+   status) + `tasks.md` (status) + `subspecs/`.
+3. Código + `bootstrap/app.php` + `routes/api.php`. **Código vence prosa**; se conflitar, corrija a spec.
 
-## Commands
+`docs/ROADMAP.md` = fases cross-domain. `docs/STATE.md` = sessão atual / próximos passos.
+Idioma: specs/discussão em **PT-BR**; identificadores, permissions, código em **inglês**.
 
-- Full gate: `composer qa:gate` (or `./vendor/bin/sail composer qa:gate`). It runs strict composer validation, clears config, `migrate:fresh --env=testing`, Pint, `git diff --exit-code`, PHPStan, PHP Insights, then compact tests.
-- Because the QA gate runs Pint before `git diff --exit-code`, it fails if formatting changed files; inspect/keep those changes rather than rerunning blindly.
-- Focused tests: `php artisan test --compact tests/Feature/Path/Test.php` or `php artisan test --compact --filter=testName`.
-- Normal test script: `composer test` clears config then runs `php artisan test`.
-- Static/style shortcuts: `composer analyse`, `composer insights`, `vendor/bin/pint --dirty --format agent` for modified PHP files.
-- Frontend: `npm run dev`, `npm run build`; all-in-one dev loop is `composer dev` (server, queue listener, pail logs, Vite via concurrently).
-- API docs: `composer docs` / `php artisan scribe:generate`.
+## Stack
 
-## Test environment gotchas
+- PHP 8.4 + Laravel 12 (estrutura streamlined; middleware/exceptions/routing em `bootstrap/app.php`, sem `app/Http/Kernel.php`).
+- Sanctum 4 (token opaco), spatie: permission / multitenancy / medialibrary / activitylog / query-builder, staudenmeir/eloquent-has-many-deep.
+- Pest 4, Pint, Larastan, PHP Insights, Scribe.
+- MySQL 8 (+ MariaDB stats / Redis cache / RabbitMQ filas — planejados).
+- **Upgrade diferido**: Laravel 13 + PHP 8.5 + pacotes quando o ecossistema suportar `^13` (hoje todas as deps travam `^12`). Ver `docs/ROADMAP.md`.
 
-- `phpunit.xml` sets `DB_DATABASE=testing` but does not override `DB_CONNECTION`; `.env.example` uses `mariadb`, so local focused tests may require an existing `testing` database.
-- Testing uses array cache/session/mail, sync queue, and disables Pulse/Telescope/Nightwatch.
-- Tests are Pest feature-heavy under `tests/Feature/Api/...`; activate the `pest-testing` skill before writing or changing tests.
+## Execução (Docker)
 
-## Architecture patterns to preserve
+App roda no container `ead2026-laravel.test-1` (`/var/www/html`). Comandos via `docker exec`:
 
-- API routing is registered from `routes/api.php`; route prefixes there start with `v1/...`, which Laravel exposes as `/api/v1/...`.
-- Middleware aliases, exception rendering, and routing are configured in `bootstrap/app.php` (Laravel 12 structure; no `app/Http/Kernel.php`).
-- Tenant/request context is central: routes usually combine `resolve.tenant.optional`, `api.context`, `tenant.required.unless.developer`, `auth:sanctum`, and `tenant.access`.
-- Controllers under `app/Http/Controllers/Api/V1/...` should stay thin: authorize with Gates/Policies, accept FormRequests and `App\Http\Context\ApiContext`, call `app/Actions/...`, return API Resources or small JSON envelopes.
-- Business logic belongs in domain actions under `app/Actions/{Core,Learning,Assessment,...}`; follow sibling action names (`List*`, `Show*`, `Store*`, `Update*`, `Delete*`).
-- Models currently live flat in `app/Models/` (not domain subdirectories). Policies are in `app/Policies/`.
-- API success payloads generally use Laravel Resources (`app/Http/Resources/...`) and therefore wrap in `data`; small command responses may return `new JsonResponse(['data' => ...])`.
-- Custom exception responses from `bootstrap/app.php` use `{ "data": null, "errors": [{ "code": "...", "message": "..." }] }` for 401/403/404/422; do not use the older `{ error: ... }` shape.
+```bash
+docker exec ead2026-laravel.test-1 php artisan test --testsuite=Feature --compact --filter=<nome>
+docker exec ead2026-laravel.test-1 php artisan test --testsuite=Architecture --compact
+docker exec ead2026-laravel.test-1 vendor/bin/pint --dirty --format agent   # antes de finalizar PHP
+docker exec ead2026-laravel.test-1 composer analyse        # phpstan/larastan
+docker exec ead2026-laravel.test-1 composer insights       # thresholds mínimos
+docker exec ead2026-laravel.test-1 composer qa:gate        # gate completo
+docker exec ead2026-laravel.test-1 php artisan scribe:generate
+```
+
+`qa:gate` roda Pint **antes** de `git diff --exit-code` → código não-formatado falha o gate
+(formate antes; não re-rode às cegas). Banco de teste: `testing` / conexão `mysql` (fixado em `phpunit.xml`).
+
+## Arquitetura
+
+**Modular monolith por bounded context** + **ports/adapters seletivo**. Detalhe em
+`docs/specs/00-architecture/backend-patterns.md`. Resumo:
+
+- Código por módulo em `app/Modules/{Core,Learning,Assessment,Financial,Ecosystem}`; `app/Plugins/`
+  (first-party), `app/Shared/`, `app/Support/Ports/` (+ adapters).
+- Fluxo: `Route → Controller (fino) → Action → Model → Resource`.
+- Ports/adapters **só** em 3 costuras: `PaymentGateway`, `MediaProvider`, `Plugin`. Resto: Eloquent direto.
+
+**Estado atual vs alvo (honesto):** o código hoje é flat (`app/Models/*`, `app/Actions/<Domain>`,
+`app/Http/Controllers/Api/V1/<Domain>`) e **ainda não cumpre todas as invariantes**. São **alvo a
+construir** (não existem ainda): a estrutura `app/Modules/*`, `config/permissions.php`,
+`config/lgpd.php` e a suite `tests/Architecture`. As invariantes abaixo são o **contrato vinculante**;
+o código é realinhado por slice e a dívida fica rastreada nos invariantes (como `todo`/`skip`).
+
+## Invariantes não-negociáveis
+
+1. **Controller fino**: injeta `App\...\ApiContext`, autoriza, chama Action, devolve Resource.
+   Sem query, sem `where('tenant_id')`, sem regra, sem `try/catch` morto, sem FQCN inline.
+2. **Um estilo de autz**: `Gate::forUser($ctx->requiredUser())->authorize($ability, ...)`. Nada de `Gate::check(){abort(403)}`.
+3. **Action layer**: um `handle()`; `fill()`+`$fillable`; dependências injetadas (testável); sem facade estática em regra.
+4. **API Resources sempre**; sucesso embrulha em `{data}`. Erro = `{"data":null,"errors":[{"code","message"}]}` (render central em `bootstrap/app.php`) para 401/403/404/422.
+5. **Tenant scope** via `spatie/laravel-multitenancy` — nunca `where('tenant_id')` na mão.
+6. **Permissions canônicas em `config/permissions.php`** (`permission => {label, user_types}`); seeder e Gates **derivam** dele. Nome: `domain.resource.action`.
+7. **Dinheiro em cents inteiro, nunca float.**
+8. **Listagens usam `cursorPaginate`**; eager-load contra N+1.
+9. **PII/LGPD**: campos sensíveis (`cpf`, `email`, …) auditados via activitylog; registrar novo PII (`config/lgpd.php`). Ver `00-architecture/security-privacy-lgpd.md`.
+10. **Scribe `@unauthenticated`** bate com o middleware real da rota.
+11. **Cross-module só via Domain Events ou Contracts** — um módulo não importa interno de outro.
+
+Cada invariante tem (ou terá) um teste em `tests/Architecture` como árbitro executável.
+
+## Testes (TDD)
+
+Pirâmide unit/feature/e2e + architecture — detalhe e "onde cada nível cabe" em
+`docs/specs/00-architecture/testing-strategy.md`. Teste antes da implementação; cada task ↔ ≥1 teste.
+Helpers em `tests/Pest.php` (`actingAsUserType`, `tenantHeaders`, `assertApiErrorEnvelope`,
+`assertTenantIsolation`) cortam o boilerplate. Suites: `Unit`, `Feature`, `E2E`, `Architecture`.
+
+## Convenções de trabalho
+
+- **Laravel Boost MCP** (`search-docs`, `tinker`, `database-schema`, …) para docs e inspeção; não chute API de pacote.
+- `php artisan make:` para gerar arquivos; `--no-interaction`.
+- FormRequest para validação **e** filtros de listagem (com `queryParameters()` p/ Scribe).
+- **Skills sob demanda** (planejar / construir / testar) — não sempre-ligadas.
+- `env()` só em arquivos de config; no código use `config(...)`.
+- Commits: Conventional Commits, atômicos; branch antes de mexer; commit/push só quando pedido.
+
+## Reporte de status (disciplina)
+
+O git é o árbitro. Ao reportar progresso:
+
+- Distinga sempre **committed** (no HEAD) / **staged** / **working tree** / **pushed**. Não descreva
+  trabalho local como se estivesse consolidado.
+- Não use "pronto / completo / done" sem evidência: existe no git **e** sem `TODO`/`Needs Review`
+  pendente. "Funciona" exige teste verde citado.
+- Diferencie **contrato-alvo** de **estado atual** quando o código ainda não cumpriu a regra.
+- Em checkpoints (antes de commit/PR ou fim de stage), vale uma tabela selada
+  (confirmado / parcial / não confirmado / enganoso) com `arquivo:linha` — não a cada mensagem.
 
 ## Frontend
 
-- Vite only builds `resources/css/app.css` and `resources/js/app.js`; Tailwind is wired through `@tailwindcss/vite`.
-- Activate `tailwindcss-development` before styling/Tailwind work.
+Vite compila `resources/css/app.css` + `resources/js/app.js`; Tailwind v4 via `@tailwindcss/vite`.
+`composer dev` = server + queue + pail + vite. Mudança não refletida → `npm run build`.

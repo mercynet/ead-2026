@@ -6,29 +6,29 @@
 
 ## Sessão
 
-- 2026-06-10 — Construção do harness. Planejamento travado e pushado. Fundação executável:
-  `config/permissions.php` + `PermissionDriftTest`, hooks (pint/footguns), skill `context-checkpoint`,
-  GitHub MCP read-only. **Invariantes `tests/Architecture` adicionados** (commit `59e4e7d`):
-  MoneyNeverFloat/TenantIsolation/ErrorEnvelope(422,404) verdes; ControllerLeanness + ScribeAuth
-  como `skip('debt')` com asserção presente.
+- 2026-06-10 — Harness fechado (exceto `ModuleBoundaryTest`): 8 invariantes em `tests/Architecture`
+  (7 pass + 2 todos + 3 skipped:debt), skills `spec-task-planning`/`vertical-slice`/`pest-api-tests`
+  (rascunho Haiku, revisadas), regra de **economia de modelo** no `AGENTS.md` (barato rascunha,
+  caro revisa). Avaliados repos ECC e graphify: ROI baixo, não adotar (já cobertos pelo harness).
 
 ## Próximos passos (1-3)
 
-1. Invariantes pendentes do spec (`RouteSecuritySurfaceTest`, `PiiAuditTest` escrevíveis já;
-   `ModuleBoundaryTest` depende da migração modular).
-2. Migração modular `app/` → `app/Modules/*` (item B) → slices TDD (C). RFCs por último.
-3. Decidir/corrigir drift do error-envelope (ver Decisões abertas).
+1. Corrigir drift do error-envelope (ver Decisões abertas) — destrava os 2 `->todo()` do
+   `ErrorEnvelopeShapeTest`.
+2. Migração modular `app/` → `app/Modules/*` (item B) — destrava `ModuleBoundaryTest` e a
+   extração das Actions dos Learning controllers (`ControllerLeannessTest`).
+3. Slices TDD (item C) via skills `vertical-slice` + `pest-api-tests`. RFCs por último.
 
 ## Decisões abertas
 
-- **Drift do error-envelope (descoberto ao escrever `ErrorEnvelopeShapeTest`):** só as 4 exceptions
-  custom (bootstrap/app.php) emitem `{data,errors}`. Sanctum 401, Gate `AuthorizationException` 403 e
-  `findOrFail` 404 ainda vazam JSON default do Laravel. Os 2 `->todo()` no teste marcam isso. Decidir:
-  registrar render handlers para `AuthenticationException`/`AuthorizationException`/`ModelNotFoundException`
-  e padronizar `findOrFail` → `ResourceNotFoundException`.
-- Sem outras bloqueantes. (Identidade tenant-scoped, acesso Learning e matriz de permissions resolvidos.)
+- **Drift do error-envelope:** só as 4 exceptions custom (bootstrap/app.php) emitem `{data,errors}`.
+  Sanctum 401, Gate `AuthorizationException` 403 e `findOrFail` 404 vazam JSON default do Laravel.
+  Decidir: registrar render handlers para `AuthenticationException`/`AuthorizationException`/
+  `ModelNotFoundException` e padronizar `findOrFail` → `ResourceNotFoundException`.
+- Sem outras bloqueantes.
 
 ## Último commit
 
-- `70c9582` — `feat(harness): add spec-task-planning, vertical-slice and pest-api-tests skills` —
-  branch `harness/specs-foundation`. Architecture: 5 pass + 2 todos + 2 skipped (debt).
+- `cc8bd5b` — `docs(harness): add model-economy rule (cheap drafts, expensive reviews)` — branch
+  `harness/specs-foundation` (local, não pushed; 6 commits à frente da última referência pushada).
+  Architecture: 7 pass + 2 todos + 3 skipped (24 asserts).

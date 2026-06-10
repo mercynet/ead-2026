@@ -96,6 +96,7 @@ Helpers em `tests/Pest.php` (`actingAsUserType`, `tenantHeaders`, `assertApiErro
 - `php artisan make:` para gerar arquivos; `--no-interaction`.
 - FormRequest para validação **e** filtros de listagem (com `queryParameters()` p/ Scribe).
 - **Skills sob demanda** (planejar / construir / testar) — não sempre-ligadas.
+- **Ao fim de cada task**: rode a skill `context-checkpoint` — atualiza `docs/STATE.md` (handoff de retomada) e recomenda `continue | clear | waiting_for_user`. Após um `clear`, reconstrua o contexto lendo `AGENTS.md` + `docs/STATE.md`.
 - `env()` só em arquivos de config; no código use `config(...)`.
 - Commits: Conventional Commits, atômicos; branch antes de mexer; commit/push só quando pedido.
 

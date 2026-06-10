@@ -42,7 +42,7 @@ class CategoryPolicy
         }
 
         return $user->belongsToTenant($tenant)
-            && $user->getAllPermissions()->contains('name', 'learning.categories.tenant.create');
+            && $user->getAllPermissions()->contains('name', 'learning.categories.create');
     }
 
     public function manageSystem(User $user): bool
@@ -58,7 +58,7 @@ class CategoryPolicy
                 return $user->getAllPermissions()->contains('name', 'learning.categories.system.manage');
             }
 
-            return $user->getAllPermissions()->contains('name', 'learning.categories.tenant.update');
+            return $user->getAllPermissions()->contains('name', 'learning.categories.update');
         }
 
         if (! $user->belongsToTenant($tenant)) {
@@ -69,7 +69,7 @@ class CategoryPolicy
             return false;
         }
 
-        return $user->getAllPermissions()->contains('name', 'learning.categories.tenant.update');
+        return $user->getAllPermissions()->contains('name', 'learning.categories.update');
     }
 
     public function delete(User $user, Tenant $tenant, Category $category): bool
@@ -79,7 +79,7 @@ class CategoryPolicy
                 return $user->getAllPermissions()->contains('name', 'learning.categories.system.manage');
             }
 
-            return $user->getAllPermissions()->contains('name', 'learning.categories.tenant.delete');
+            return $user->getAllPermissions()->contains('name', 'learning.categories.delete');
         }
 
         if (! $user->belongsToTenant($tenant)) {
@@ -90,6 +90,6 @@ class CategoryPolicy
             return false;
         }
 
-        return $user->getAllPermissions()->contains('name', 'learning.categories.tenant.delete');
+        return $user->getAllPermissions()->contains('name', 'learning.categories.delete');
     }
 }

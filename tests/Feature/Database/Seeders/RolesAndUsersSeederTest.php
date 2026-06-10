@@ -30,7 +30,7 @@ it('seeds catalog permissions and links them to the expected roles', function ()
     $this->seed(DatabaseSeeder::class);
 
     expect(Permission::query()->where('name', 'learning.courses.list')->exists())->toBeTrue();
-    expect(Permission::query()->where('name', 'learning.courses.show')->exists())->toBeTrue();
+    expect(Permission::query()->where('name', 'learning.courses.view')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.categories.list')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.categories.system.manage')->exists())->toBeTrue();
     expect(Permission::query()->where('name', 'learning.categories.create')->exists())->toBeTrue();
@@ -41,7 +41,7 @@ it('seeds catalog permissions and links them to the expected roles', function ()
     $developerRole = Role::query()->where('name', 'developer')->first();
 
     expect($studentRole?->hasPermissionTo('learning.courses.list'))->toBeTrue();
-    expect($studentRole?->hasPermissionTo('learning.courses.show'))->toBeTrue();
+    expect($studentRole?->hasPermissionTo('learning.courses.view'))->toBeTrue();
     expect($studentRole?->hasPermissionTo('learning.categories.list'))->toBeTrue();
     expect($instructorRole?->hasPermissionTo('learning.courses.list'))->toBeTrue();
     expect($instructorRole?->hasPermissionTo('learning.courses.view'))->toBeTrue();

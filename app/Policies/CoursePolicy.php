@@ -19,7 +19,7 @@ class CoursePolicy
         }
 
         return $authenticatedUser->belongsToTenant($tenant)
-            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.catalog.courses.list');
+            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.list');
     }
 
     public function show(User $authenticatedUser, ?Tenant $tenant, ?Course $course = null): bool
@@ -33,7 +33,7 @@ class CoursePolicy
         }
 
         return $authenticatedUser->belongsToTenant($tenant)
-            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.catalog.courses.show');
+            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.view');
     }
 
     public function modules(User $authenticatedUser, ?Tenant $tenant): bool
@@ -47,7 +47,7 @@ class CoursePolicy
         }
 
         return $authenticatedUser->belongsToTenant($tenant)
-            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.course.modules');
+            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.view');
     }
 
     public function update(User $authenticatedUser, Tenant $tenant, Course $course): bool

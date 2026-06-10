@@ -23,6 +23,9 @@ pest()->extend(Tests\TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+pest()->extend(Tests\TestCase::class)
+    ->in('Architecture');
+
 /*
 |--------------------------------------------------------------------------
 | Harness Helpers (ver skill pest-api-tests)

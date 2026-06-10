@@ -12,6 +12,8 @@ class RolesSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $canonicalPermissions = array_keys(config('permissions'));
+
         $roles = [
             [
                 'name' => 'developer',
@@ -90,9 +92,6 @@ class RolesSeeder extends Seeder
                     'learning.categories.view',
                     'learning.categories.update',
                     'learning.categories.delete',
-                    'learning.categories.tenant.create',
-                    'learning.categories.tenant.update',
-                    'learning.categories.tenant.delete',
                     'learning.courses.list',
                     'learning.courses.create',
                     'learning.courses.view',
@@ -138,7 +137,7 @@ class RolesSeeder extends Seeder
                 'scope' => 'global',
                 'tenant_id' => null,
                 'permissions' => [
-                    'core.users.show',
+                    'core.users.view',
                     'core.users.update-self',
                     'core.users.update-password',
                     'learning.categories.list',
@@ -183,17 +182,24 @@ class RolesSeeder extends Seeder
                 'scope' => 'global',
                 'tenant_id' => null,
                 'permissions' => [
-                    'core.users.show',
+                    'core.users.view',
                     'core.users.update-self',
                     'core.users.update-password',
                     'learning.categories.list',
                     'learning.courses.list',
-                    'learning.courses.show',
+                    'learning.courses.view',
                 ],
             ],
         ];
 
         foreach ($roles as $roleData) {
+            foreach ($roleData['permissions'] as $permissionName) {
+                assert(
+                    in_array($permissionName, $canonicalPermissions, true),
+                    "Permission '{$permissionName}' for role '{$roleData['name']}' is not in config('permissions')."
+                );
+            }
+
             $role = Role::query()->firstOrCreate([
                 'name' => $roleData['name'],
                 'guard_name' => 'web',

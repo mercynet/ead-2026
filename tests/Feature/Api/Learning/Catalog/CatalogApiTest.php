@@ -117,9 +117,9 @@ it('hides purchased courses for authenticated user', function (): void {
         'email' => 'student@tenant-a.test',
         'password' => Hash::make('password123'),
     ]);
-    Permission::query()->firstOrCreate(['name' => 'learning.catalog.courses.list', 'guard_name' => 'web']);
+    Permission::query()->firstOrCreate(['name' => 'learning.courses.list', 'guard_name' => 'web']);
     Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.catalog.courses.list');
+        ->givePermissionTo('learning.courses.list');
     $student->assignRole('student');
 
     $purchasedCourse = Course::query()->create([

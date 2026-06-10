@@ -29,9 +29,9 @@ it('returns course modules with lesson progress for enrolled user', function ():
         'password' => Hash::make('password123'),
     ]);
 
-    Permission::query()->firstOrCreate(['name' => 'learning.course.modules', 'guard_name' => 'web']);
+    Permission::query()->firstOrCreate(['name' => 'learning.courses.view', 'guard_name' => 'web']);
     Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.course.modules');
+        ->givePermissionTo('learning.courses.view');
     $student->assignRole('student');
 
     $course = Course::query()->create([
@@ -129,9 +129,9 @@ it('returns modules without progress for non-enrolled user', function (): void {
         'password' => Hash::make('password123'),
     ]);
 
-    Permission::query()->firstOrCreate(['name' => 'learning.course.modules', 'guard_name' => 'web']);
+    Permission::query()->firstOrCreate(['name' => 'learning.courses.view', 'guard_name' => 'web']);
     Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.course.modules');
+        ->givePermissionTo('learning.courses.view');
     $student->assignRole('student');
 
     $course = Course::query()->create([
@@ -189,9 +189,9 @@ it('returns 404 for non-existent course', function (): void {
         'password' => Hash::make('password123'),
     ]);
 
-    Permission::query()->firstOrCreate(['name' => 'learning.course.modules', 'guard_name' => 'web']);
+    Permission::query()->firstOrCreate(['name' => 'learning.courses.view', 'guard_name' => 'web']);
     Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
-        ->givePermissionTo('learning.course.modules');
+        ->givePermissionTo('learning.courses.view');
     $student->assignRole('student');
 
     $token = $student->createToken('test-token')->plainTextToken;

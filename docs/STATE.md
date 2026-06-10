@@ -16,17 +16,19 @@
   (scan do `AppServiceProvider`). Testes de Enrollment/Lesson migrados para helpers
   (`actingAsUserType`/`seedRbac`). `DbgTest` removido. `AGENTS.md` atualizado (permissions.php e
   `tests/Architecture` existem). Skills `pest-api-tests` (401/403 exemplos) e `vertical-slice`
-  (claim do drift test + `requiredUser()`) corrigidas. Suíte completa: 106 passed, 3 skipped
-  (364 asserts) — era 107/365 com o DbgTest.
+  (claim do drift test + `requiredUser()`) corrigidas. Commit `1ee716d` (pushed).
+- 2026-06-10 — **Dívida LGPD sanada**: `config/lgpd.php` criado (inventário PII canônico),
+  `User` usa `LogsActivity` (logOnly derivado do config, logOnlyDirty), `PiiAuditTest`
+  des-skipado e verde. Suíte completa: 107 passed, 2 skipped (367 asserts).
 
 ## Próximos passos (1-3)
 
-1. **Commitar** o pacote desta sessão (working tree sujo — ver lista abaixo); push só a pedido.
-2. **Migração modular** `app/` → `app/Modules/*` (item B; ver
+1. **Migração modular** `app/` → `app/Modules/*` (item B; ver
    `docs/specs/00-architecture/backend-patterns.md`) — destrava `ModuleBoundaryTest` e a extração
    das Actions dos Learning controllers (`ControllerLeannessTest`, hoje skip:debt).
-3. Sanar dívidas skip: `ControllerLeannessTest`, `ScribeAuthAnnotationMatchesMiddlewareTest`,
-   `PiiAuditTest` (`config/lgpd.php` + `LogsActivity`).
+2. Sanar dívidas skip restantes: `ControllerLeannessTest` (depende da migração modular),
+   `ScribeAuthAnnotationMatchesMiddlewareTest` (auditar `@unauthenticated`).
+3. Slices TDD (item C) via skills `vertical-slice` + `pest-api-tests`.
 
 ## Decisões abertas
 
@@ -45,8 +47,6 @@
 
 ## Último commit
 
-- `4160bce` (HEAD; refresh de STATE não conhece o próprio hash — âncora = commit anterior ao
-  refresh) — branch `harness/specs-foundation`, local, ahead do origin; push só quando o usuário
-  pedir. **Working tree NÃO commitada**: config/permissions.php, RolesSeeder, EnrollmentController,
-  LessonController, PermissionDriftTest, EnrollmentApiTest, LessonApiTest, LessonCompletedEventTest,
-  AGENTS.md, skills (pest-api-tests, vertical-slice), este STATE.
+- `1ee716d` (âncora = commit anterior a este refresh; o commit do pacote LGPD inclui este STATE) —
+  branch `harness/specs-foundation`, sincronizada com origin após push.
+  Architecture: 12 pass + 2 skipped. Suíte completa: 107 passed, 2 skipped (367 asserts).

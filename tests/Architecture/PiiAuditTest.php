@@ -8,9 +8,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * Models holding PII must use the LogsActivity trait, and every PII field
  * must be registered in config/lgpd.php — the canonical PII inventory
  * (see docs/specs/00-architecture/security-privacy-lgpd.md). No DB required.
- *
- * Current debt: config/lgpd.php does not exist yet and no model uses
- * LogsActivity. Assertion is present and hard-fails once `skip()` is removed.
  */
 it('audits every PII field declared in config/lgpd.php via LogsActivity', function (): void {
     $lgpdConfigPath = config_path('lgpd.php');
@@ -57,4 +54,4 @@ it('audits every PII field declared in config/lgpd.php via LogsActivity', functi
     expect($violations)->toBeEmpty(
         'PII audit trail is incomplete: '.implode('; ', $violations)
     );
-})->skip('debt: config/lgpd.php does not exist and no model uses LogsActivity yet');
+});

@@ -6,10 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 /**
  * Guard the canonical API error envelope: {data:null, errors:[{code,message}]}.
  *
- * The shape is enforced by the render() closures in bootstrap/app.php. These
- * tests exercise the real HTTP stack for the statuses that currently produce
- * the envelope, and flag (as debt) the statuses that still leak Laravel's
- * default JSON — see docs/specs/00-architecture/api-conventions.md.
+ * The shape is enforced by the render() closures in bootstrap/app.php for
+ * both the custom domain exceptions and the framework ones (Authentication,
+ * Authorization, ModelNotFound/NotFoundHttp) on api/* requests — see
+ * docs/specs/00-architecture/api-conventions.md.
  */
 uses(RefreshDatabase::class);
 
@@ -38,17 +38,28 @@ it('renders 401 unauthenticated in the canonical envelope', function (): void {
         'X-Tenant-ID' => $headers['X-Tenant-ID'] ?? '1',
     ]);
 
-    assertApiErrorEnvelope($response, 401);
-})->todo('debt: Sanctum 401 returns Laravel default {"message":...}, not the canonical envelope');
+    assertApiErrorEnvelope($response, 401, 'unauthenticated');
+});
 
 it('renders 403 access_denied in the canonical envelope', function (): void {
     [$student, $headers] = actingAsUserType(UserType::Student);
 
-    // Student lacks the create permission → Gate denies.
+    // Payload must pass validation so the Gate (which runs after the
+    // FormRequest) is what denies. Student lacks the create permission.
     $response = $this->postJson('/api/v1/assessment/questionnaires', [
-        'title' => 'x',
-        'type' => 'quiz',
+        'title' => 'Sem permissão',
+        'type' => 'standalone',
     ], $headers);
 
     assertApiErrorEnvelope($response, 403, 'access_denied');
-})->todo('debt: Gate AuthorizationException returns Laravel default 403, not the canonical envelope');
+});
+
+it('renders findOrFail 404 in the canonical envelope', function (): void {
+    [$developer, $headers] = actingAsUserType(UserType::Developer);
+
+    // ShowQuestionnaireAction uses findOrFail → ModelNotFoundException.
+    // Developer is global: no X-Tenant-ID needed.
+    $response = $this->getJson('/api/v1/assessment/questionnaires/999999', $headers);
+
+    assertApiErrorEnvelope($response, 404, 'not_found');
+});

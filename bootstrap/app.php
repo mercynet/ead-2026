@@ -4,10 +4,13 @@ use App\Exceptions\AccessDeniedException;
 use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Exceptions\TenantContextRequiredException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -72,5 +75,58 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ],
             ], 403);
+        });
+
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'unauthenticated',
+                        'message' => 'Não autenticado.',
+                    ],
+                ],
+            ], 401);
+        });
+
+        /*
+         * O Handler converte AuthorizationException → AccessDeniedHttpException e
+         * ModelNotFoundException → NotFoundHttpException ANTES dos render callbacks
+         * (prepareException) — por isso os handlers abaixo miram as classes Symfony.
+         */
+        $exceptions->render(function (AccessDeniedHttpException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'access_denied',
+                        'message' => 'Acesso negado.',
+                    ],
+                ],
+            ], 403);
+        });
+
+        $exceptions->render(function (NotFoundHttpException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'not_found',
+                        'message' => 'Recurso não encontrado.',
+                    ],
+                ],
+            ], 404);
         });
     })->create();

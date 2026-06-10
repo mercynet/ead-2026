@@ -96,7 +96,7 @@ it('denies student creating questionnaires', function (): void {
     ], $headers);
 
     assertApiErrorEnvelope($response, 403, 'access_denied');
-})->todo('debt: Gate 403 não retorna envelope canônico ainda');
+});
 
 it('denies admin B reaching questionnaire de admin A', function (): void {
     $tenantA = makeTenant();
@@ -119,12 +119,13 @@ Vide `App\Enums\UserType`:
 - `Instructor` — tenant-scoped, cria aulas.
 - `Student` — tenant-scoped, consome aulas.
 
-## Dívida conhecida
+## Envelope de erro — cobertura completa
 
-- **Sanctum 401**: ainda retorna `{"message":...}` de Laravel, não o envelope `{data:null,errors:[...]}`.
-- **Gate 403**: ainda retorna status 403 default, não o envelope.
-
-Até o drift ser corrigido, assertar só o `->assertStatus(401)` ou `->assertStatus(403)` nesses casos. Vide `ErrorEnvelopeShapeTest.php`.
+401 (Sanctum), 403 (Gate), 404 (`findOrFail`/rota) e 422 (exceptions custom) retornam o envelope
+canônico `{data:null,errors:[{code,message}]}` em rotas `api/*` — handlers em `bootstrap/app.php`
+(atenção: miram `AccessDeniedHttpException`/`NotFoundHttpException` porque o Handler converte as
+exceptions Illuminate antes dos render callbacks). Use `assertApiErrorEnvelope()` sempre.
+Códigos: `unauthenticated`, `access_denied`, `not_found`, `tenant_not_resolved`, `invalid_credentials`.
 
 ## Economia de modelo
 

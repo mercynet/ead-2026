@@ -53,6 +53,8 @@ class CertificateController extends Controller
      * Verificar Certificado
      *
      * Endpoint público para verificação de certificados.
+     *
+     * @unauthenticated
      */
     public function verify(string $certificateNumber): JsonResponse
     {

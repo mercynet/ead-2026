@@ -19,15 +19,20 @@
   (claim do drift test + `requiredUser()`) corrigidas. Commit `1ee716d` (pushed).
 - 2026-06-10 — **Dívida LGPD sanada**: `config/lgpd.php` criado (inventário PII canônico),
   `User` usa `LogsActivity` (logOnly derivado do config, logOnlyDirty), `PiiAuditTest`
-  des-skipado e verde. Suíte completa: 107 passed, 2 skipped (367 asserts).
+  des-skipado e verde. Commit `c885ee1` (pushed).
+- 2026-06-10 — **Dívida Scribe sanada**: `@unauthenticated` auditado contra o router —
+  removido de 4 métodos protegidos (Category/Course update+destroy), adicionado em 3 públicos
+  (catalog courses index+show, certificates verify). `ScribeAuthAnnotationMatchesMiddlewareTest`
+  des-skipado e verde. Suíte completa: 108 passed, 1 skipped (368 asserts) — único skip restante:
+  `ControllerLeannessTest` (depende da migração modular).
 
 ## Próximos passos (1-3)
 
 1. **Migração modular** `app/` → `app/Modules/*` (item B; ver
    `docs/specs/00-architecture/backend-patterns.md`) — destrava `ModuleBoundaryTest` e a extração
    das Actions dos Learning controllers (`ControllerLeannessTest`, hoje skip:debt).
-2. Sanar dívidas skip restantes: `ControllerLeannessTest` (depende da migração modular),
-   `ScribeAuthAnnotationMatchesMiddlewareTest` (auditar `@unauthenticated`).
+2. Na migração modular, criar `ModuleBoundaryTest` e destravar `ControllerLeannessTest`
+   (último skip).
 3. Slices TDD (item C) via skills `vertical-slice` + `pest-api-tests`.
 
 ## Decisões abertas
@@ -47,6 +52,6 @@
 
 ## Último commit
 
-- `1ee716d` (âncora = commit anterior a este refresh; o commit do pacote LGPD inclui este STATE) —
+- `c885ee1` (âncora = commit anterior a este refresh; o commit do pacote Scribe inclui este STATE) —
   branch `harness/specs-foundation`, sincronizada com origin após push.
-  Architecture: 12 pass + 2 skipped. Suíte completa: 107 passed, 2 skipped (367 asserts).
+  Architecture: 13 pass + 1 skipped. Suíte completa: 108 passed, 1 skipped (368 asserts).

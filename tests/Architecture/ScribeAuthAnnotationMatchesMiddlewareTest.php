@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Route;
  * A route without `auth:sanctum` is public and its controller method must
  * carry @unauthenticated; a protected route must not. Keeps the generated
  * API docs honest about which endpoints need a token. No DB required.
- *
- * Current debt: annotations have not been audited against the router yet.
- * Assertion is present and hard-fails once `skip()` is removed.
  */
 it('keeps @unauthenticated in sync with auth:sanctum on every api/v1 route', function (): void {
     /** @var array<string> $mismatches */
@@ -52,4 +49,4 @@ it('keeps @unauthenticated in sync with auth:sanctum on every api/v1 route', fun
     expect($mismatches)->toBeEmpty(
         'Scribe auth annotations drifted from middleware: '.implode('; ', $mismatches)
     );
-})->skip('debt: @unauthenticated annotations not yet audited against the router');
+});

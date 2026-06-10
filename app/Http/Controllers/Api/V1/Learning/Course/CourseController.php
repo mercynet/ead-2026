@@ -46,8 +46,6 @@ class CourseController extends Controller
      *
      * Atualiza um curso existente.
      *
-     * @unauthenticated
-     *
      * @response 200 scenario="Curso atualizado com sucesso"
      * {
      *   "data": {
@@ -99,8 +97,6 @@ class CourseController extends Controller
      * Deletar Curso
      *
      * Remove um curso existente.
-     *
-     * @unauthenticated
      *
      * @response 200 scenario="Curso deletado com sucesso"
      * {

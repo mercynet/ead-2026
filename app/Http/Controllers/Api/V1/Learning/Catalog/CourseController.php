@@ -28,6 +28,8 @@ class CourseController extends Controller
      * Listar Cursos
      *
      * Retorna uma lista de cursos disponíveis no catálogo.
+     *
+     * @unauthenticated
      */
     public function index(ListCatalogCoursesRequest $request, ApiContext $context): AnonymousResourceCollection
     {
@@ -46,6 +48,8 @@ class CourseController extends Controller
      * Retorna os detalhes de um curso específico.
      *
      * @urlParam slug string required O slug do curso
+     *
+     * @unauthenticated
      */
     public function show(string $slug, ListCatalogCoursesRequest $request, ApiContext $context): CourseDetailResource
     {

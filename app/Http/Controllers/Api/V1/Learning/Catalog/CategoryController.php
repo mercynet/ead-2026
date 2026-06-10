@@ -69,8 +69,6 @@ class CategoryController extends Controller
      *
      * Atualiza uma categoria existente (custom ou de sistema).
      *
-     * @unauthenticated
-     *
      * @response 200 scenario="Categoria atualizada com sucesso"
      * {
      *   "data": {
@@ -119,8 +117,6 @@ class CategoryController extends Controller
      * Deletar Categoria
      *
      * Remove uma categoria (apenas categorias do tenant, não de sistema).
-     *
-     * @unauthenticated
      *
      * @response 200 scenario="Categoria deletada com sucesso"
      * {

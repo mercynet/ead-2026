@@ -41,7 +41,7 @@ Recursos detalhados nas subspecs:
 
 | Model | Tabela | Invariantes |
 |-------|--------|-------------|
-| `User` | `users` | `tenant_id` nulo só para developer/landlord; `cpf` único cross-tenant; `user_type` (enum) define o teto de acesso. Roles/permissions via spatie/laravel-permission. |
+| `User` | `users` | `tenant_id` nulo só para developer/landlord; `cpf`/`email` únicos **por tenant** (`unique(tenant_id, …)`); `user_type` (enum) define o teto de acesso. Roles/permissions via spatie/laravel-permission. |
 | `Tenant` | `tenants` (landlord) | `slug`/`domain` resolvem o tenant; só resolve se `is_active`. |
 | `TenantCustomization` | `tenant_customizations` | Brand/white-label do tenant; lido por `GET /tenant/config` (público). |
 | `TenantIntegration` | `tenant_integrations` | `credentials` sempre `encrypted:json`. |
@@ -53,8 +53,9 @@ Detalhe colunar de cada entidade nas subspecs.
 
 - **Isolamento total por tenant.** `tenant_id` é a âncora. Ver
   [`../00-architecture/multi-tenancy.md`](../00-architecture/multi-tenancy.md).
-- **CPF é identificador universal único cross-tenant; login é por email.** Ao matricular, busca-se
-  por CPF primeiro. Detalhe em [`subspecs/users.md`](subspecs/users.md).
+- **Identidade tenant-scoped:** `cpf` e `email` únicos **por tenant**; login por email no contexto
+  do tenant. Mesma pessoa em tenants distintos = registros independentes (sem pool global). Ao
+  matricular, busca-se por CPF **dentro do tenant**. Detalhe em [`subspecs/users.md`](subspecs/users.md).
 - **UserType define o teto de acesso** e é imutável exceto por developer. Ver
   [`../00-architecture/rbac.md`](../00-architecture/rbac.md).
 - **White-label inicializável sem login**: a SPA chama `GET /tenant/config` via host header para

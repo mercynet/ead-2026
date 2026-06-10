@@ -50,6 +50,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ### Core
 - [ ] Migration: trocar `unique` global de `cpf`/`email` por compostos `(tenant_id, cpf)` e `(tenant_id, email)` — alinha ao modelo tenant-scoped (corrige dívida de schema).
+- [ ] Padronizar permission de `GET /users/{id}` para `core.users.view` (canônico); remover `core.users.show` das roles instructor/student no seeder/`config/permissions.php`.
 - [ ] `PATCH /api/v1/core/users/{id}` (update por admin).
 - [ ] `DELETE /api/v1/core/users/{id}`.
 - [ ] `GET /api/v1/core/tenant/config` (público, white-label).
@@ -60,7 +61,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Needs Review
 
-- [ ] Permission de `GET /users/{id}`: padronizar para `core.users.view` (legado usava `core.users.show`).
+- _(nenhuma)_ — padronização de `GET /users/{id}` para `core.users.view` virou task em *Pending*.
 
 ## Open Questions
 

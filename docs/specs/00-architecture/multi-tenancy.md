@@ -22,8 +22,9 @@ escopo, ou escopando no banco único via `tenant_id`.
 
 ## Isolamento
 
-`tenant_id` é a âncora de isolamento. Um `student` registrado no Tenant A não existe no Tenant B
-(a menos que as instâncias compartilhem o mesmo pool de usuários base).
+`tenant_id` é a âncora de isolamento. Identidade é **tenant-scoped**: um `student` registrado no
+Tenant A não existe no Tenant B — a mesma pessoa em dois tenants são registros independentes (sem
+pool global de usuários). Ver [`../10-core-identity/subspecs/users.md`](../10-core-identity/subspecs/users.md).
 
 | UserType | Vê outros tenants? |
 |----------|--------------------|

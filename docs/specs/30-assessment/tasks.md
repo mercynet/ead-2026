@@ -33,11 +33,12 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Geração de PDF do certificado.
 - [ ] Eventos: `QuizAttemptStarted`, `QuizAttemptFinished` (+ passed/failed), `CourseCompletedEvent`, `CertificateIssuedEvent`, `CertificateRevokedEvent`.
 - [ ] Revoke de certificado (`assessment.certificates.revoke`).
+- [ ] Alinhar permissions de Assessment às roles (admin/instructor/student) conforme a matriz em [`../00-architecture/rbac.md`](../00-architecture/rbac.md).
+- [ ] Teste E2E do fluxo do aluno (start → answer → finish → resultado).
 
 ## Needs Review
 
-- [ ] Permissions atreladas às roles corretas (tenant_admin, instructor) para todo o domínio.
-- [ ] Fluxo completo do aluno (start/submit/finish) validado fim-a-fim com testes.
+- _(nenhuma)_
 
 ## Open Questions
 

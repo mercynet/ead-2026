@@ -6,8 +6,8 @@
 
 ## Sessão
 
-- 2026-06-10 — **Migração modular concluída (item B), AINDA NÃO COMMITADA** (working tree sobre
-  `67626f8`): código movido para `app/Modules/{Core,Learning,Assessment}` + `app/Shared`
+- 2026-06-10 — **Migração modular concluída (item B)** — commit `ea9d83a` (pushed):
+  código movido para `app/Modules/{Core,Learning,Assessment}` + `app/Shared`
   (ApiContext, base Controller, exceptions); middleware de tenancy em `Core/Http/Middleware`.
   Gates e rotas por módulo em `Providers/<M>ServiceProvider` (registrados em
   `bootstrap/providers.php`); `routes/api.php` e `api.php.bak` removidos (`withRouting` sem `api:`).
@@ -32,11 +32,11 @@
 
 ## Próximos passos (1-3)
 
-1. **Commitar a migração** (working tree completo; sugerir 1 commit `refactor(arch)` ou split
-   move/extração) — nada foi commitado ainda.
+1. Slices TDD (item C) via skills `vertical-slice` + `pest-api-tests`.
 2. Converter a dívida da allowlist do `ModuleBoundaryTest` em Events/Contracts (começar pelas
-   relações inversas `User→QuizAttempt/Certificate` e `Course→Certificate`, que invertem o grafo).
-3. Slices TDD (item C) via skills `vertical-slice` + `pest-api-tests`.
+   relações inversas `User→QuizAttempt/Certificate` e `Course→Certificate`, que invertem o grafo);
+   rodar `coupling-analysis` antes pra priorizar.
+3. Sanar dívida de tipos do phpstan (156 erros, level 5 — pré-existente, ver Observações).
 
 ## Decisões abertas
 
@@ -54,5 +54,6 @@
 
 ## Último commit
 
-- `67626f8` (HEAD; **migração modular inteira está só no working tree**) —
-  branch `harness/specs-foundation`, sincronizada com origin antes desta sessão.
+- `5ec0c8f` (skills .agents/symlinks; `ea9d83a` = migração modular) —
+  branch `harness/specs-foundation`, **pushed**, working tree limpo.
+  Suíte: 110 passed, 0 skipped (372 asserts); Architecture 14/14.

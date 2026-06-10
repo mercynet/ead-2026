@@ -11,6 +11,7 @@
   de economia de modelo no `AGENTS.md`. **Drift do error-envelope corrigido** (`b9a5e72`): 401/403/404
   framework agora emitem `{data,errors}` em api/* — handlers miram as classes Symfony (Handler
   converte Illuminate antes dos callbacks). Suíte completa: 107 passed, 3 skipped.
+  Repos ECC e graphify avaliados a pedido: **ROI baixo, não adotar** (harness próprio já cobre).
 
 ## Próximos passos (1-3)
 
@@ -34,6 +35,6 @@
 
 ## Último commit
 
-- `b9a5e72` — `fix(api): render canonical error envelope for framework 401/403/404` — branch
-  `harness/specs-foundation` (local, ahead 7 do origin; push só quando o usuário pedir).
+- `90bcbc1` (topo; último substantivo: `b9a5e72` — envelope fix) — branch `harness/specs-foundation`,
+  local, ahead 7+ do origin; push só quando o usuário pedir.
   Architecture: 11 pass + 3 skipped. Suíte completa: 107 passed, 3 skipped (365 asserts).

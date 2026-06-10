@@ -6,29 +6,34 @@
 
 ## Sessão
 
-- 2026-06-10 — Harness fechado (exceto `ModuleBoundaryTest`): 8 invariantes em `tests/Architecture`
-  (7 pass + 2 todos + 3 skipped:debt), skills `spec-task-planning`/`vertical-slice`/`pest-api-tests`
-  (rascunho Haiku, revisadas), regra de **economia de modelo** no `AGENTS.md` (barato rascunha,
-  caro revisa). Avaliados repos ECC e graphify: ROI baixo, não adotar (já cobertos pelo harness).
+- 2026-06-10 — Harness completo (exceto `ModuleBoundaryTest`): 8 invariantes em `tests/Architecture`
+  (11 pass + 3 skipped:debt), skills `spec-task-planning`/`vertical-slice`/`pest-api-tests`, regra
+  de economia de modelo no `AGENTS.md`. **Drift do error-envelope corrigido** (`b9a5e72`): 401/403/404
+  framework agora emitem `{data,errors}` em api/* — handlers miram as classes Symfony (Handler
+  converte Illuminate antes dos callbacks). Suíte completa: 107 passed, 3 skipped.
 
 ## Próximos passos (1-3)
 
-1. Corrigir drift do error-envelope (ver Decisões abertas) — destrava os 2 `->todo()` do
-   `ErrorEnvelopeShapeTest`.
-2. Migração modular `app/` → `app/Modules/*` (item B) — destrava `ModuleBoundaryTest` e a
-   extração das Actions dos Learning controllers (`ControllerLeannessTest`).
+1. **Migração modular** `app/` → `app/Modules/*` (item B do plano; ver
+   `docs/specs/00-architecture/backend-patterns.md`) — task grande, começar com contexto limpo.
+   Destrava `ModuleBoundaryTest` e a extração das Actions dos Learning controllers
+   (`ControllerLeannessTest`, hoje skip:debt).
+2. Sanar dívidas marcadas: `ControllerLeannessTest` (Learning controllers gordos),
+   `ScribeAuthAnnotationMatchesMiddlewareTest` (auditar `@unauthenticated`), `PiiAuditTest`
+   (criar `config/lgpd.php` + `LogsActivity` no User).
 3. Slices TDD (item C) via skills `vertical-slice` + `pest-api-tests`. RFCs por último.
 
 ## Decisões abertas
 
-- **Drift do error-envelope:** só as 4 exceptions custom (bootstrap/app.php) emitem `{data,errors}`.
-  Sanctum 401, Gate `AuthorizationException` 403 e `findOrFail` 404 vazam JSON default do Laravel.
-  Decidir: registrar render handlers para `AuthenticationException`/`AuthorizationException`/
-  `ModelNotFoundException` e padronizar `findOrFail` → `ResourceNotFoundException`.
-- Sem outras bloqueantes.
+- Nenhuma bloqueante. (Error-envelope resolvido em `b9a5e72`.)
+
+## Observações operacionais
+
+- Banco `testing` corrompeu uma vez (migrations table sumida) — fix:
+  `docker exec ead2026-laravel.test-1 php artisan migrate:fresh --database=mysql --env=testing --force`.
 
 ## Último commit
 
-- `cc8bd5b` — `docs(harness): add model-economy rule (cheap drafts, expensive reviews)` — branch
-  `harness/specs-foundation` (local, não pushed; 6 commits à frente da última referência pushada).
-  Architecture: 7 pass + 2 todos + 3 skipped (24 asserts).
+- `b9a5e72` — `fix(api): render canonical error envelope for framework 401/403/404` — branch
+  `harness/specs-foundation` (local, ahead 7 do origin; push só quando o usuário pedir).
+  Architecture: 11 pass + 3 skipped. Suíte completa: 107 passed, 3 skipped (365 asserts).

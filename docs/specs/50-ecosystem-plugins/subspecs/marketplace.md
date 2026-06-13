@@ -12,25 +12,48 @@ last-reviewed: 2026-06-10
 ```
 plugins
 - id, name, slug
-- short_description, long_description
+- short_description, long_description     // categorias via pivô category_plugin (M:N), não coluna
 - support_url, logo
 - screenshots            // JSON array
-- (status de mercado controlado pela master)
+- is_curated             // "escolhido pelo Mzrt" (curadoria manual do developer)
+- status / visibility    // controlado pela master (draft/published/deprecated)
 
-plugin_categories        // Pagamentos, Mídia, Analytics, Pedagógico
-plugin_subgroups         // subcategoria dentro de cada categoria
+// Categorias: REUSA a tabela `categories` (is_system=true, taxonomia global do Mzrt) +
+// pivô dedicado `category_plugin` — MESMO molde de cursos. NÃO há tabela `plugin_categories`.
+// Hierarquia N níveis e antiduplicação já resolvidas em categories (ADR-002).
+category_plugin          // pivô dedicado
+- plugin_id, category_id, position, is_featured
+
 plugin_versions          // versão + changelog
-plugin_pricings          // tier: free | basic | premium; recorrente ou avulso
+plugin_pricings          // config do dev: tier free | basic | premium; recorrente ou avulso (preço fixo)
 plugin_features          // capabilities exibidas na vitrine
 plugin_permissions       // permissions concedidas ao assinar (ver rbac.md §3)
+
+plugin_ratings           // tenant avalia plugin (1-5, comment, status moderação)
+plugin_rating_aggregates // rollup (avg, count) — alimenta Featured
 ```
 
 ## Rules
 
-- **First-party only:** plugins vivem em `app/Plugins/`, desenvolvidos só pela master.
-- `developer` vê o catálogo completo e edita preços/disponibilidade; `tenant_admin` vê só a vitrine.
-- A "Store Page" carrega forte apelo de UX: preço, rating, datas, versão, descrição, logo,
+- **First-party only:** plugins vivem em `app/Plugins/`, desenvolvidos só pela master; discovery por DB.
+- **Só o Mzrt provisiona:** `developer` cria/edita/ativa/desativa/depreca e edita preços/curadoria;
+  `tenant_admin` só vê a vitrine e adere.
+- **Categorias = a tabela `categories` compartilhada** (`is_system`, hierarquia N níveis por
+  materialized path), igual a cursos — vínculo via pivô `category_plugin`. **Sem tabela própria.**
+  Ver [`../../00-architecture/decisions/002-categorias-tabela-unica-pivot-dedicado.md`](../../00-architecture/decisions/002-categorias-tabela-unica-pivot-dedicado.md).
+  **Filtros são ortogonais à categoria** (ver abaixo): a categoria organiza o catálogo; o filtro é a
+  lente do tenant para achar o plugin.
+- A "Store Page" carrega forte apelo de UX: preço, **rating**, datas, versão, descrição, logo,
   passo-a-passo e screenshots.
+
+### Categorias × Filtros (não confundir)
+
+- **Categorias** (recursivas): eixo de organização do catálogo, definido pelo dev (ex.: Pagamentos →
+  PIX; Mídia → Vídeo). Uma só hierarquia.
+- **Filtros** (lentes da vitrine, combináveis): `Instalados` (default) · `Disponíveis` · `Free` ·
+  `Premium` · `Novos` · `Featured` (orientado por uso + `plugin_rating_aggregates`) · `Recomendados`
+  · `Escolhidos por mim` (`is_curated`, curadoria Mzrt). No fim, categoria + filtro se combinam para
+  o tenant achar o que quer.
 
 ## Plugins First-Party (catálogo planejado)
 
@@ -49,10 +72,11 @@ e vive em [`../tasks.md`](../tasks.md), não aqui.
 
 | Método | Path | Descrição | Acesso |
 |--------|------|-----------|--------|
-| GET | `/api/v1/ecosystem/marketplace/plugins` | Vitrine (clusters + filtros: Todos/Premium/Free/Recomendados/Novos/Instalados) | tenant_admin |
+| GET | `/api/v1/ecosystem/marketplace/plugins` | Vitrine (categorias + filtros: Instalados/Disponíveis/Free/Premium/Novos/Featured/Recomendados/Escolhidos-por-mim) | tenant_admin |
+| POST | `/api/v1/ecosystem/marketplace/plugins/{slug}/ratings` | Tenant avalia plugin (1-5 + comentário) | tenant_admin |
 | GET | `/api/v1/ecosystem/marketplace/plugins/{slug}` | Store page do plugin | tenant_admin |
 | POST | `/api/v1/ecosystem/admin/plugins` | Cadastrar plugin | developer |
-| PATCH | `/api/v1/ecosystem/admin/plugins/{id}` | Liberar/depreciar (bloqueia compras futuras) | developer |
+| PATCH | `/api/v1/ecosystem/admin/plugins/{id}` | Liberar/desativar/depreciar + curadoria (`is_curated`) (bloqueia compras futuras) | developer |
 
 ## Permissions
 

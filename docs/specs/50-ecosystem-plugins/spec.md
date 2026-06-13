@@ -41,35 +41,63 @@ Recursos detalhados nas subspecs:
 | Model | Papel |
 |-------|-------|
 | `Plugin` | Raiz de marketplace (name, slug, descrições, logo, screenshots). |
-| `PluginCategory` / `PluginSubgroup` | Agrupamento (Pagamentos, Mídia, Analytics, Pedagógico). |
+| `categories` (compartilhada) + `category_plugin` (pivô) | Plugin **reusa a tabela `categories`** (`is_system=true`, taxonomia global do Mzrt) via pivô dedicado `category_plugin` — **mesmo molde de cursos** (ADR-002), **não** tabela `plugin_categories` própria. |
 | `PluginVersion` | Versões + changelog. |
-| `PluginPricing` | Preços recorrentes/avulsos (tier: free, basic, premium). |
+| `PluginPricing` | **Config do dev**: preço fixo recorrente/avulso (tier: free, basic, premium). Promoções/janela = futuro. |
 | `PluginFeature` | Lista de capabilities para a vitrine. |
-| `PluginInstallation` / `PluginActivation` | Instalação e histórico de ativação por tenant. |
+| `PluginRating` / `PluginRatingAggregate` | Avaliação de plugin pelo tenant (1-5 + moderação) e rollup — alimenta **featured** e ordenação da vitrine. |
+| `PluginInstallation` / `PluginActivation` | Instalação e histórico de ativação por tenant — **criados para free e pago** (Mzrt enxerga ambos). |
 | `PluginSubscription` | Assinatura SaaS (status, `next_billing_date`, trial). |
 | `PluginBilling` | Extrato recorrente; lógica de retry (`retry_count`, `next_retry_at`). |
-| `PluginUsageLog` / `PluginLicense` / `PluginSetting` | Quota, licença e config por tenant. |
-| `TenantIntegration` | Tokens externos do tenant (`encrypted:json`), injetados via evento. |
-| `PluginCoupon` | Cupom fixo/percentual para a cobrança SaaS. |
+| `PluginGrant` | **Comp por tenant** (Mzrt): override de preço / free por janela (`starts_at`/`ends_at`, `reason`) sem mexer no pricing global. |
+| `PluginUsageLog` / `PluginLicense` | Quota e licença por tenant. |
+| `PluginSetting` | **Config de instância do tenant** (limites, opções não-secretas). Segredos vão em `TenantIntegration`. |
+| `TenantIntegration` | Credenciais externas do tenant (`encrypted:json`) — ex.: chaves Mercado Pago, prod/sandbox; injetadas via evento. |
+| `PluginCoupon` | Cupom fixo/percentual na cobrança SaaS (**deferred** — promoção é fase futura). |
 
 ## Business Rules
 
 - **First-party only:** sem upload de terceiros. Plugins residem em `app/Plugins/` e são
-  desenvolvidos só pela master.
-- **Billing recorrente:** diferente do Financial (compra spot), usa `PluginSubscription` +
-  `PluginBilling` com Cron/Scheduler. Cobrança master→tenant em gateway master (ex.: Stripe
-  Subscriptions); o tenant opera o próprio carrinho via plugin Cart.
+  desenvolvidos só pela master. Discovery é por **DB** (registrados no banco), não filesystem.
+- **Provisionamento exclusivo do Mzrt:** apenas `developer` (área Mzrt) cria, edita, **ativa,
+  desativa ou deprecia** plugins no catálogo. Ninguém mais — nem `tenant_admin`. Ver
+  [`../00-architecture/areas-surfaces.md`](../00-architecture/areas-surfaces.md) §Mzrt.
+- **Duas camadas de config (dev × tenant):** cada plugin (free ou pago) tem **config de catálogo**
+  definida pelo dev (título, descrição, limites, pricing — `Plugin`/`PluginPricing`/`PluginSetting`
+  default) e **config de instância** por tenant ao ativar (`PluginSetting` do tenant). **Segredos
+  do tenant** (chaves Mercado Pago, prod/sandbox, parcelas) **nunca** em `PluginSetting` em claro —
+  vão em `TenantIntegration` (`encrypted:json`).
+- **Free → associação ao tenant:** ativar um free faz **bypass de cobrança** mas **gera
+  `PluginInstallation` + `PluginActivation`** (e um registro financeiro espelho de `amount_cents=0`
+  no plano Plataforma — ver §"Billing — onde a venda de plugin entra") para o Mzrt contabilizar quem usa free.
+  Desativar volta ao estado anterior; retenção de config no desativar segue LGPD (ver Notes).
+- **Rating de plugin:** tenant avalia plugin que usa (`PluginRating`, 1-5 + moderação); o rollup
+  (`PluginRatingAggregate`) alimenta o filtro **Featured** (stat de uso + rating) da vitrine.
+- **Comp por tenant:** Mzrt pode dar preço diferente ou **free por um período** a um tenant
+  específico via `PluginGrant` (janela + `reason`, auditável), sem alterar o pricing global.
+- **Billing recorrente (plano Plataforma):** Mzrt→tenant usa `PluginSubscription` + `PluginBilling`
+  com Cron/Scheduler, liquidado no **ledger próprio do Mzrt** (`platform_orders` + gateway do
+  Mozart — ver §"Billing — onde a venda de plugin entra" e Financial). **Não** reusa o `orders` do tenant.
 - **Ativação dinâmica:** perda de validade financeira ou desinstalação emite evento que desliga
   as features daquele tenant (e invalida o cache de features — ver performance-scalability.md).
 - **Landlord vs. Tenant:** `developer` vê o catálogo completo e edita preços; `tenant_admin` vê a
-  vitrine, adere (pagamento ou ativação de free) e usa. Tenant pode desabilitar plugins free
-  (ex.: desligar o Cart default).
+  vitrine, adere (pagamento ou ativação de free) e usa **dentro do range liberado pelo Mzrt**.
+  Tenant pode desabilitar plugins free (ex.: desligar o Cart default).
+
+## Billing — onde a venda de plugin entra
+
+Assinar plugin pago gera um **`PlatformOrder`** (plano Plataforma, gateway do Mozart) — **não** o
+`Order` tenant-scoped. Free gera `PlatformOrder` de `amount_cents=0`. `plugin_purchases` legado é
+descartado. **Conceito e schema não se repetem aqui** — canônico em
+[`../00-architecture/decisions/003-billing-dois-ledgers-itemable-seam.md`](../00-architecture/decisions/003-billing-dois-ledgers-itemable-seam.md)
+e [`../40-financial/subspecs/orders-payments.md`](../40-financial/subspecs/orders-payments.md).
 
 ## Domain Boundaries
 
 - **Emite:** eventos de ativação/expiração de plugin → invalidam cache de features do tenant;
   registro de campos de auth do tenant via evento (`TenantIntegration`).
-- **Consome:** intenção de assinatura mapeia um `Order` do Financial (`origin_type: Subscription`).
+- **Consome:** assinar plugin pago mapeia um **`PlatformOrder`** do Financial (plano Plataforma,
+  gateway do Mozart) — **não** o `Order` tenant-scoped. Free gera `PlatformOrder` de `amount_cents=0`.
 
 ## Authorization
 

@@ -34,18 +34,35 @@ Recursos detalhados nas subspecs:
 
 ## Entities
 
+**Plano Venda (tenant → aluno):**
+
 | Model | Invariantes |
 |-------|-------------|
-| `Order` | `order_number`; status `pending|paid|failed|cancelled|refunded`; `origin_type` (Direct/Cart/Subscription/Renewal). |
-| `OrderItem` | Polimórfico (`itemable_type/id` → Curso/Plano/Plugin); guarda `item_snapshot` para histórico. |
+| `Order` | tenant-scoped; `order_number`; status `pending|paid|failed|cancelled|refunded`; `origin_type` (Direct/Cart/Subscription/Renewal — **Subscription = aluno→plano do tenant**, plugin Subscriptions). |
+| `OrderItem` | Polimórfico (`itemable_type/id` → Curso/Plano); guarda `item_snapshot` para histórico. |
 | `PriceHistory` | Auditoria de alterações de preço. |
 | `Payment` | Atrelado a `Order`; `gateway_response` cru, `external_id`; status `pending|completed|failed`. |
-| `TenantPaymentGateway` | Credenciais cifradas por tenant (`encrypted:json`); múltiplos gateways. |
+| `TenantPaymentGateway` | Credenciais cifradas **por tenant** (`encrypted:json`); múltiplos gateways. |
 | `Cart` / `CartItem` (plugin) | Carrinho por usuário; itens polimórficos. |
 | `Coupon` (plugin) | Desconto percentual/fixo, validade e limite de uso. |
 
+**Plano Plataforma (Mozart → tenant)** — ledger irmão, escopo global (área Mzrt):
+
+| Model | Invariantes |
+|-------|-------------|
+| `PlatformOrder` | **global** (pagador = tenant); status idem; `origin_type` (PluginSubscription/Renewal). |
+| `PlatformOrderItem` | Polimórfico (`itemable` → Plugin/PluginPricing); `item_snapshot`. |
+| `PlatformPayment` | Atrelado a `PlatformOrder`; `gateway_response`, `external_id`. |
+| `PlatformPaymentGateway` | Credenciais cifradas **do Mozart** (`encrypted:json`) — formas de pgto da master, não do tenant. |
+
+| `Commission` | 3ª camada — repasse ao instrutor (`commission_rate`); ver areas-surfaces §Três camadas. |
+
 ## Business Rules
 
+- **Dois ledgers (Venda × Plataforma):** `Order*` e `PlatformOrder*` compartilham o **padrão** mas
+  **nunca a tabela** — decisão e *porquê* em
+  [`../00-architecture/decisions/003-billing-dois-ledgers-itemable-seam.md`](../00-architecture/decisions/003-billing-dois-ledgers-itemable-seam.md).
+  Schema em [`subspecs/orders-payments.md`](subspecs/orders-payments.md).
 - **Gateway-agnostic:** core não acopla lógica de checkout. Gera `Order`, submete intenção via
   Factory, recebe webhooks. Exceções de gateway são capturadas e **traduzidas para PT-BR**.
 - **Valores em centavos:** `price_cents` (inteiros) para evitar floating math. Ver
@@ -58,9 +75,10 @@ Recursos detalhados nas subspecs:
 
 ## Domain Boundaries
 
-- **Emite:** `OrderPaidEvent` — escutado pelo Learning para matrícula automática (`EnrollService`).
-  Mantém código de matrícula fora das rotas financeiras.
-- **Consome:** intenções de assinatura do Ecosystem (`origin_type: Subscription`).
+- **Emite:** `OrderPaidEvent` (plano Venda) — escutado pelo Learning para matrícula automática
+  (`EnrollService`). `PlatformOrderPaidEvent` (plano Plataforma) — escutado pelo Ecosystem para
+  ativar a `PluginSubscription`. Mantém código de matrícula/ativação fora das rotas financeiras.
+- **Consome:** intenção de assinatura de plugin do Ecosystem → `PlatformOrder` (plano Plataforma).
 
 ## Authorization
 

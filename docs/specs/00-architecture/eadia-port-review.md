@@ -190,4 +190,6 @@ vale portar.
 - **`lesson_views`** (replay) + `LessonViewedEvent`.
 - **Registro financeiro espelho** de matrícula gratuita (Order/Payment com método "Gratuito",
   `amount_cents=0`).
-- **Resolver overlap** `plugin_purchases` × `orders` (decidir fonte única da verdade financeira).
+- ~~**Resolver overlap** `plugin_purchases` × `orders`~~ — **RESOLVIDO (2026-06-13):** dois ledgers
+  irmãos — `PlatformOrder*` (Mzrt→tenant, gateway do Mozart) ≠ `Order*` (tenant→aluno). `plugin_purchases`
+  descartado. Ver `decisions/003-billing-dois-ledgers-itemable-seam.md` e `40-financial/subspecs/orders-payments.md`.

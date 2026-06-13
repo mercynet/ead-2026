@@ -56,7 +56,7 @@ Onde a equipe dev gerencia **tudo**, multi-tenant, com **logs e auditoria sério
 sempre (ver `security-privacy-lgpd.md`). Particularidades exclusivas:
 
 - **Billing Mzrt → tenant:** cobra os tenants pela plataforma e pelos plugins assinados (camada de
-  cobrança distinta do billing tenant→aluno; ver §"Duas camadas de billing").
+  cobrança distinta do billing tenant→aluno; ver §"Três camadas de billing").
 - **Provisionamento de plugins:** Mzrt é o **único** que cria/disponibiliza plugins. Nunca
   abriremos para terceiros criarem. Define o catálogo e o *range* que cada tenant pode ativar.
 - Vê e gerencia qualquer tenant; único que edita permissions e `UserType`.
@@ -193,6 +193,13 @@ decide a ação. Hierarquia de `UserType` (`rbac.md` §1) ainda vale: um `develo
 São fluxos distintos e não devem se misturar no payload nem no controller. A 3ª camada
 (comissão de instrutor) vem do modelo do `../eadIA` (`Commission` + `commission_rate`) e ainda
 **não existe** no ead2026 — entra como domínio do Financial (ver `tasks.md` do domínio).
+
+> **Três camadas, dois ledgers.** Das três camadas, **duas são ledgers de Order** — Plataforma
+> (`platform_orders`) e Venda (`orders`) — tabelas irmãs, mesmo padrão, **nunca a mesma tabela**
+> (pagador/gateway/escopo/LGPD divergem). A **Comissão** não é ledger próprio: é **repasse derivado**
+> de uma venda confirmada. O *porquê* e o schema vivem em
+> [`decisions/003-billing-dois-ledgers-itemable-seam.md`](decisions/003-billing-dois-ledgers-itemable-seam.md)
+> (canônico) — não reabrir aqui.
 
 ## Impacto e migração (não é rewrite imediato)
 

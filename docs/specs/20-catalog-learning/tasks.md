@@ -36,9 +36,20 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Pending
 
+### Categorias (redesign — ADR-002)
+> Impl atual já tem `is_system` + `parent_id` + antiduplicação em `StoreCategoryAction`. Delta até o
+> alvo do [ADR-002](../00-architecture/decisions/002-categorias-tabela-unica-pivot-dedicado.md):
+- [ ] `normalized_name` **persistida** + helper de normalização compartilhado (lower, sem acento, trim, espaços colapsados).
+- [ ] Coluna gerada `tenant_key = COALESCE(tenant_id,0)` + `UNIQUE(tenant_key, normalized_name)`.
+- [ ] Materialized path: colunas `path`/`depth` + manutenção na escrita (create/move) + prevenção de ciclo.
+- [ ] Regra **parent de mesmo escopo** (system→system, tenant→mesmo tenant); proibir cross-escopo.
+- [ ] Pivô `category_course`: adicionar `order` + `is_featured`, FK reais; ajustar relação `Category::courses()`.
+- [ ] Soft delete + proteção no delete: system com cursos **bloqueia**; tenant com cursos exige `force/confirm` + **detach** dos pivôs (invariante: nenhum pivô → categoria soft-deletada).
+- [ ] Re-slot área-first: system → Mzrt (`v1/mzrt`), tenant → Admin (`v1/admin`); `CategoryPolicy` decide por `is_system`.
+
 ### Courses
 - [ ] `POST /courses/{id}/publish` + `POST /courses/{id}/unpublish`.
-- [ ] Attach categories to courses.
+- [ ] Attach categories to courses (usa pivô dedicado + `order`/`is_featured`).
 
 ### Modules
 - [ ] `POST/GET/PATCH/DELETE /modules` (CRUD).

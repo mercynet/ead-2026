@@ -1,7 +1,7 @@
 ---
 domain: catalog-learning
 maturity: stable
-last-reviewed: 2026-06-10
+last-reviewed: 2026-06-13
 owners: [paulo]
 related:
   - ../00-architecture/api-conventions.md
@@ -41,7 +41,7 @@ Recursos detalhados nas subspecs:
 
 | Model | Tabela | Invariantes |
 |-------|--------|-------------|
-| `Category` | `categories` | Hierárquica (`parent_id`); system (`tenant_id=null,is_system=true`, só developer edita) vs. tenant; nome não pode colidir (normalizado) com categoria padrão global. |
+| `Category` | `categories` | Tabela única; hierárquica (`parent_id`+materialized `path`/`depth`, parent de mesmo escopo); system (`tenant_id=null,is_system=true`, só developer) vs. tenant; unicidade `UNIQUE(tenant_key=COALESCE(tenant_id,0), normalized_name)` + guard app (tenant ≠ nome de sistema); soft delete com proteção. Ver ADR-002. |
 | `Course` | `courses` | Agrupador raiz; soft deletes; status publicação; preço em centavos; config de certificado. |
 | `CourseModule` | `course_modules` | Pertence a um único curso; reordenável (`sort_order`). |
 | `Lesson` | `lessons` | Conteúdo da aula; pode ser gratuita (`is_free`); reordenável. |
@@ -50,15 +50,18 @@ Recursos detalhados nas subspecs:
 | `LessonView` | `lesson_views` | Estatística: 1 registro por acesso (replay). |
 | `Rating` / `RatingStats` | `ratings` / `rating_stats` | Avaliação 1-5 + like/dislike; rollup agregado em cache. |
 | `CourseMaterial` / `MaterialDownload` | — | Materiais extras (≤50MB) com tracking de download. |
-| `category_course` (pivot) | `category_course` | Tenant-aware: `tenant_id, course_id, category_id`; nunca cruza tenants. |
+| `category_course` (pivot) | `category_course` | Pivô **dedicado** (não polimórfico): `tenant_id, course_id, category_id, order, is_featured`; FK reais; nunca cruza tenants. Produtos futuros = `category_product`. |
 
 ## Business Rules
 
 - **Catálogo vs. progresso (dados frios vs. quentes):** payloads de leitura separam catálogo
   (cacheável) do progresso pessoal (banco). Ver
   [`../00-architecture/performance-scalability.md`](../00-architecture/performance-scalability.md).
-- **Categorias padrão globais + antiduplicação:** tenant usa, mas não cria/edita categorias
-  padrão; não pode criar categoria com mesmo nome normalizado de uma padrão global. Detalhe em
+- **Categorias — tabela única, pivô dedicado, materialized path, soft delete:** system (developer/Mzrt)
+  vs. tenant (Admin); tenant usa as de sistema por seleção (banco de categorias), não as edita;
+  antiduplicação por `normalized_name` (system único global, tenant único interno, livre entre
+  tenants, nunca colide com sistema); delete com proteção (system com cursos bloqueia; tenant com
+  cursos exige confirm + detach). Desenho em ADR-002; detalhe em
   [`subspecs/catalog.md`](subspecs/catalog.md).
 - **Catálogo esconde cursos já comprados** pelo aluno logado.
 - **Access control na lição:** acesso à mídia se o curso for gratuito, ou a aula for degustação

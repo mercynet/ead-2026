@@ -21,7 +21,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `PUT /catalog/categories/{id}`.
 - [x] `DELETE /catalog/categories/{id}`.
 - [x] `GET /courses/{id}/modules`.
-- [x] `GET /courses/{id}` (admin view) — `learning.courses.view-check` + `CourseDetailResource` (módulos+categorias).
+- [x] ~~`GET /courses/{id}` (admin view)~~ → **re-slotado área-first** para `GET /api/v1/admin/courses/{id}` (2026-06-13): `area.guard:admin` (admin+developer por hierarquia, student/instructor → 403 `area_forbidden`) + `learning.courses.view-check` + `CourseDetailResource`. 1º slice da área Admin: carrega scaffold (`Area` enum, `EnsureAreaAccess`, `Routes/admin.php`, `Http/Controllers/Admin/`).
 - [x] `POST /courses` (criar curso).
 - [x] `PATCH /courses/{id}` (atualizar curso).
 - [x] `DELETE /courses/{id}`.

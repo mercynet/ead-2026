@@ -1,7 +1,7 @@
 ---
 layer: architecture
 applies-to: all-domains
-maturity: draft
+maturity: stable
 last-reviewed: 2026-06-13
 owners: [paulo]
 related:
@@ -14,8 +14,10 @@ related:
 
 # Áreas & Superfícies
 
-> **Status: DRAFT / proposta.** Decisão fundamental de produto+arquitetura. Define as **áreas**
-> (audiências) do sistema e como elas se separam na API. Ratificar antes de migrar endpoints.
+> **Status: RATIFICADA (2026-06-13).** Decisão fundamental de produto+arquitetura. Define as
+> **áreas** (audiências) do sistema e como elas se separam na API. Sub-decisões fechadas:
+> **(A) URL área-first puro**, **(B) middleware `area.guard` dedicado**, **(D) re-slot só `/admin`
+> primeiro**. **(C)** (estratégia de Resource) decide-se ao implementar o 1º recurso multi-área.
 
 > **Referência:** o projeto anterior `../eadIA` (Laravel+Filament) é a referência de **modelo de
 > domínio, plugins e financeiro** — **não** de áreas. O plano de painéis do eadIA está **errado**
@@ -157,8 +159,8 @@ só Actions/Models do próprio domínio (+ contratos compartilhados).
 /api/v1/home/courses          /api/v1/home/highlights     (público, sem auth)
 ```
 
-> **Sub-decisão aberta (A):** `v1/{area}/{resource}` (área-first, domínio fora da URL) **vs**
-> `v1/{area}/{domain}/{resource}` (mais verboso, espelha o módulo). Recomendação: área-first puro.
+> **Sub-decisão (A) — FECHADA:** `v1/{area}/{resource}` (área-first puro, domínio fora da URL). O
+> domínio é organização de código, não da URL.
 
 ## Área × RBAC
 
@@ -177,9 +179,8 @@ Dentro da área, a permission (`<domain>.<resource>.<action>` / `<plugin>.<resou
 decide a ação. Hierarquia de `UserType` (`rbac.md` §1) ainda vale: um `developer` pode entrar em
 áreas abaixo.
 
-> **Sub-decisão aberta (B):** middleware `area.guard:{area}` dedicado vs reuso de
-> `tenant.required.unless.developer` + checagem de `UserType` por grupo. Recomendação: middleware
-> `area.guard` explícito (legível, testável por invariante).
+> **Sub-decisão (B) — FECHADA:** middleware `area.guard:{area}` dedicado (legível, testável por
+> invariante), não reuso de `tenant.required.unless.developer` + checagem ad-hoc de `UserType`.
 
 ## Três camadas de billing
 
@@ -231,8 +232,9 @@ está errado. Ao consultar o eadIA:
 
 ## Open Questions
 
-- (A) Formato de URL: área-first puro vs área+domínio. **Recomendado:** área-first puro.
-- (B) Guard de área: middleware `area.guard` dedicado vs reuso. **Recomendado:** dedicado.
+- ~~(A) Formato de URL~~ — **FECHADA (2026-06-13):** área-first puro `v1/{area}/{resource}`.
+- ~~(B) Guard de área~~ — **FECHADA (2026-06-13):** middleware `area.guard` dedicado.
 - (C) Estratégia anti-repetição de Resource: base Resource compartilhada + subclasses por área,
-  vs Resources independentes por área. Decidir ao implementar o 1º recurso multi-área.
-- (D) Ordem de migração dos endpoints existentes para o modelo de áreas.
+  vs Resources independentes por área. **Aberta** — decidir ao implementar o 1º recurso multi-área.
+- ~~(D) Ordem de migração~~ — **FECHADA (2026-06-13):** re-slot incremental, começando por
+  `/admin` do `GET /courses/{id}`; instructor/student/home viram slices separados depois.

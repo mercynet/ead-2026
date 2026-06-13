@@ -67,48 +67,6 @@ class CourseController extends Controller
     }
 
     /**
-     * Ver Curso (admin)
-     *
-     * Retorna um curso do tenant atual com módulos e categorias, incluindo drafts.
-     *
-     * @urlParam id int required ID do curso
-     *
-     * @response 200 scenario="Curso encontrado"
-     * {
-     *   "data": {
-     *     "id": 1,
-     *     "title": "Curso",
-     *     "slug": "curso",
-     *     "status": "draft",
-     *     "price_cents": 0,
-     *     "is_free": true,
-     *     "categories": [],
-     *     "modules": []
-     *   }
-     * }
-     * @response 403 scenario="Sem permissão"
-     * {
-     *   "data": null,
-     *   "errors": [{"code": "access_denied", "message": "Acesso negado."}]
-     * }
-     * @response 404 scenario="Curso não encontrado"
-     * {
-     *   "data": null,
-     *   "errors": [{"code": "not_found", "message": "Recurso não encontrado."}]
-     * }
-     */
-    public function show(ApiContext $context, int $id): CourseDetailResource
-    {
-        $course = $this->getCourseAction->handle($context, $id);
-
-        Gate::forUser($context->requiredUser())->authorize('learning.courses.view-check', [$context->tenant, $course]);
-
-        $course->load(['categories', 'modules']);
-
-        return CourseDetailResource::make($course);
-    }
-
-    /**
      * Listar Módulos
      *
      * Retorna todos os módulos de um curso matriculado.

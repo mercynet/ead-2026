@@ -1,6 +1,7 @@
 <?php
 
 use App\Shared\Exceptions\AccessDeniedException;
+use App\Shared\Exceptions\AreaAccessDeniedException;
 use App\Shared\Exceptions\InvalidCredentialsException;
 use App\Shared\Exceptions\ResourceNotFoundException;
 use App\Shared\Exceptions\TenantContextRequiredException;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'resolve.tenant.optional' => \App\Modules\Core\Http\Middleware\ResolveTenantOptional::class,
             'tenant.access' => \App\Modules\Core\Http\Middleware\EnsureTenantAccess::class,
             'tenant.required.unless.developer' => \App\Modules\Core\Http\Middleware\EnsureTenantRequiredForNonDeveloper::class,
+            'area.guard' => \App\Modules\Core\Http\Middleware\EnsureAreaAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -74,6 +76,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 'errors' => [
                     [
                         'code' => 'access_denied',
+                        'message' => $exception->getMessage(),
+                    ],
+                ],
+            ], 403);
+        });
+
+        $exceptions->render(function (AreaAccessDeniedException $exception, Request $request) {
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'area_forbidden',
                         'message' => $exception->getMessage(),
                     ],
                 ],

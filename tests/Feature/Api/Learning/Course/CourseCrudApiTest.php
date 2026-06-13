@@ -225,7 +225,7 @@ it('shows a course as admin', function (): void {
 
     $token = $admin->createToken('admin-token')->plainTextToken;
 
-    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+    $this->getJson('/api/v1/admin/courses/'.$course->id, [
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
     ])
@@ -236,7 +236,7 @@ it('shows a course as admin', function (): void {
         ->assertJsonStructure(['data' => ['id', 'title', 'slug', 'status', 'categories', 'modules']]);
 });
 
-it('allows student to view a course (broad view permission)', function (): void {
+it('forbids student from the admin area', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',
         'domain' => 'tenant-a.local',
@@ -268,7 +268,87 @@ it('allows student to view a course (broad view permission)', function (): void 
 
     $token = $student->createToken('student-token')->plainTextToken;
 
-    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+    $this->getJson('/api/v1/admin/courses/'.$course->id, [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'area_forbidden');
+});
+
+it('forbids instructor from the admin area', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $instructor = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Instructor,
+        'name' => 'Instructor',
+        'email' => 'instructor-admin-area@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $instructor->assignRole('instructor');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso',
+        'slug' => 'curso-show-instructor',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $instructor->createToken('instructor-token')->plainTextToken;
+
+    $this->getJson('/api/v1/admin/courses/'.$course->id, [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'area_forbidden');
+});
+
+it('allows developer into the admin area by hierarchy', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $developer = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Developer,
+        'name' => 'Developer',
+        'email' => 'developer-admin-area@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso Dev',
+        'slug' => 'curso-show-developer',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $developer->createToken('developer-token')->plainTextToken;
+
+    $this->getJson('/api/v1/admin/courses/'.$course->id, [
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
     ])
@@ -297,7 +377,7 @@ it('returns 404 viewing a missing course', function (): void {
 
     $token = $admin->createToken('admin-token')->plainTextToken;
 
-    $this->getJson('/api/v1/learning/courses/999999', [
+    $this->getJson('/api/v1/admin/courses/999999', [
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
     ])->assertNotFound();
@@ -341,7 +421,7 @@ it('isolates course view across tenants', function (): void {
 
     $token = $adminB->createToken('admin-token')->plainTextToken;
 
-    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+    $this->getJson('/api/v1/admin/courses/'.$course->id, [
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenantB->id,
     ])->assertNotFound();
@@ -366,7 +446,7 @@ it('requires authentication to view a course', function (): void {
         'is_active' => true,
     ]);
 
-    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+    $this->getJson('/api/v1/admin/courses/'.$course->id, [
         'X-Tenant-ID' => (string) $tenant->id,
     ])->assertUnauthorized();
 });

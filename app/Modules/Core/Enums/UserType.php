@@ -39,6 +39,20 @@ enum UserType: string
         return $this === self::Student;
     }
 
+    /**
+     * Posto na hierarquia de personas (maior = mais privilégio). Usado pela
+     * área para decidir se um tipo pode entrar em superfícies abaixo dele.
+     */
+    public function rank(): int
+    {
+        return match ($this) {
+            self::Developer => 4,
+            self::Admin => 3,
+            self::Instructor => 2,
+            self::Student => 1,
+        };
+    }
+
     public function canAccessAllTenants(): bool
     {
         return $this === self::Developer;

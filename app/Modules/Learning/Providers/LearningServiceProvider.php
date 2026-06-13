@@ -46,5 +46,6 @@ class LearningServiceProvider extends ServiceProvider
     private function registerRoutes(): void
     {
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/api.php');
+        Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/admin.php');
     }
 }

@@ -32,6 +32,7 @@ Route::prefix('v1/learning')
             Route::controller(CourseController::class)
                 ->group(function (): void {
                     Route::get('/courses/{courseId}/modules', 'modules');
+                    Route::get('/courses/{id}', 'show');
                     Route::post('/courses', 'store');
                     Route::patch('/courses/{id}', 'update');
                     Route::delete('/courses/{id}', 'destroy');

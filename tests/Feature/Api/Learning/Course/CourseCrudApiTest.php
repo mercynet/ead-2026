@@ -193,6 +193,184 @@ it('validates required title when creating a course', function (): void {
     ])->assertStatus(422);
 });
 
+it('shows a course as admin', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-show-course@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso Draft',
+        'slug' => 'curso-draft',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $course->id)
+        ->assertJsonPath('data.title', 'Curso Draft')
+        ->assertJsonPath('data.status', 'draft')
+        ->assertJsonStructure(['data' => ['id', 'title', 'slug', 'status', 'categories', 'modules']]);
+});
+
+it('allows student to view a course (broad view permission)', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $student = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Student,
+        'name' => 'Student',
+        'email' => 'student-show-course@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $student->assignRole('student');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso',
+        'slug' => 'curso-show-student',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $student->createToken('student-token')->plainTextToken;
+
+    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $course->id);
+});
+
+it('returns 404 viewing a missing course', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-show-missing@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->getJson('/api/v1/learning/courses/999999', [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertNotFound();
+});
+
+it('isolates course view across tenants', function (): void {
+    $tenantA = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+    $tenantB = Tenant::query()->create([
+        'name' => 'Tenant B',
+        'domain' => 'tenant-b.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenantA->id,
+        'title' => 'Curso A',
+        'slug' => 'curso-a',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $adminB = User::query()->create([
+        'tenant_id' => $tenantB->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin B',
+        'email' => 'admin-b-show@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $adminB->assignRole('admin');
+
+    $token = $adminB->createToken('admin-token')->plainTextToken;
+
+    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenantB->id,
+    ])->assertNotFound();
+});
+
+it('requires authentication to view a course', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso',
+        'slug' => 'curso-noauth',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $this->getJson('/api/v1/learning/courses/'.$course->id, [
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertUnauthorized();
+});
+
 it('updates a course as admin', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',

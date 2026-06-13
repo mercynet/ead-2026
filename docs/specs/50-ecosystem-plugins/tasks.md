@@ -41,11 +41,17 @@ Critério de aceite = teste.
 - [ ] EmailMarketing (estrutura), SalesIntelligence (parcial), PerformanceReportsEnterprise (vazio).
 - [ ] GamificationRewards (vazio).
 
+### Reuso eadIA (ver ADR-001)
+- [ ] **Plugins financeiros = gateways de pagamento**: cada gateway (Mercado Pago, PagSeguro, PIX-nativo, Asaas) é um plugin que implementa `PaymentGatewayInterface` (do Financial). Tenant ativa conforme taxa/tamanho. Stripe fica no core do Financial; demais entram aqui.
+- [ ] **Modelo de dados pronto no eadIA** (migrations `2025_11_30_*`): `plugin_installations/activations/purchases/licenses/audit_financials/settings/attachments/logs`. Portar **revisando** (não copiar cego): `tenant_id` deve ser FK inteiro (eadIA usa string em alguns), centavos inteiros, índices.
+- [ ] `AbstractPlugin` + `PluginManager`: adaptar discovery de filesystem (`plugin.json`) → **DB** (plugins são só nossos, registrados no banco).
+
 ## Needs Review
 
 - _(nenhuma)_
 
 ## Open Questions
 
-- Qual gateway master para a cobrança SaaS (Stripe Subscriptions?).
+- _(resolvido)_ Cobrança SaaS (Mzrt→tenant) e gateways: ver ADR-001. Gateways são plugins
+  financeiros; cobrança da assinatura de plugin via camada Mzrt→tenant.
 - Modelo de quota/usage tracking por tier.

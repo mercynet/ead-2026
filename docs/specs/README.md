@@ -30,6 +30,7 @@ docs/
       multi-tenancy.md       # resolução, isolamento, stack de middleware
       rbac.md                # UserTypes, roles, plugins, matriz de permissões, golden rules
       security-privacy-lgpd.md
+      dependency-supply-chain-security.md
       performance-scalability.md
       glossary.md
     10-core-identity/        # auth, users, tenant-config

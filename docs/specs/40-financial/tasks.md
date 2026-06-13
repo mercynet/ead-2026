@@ -26,10 +26,18 @@ Critério de aceite = teste.
 - [ ] Registro financeiro espelho para matrículas gratuitas (auditoria/LTV).
 - [ ] Tradução PT-BR de exceções de gateway.
 
+### Reuso eadIA + billing (ver ADR-001)
+- [ ] **`PaymentGatewayInterface`** (contrato) + `TenantPaymentGateway` (config encriptada por tenant) — portar do eadIA. Fundação que não trava em gateway.
+- [ ] **`StripeGateway` via `laravel/cashier`** (1º adaptador; add Cashier nesta task). Cobre cartão/PIX/boleto BR + global.
+- [ ] **Gateways adicionais como plugins financeiros** (Mercado Pago, PagSeguro, PIX-nativo, Asaas) — cada um implementa `PaymentGatewayInterface`; tenant ativa via `50-ecosystem-plugins`. NÃO no MVP, mas o contrato já prevê.
+- [ ] **3ª camada — comissão de instrutor**: `commission_rate` + `CommissionLog` (repasse tenant/plataforma→instrutor). Não existia no eadIA — gap a modelar.
+- [ ] **Portar (revisar, não copiar cego):** `Order`, `OrderItem` (polimórfico itemable: Course/SubscriptionPlan/Plugin + `item_snapshot`), `Payment` (`gateway_response` cru), enum `OrderOriginType`. Padronizar **centavos inteiros** (eadIA mistura decimal/cents — corrigir).
+
 ## Needs Review
 
 - _(nenhuma)_
 
 ## Open Questions
 
-- Quais gateways no MVP (Stripe, MercadoPago, Pagar.me)?
+- _(resolvido)_ Gateways: **Stripe no MVP** (via Cashier); demais como **plugins financeiros**
+  tenant-selecionáveis (taxas variam por tamanho da escola). Ver ADR-001.

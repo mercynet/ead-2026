@@ -21,6 +21,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `PUT /catalog/categories/{id}`.
 - [x] `DELETE /catalog/categories/{id}`.
 - [x] `GET /courses/{id}/modules`.
+- [x] `GET /courses/{id}` (admin view) — `learning.courses.view-check` + `CourseDetailResource` (módulos+categorias).
 - [x] `POST /courses` (criar curso).
 - [x] `PATCH /courses/{id}` (atualizar curso).
 - [x] `DELETE /courses/{id}`.
@@ -36,7 +37,6 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 ## Pending
 
 ### Courses
-- [ ] `GET /courses/{id}` (admin view).
 - [ ] `POST /courses/{id}/publish` + `POST /courses/{id}/unpublish`.
 - [ ] Attach categories to courses.
 
@@ -63,6 +63,20 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ### Eventos
 - [ ] Disparar `EnrollmentCreated`.
+
+### Reuso eadIA (a importar — ver ADR-001)
+> **Curso-core revisado (2026-06-13):** ead2026 já é mais rico que o eadIA em `courses`/`lessons`
+> (short_description, target_audience, requirements, level, order, thumbnail/banner, duration,
+> vehiculation dates, certificate_*, price_cents). Trazer só os gaps abaixo. **Pular:**
+> `access_months` (temos `access_days`), `image_cover` (temos `banner`), `country_id` em category
+> (só multi-tenant), `CoursePrice` por país, `content_data` blob (LessonMedia substitui).
+- [ ] **i18n traduzível** em `title`/`description`/`short_description` de Course/Module/Lesson/Category (JSON por locale, **com fallback**).
+- [ ] **`is_fifo`** (sequência linear) no curso.
+- [ ] **`meta_title`/`meta_description`** (JSON, SEO) — para a área Home/landing.
+- [ ] **Lesson media** (`LessonMedia` + `LessonMediaProgress`): video/streaming/audio/document, subtypes YouTube/Vimeo/AWS, `progress_strategy` (80%/full/manual/time_based), `MediaEmbedService`. Usar `medialibrary` p/ uploads.
+- [ ] **Regras de acesso** (eadIA `enrollment-access-rules.md`): `canViewCourse()`/`canAccessPaidContent()`/`canAccessLesson()` — free, is_free degustação, expirado vê vitrine mas não conteúdo pago.
+- [ ] **Matrícula manual por instrutor**: config tenant (`instructor_can_create_free_enrollments`, `..._mark_external_payment`, `..._requires_approval`), `enrollment_type`/`payment_type`/`created_by_instructor_id`.
+- [ ] **Ratings** (`Rating` + `RatingStats`, polimórfico curso/aula, rollup) e **Materials** (`CourseMaterial`/`MaterialDownload`/`MaterialStats` via medialibrary).
 
 ## Needs Review
 

@@ -225,6 +225,11 @@ Regras:
 
 ## Hook de Git obrigatório
 
+Hooks versionados em `.githooks/` (`pre-commit`, `pre-push`). Ativados via
+`git config core.hooksPath .githooks`, **religado automaticamente** a cada `composer install/update`
+pelo script `git:hooks` (chamado no `post-autoload-dump`). Rodar `composer git:hooks` religa manual.
+Invariante coberta por teste (`SecurityAuditDepsCommandTest`): se a fiação sumir, o teste quebra.
+
 ### Pre-commit
 
 O repositório deve instalar um hook `pre-commit` que execute o comando **quando houver mudanças em**:

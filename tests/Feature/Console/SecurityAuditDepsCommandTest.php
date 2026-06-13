@@ -228,6 +228,24 @@ it('defines a dedicated dependency qa script and wires it in CI', function () {
         ->and($workflow)->toContain('continue-on-error: true');
 });
 
+it('wires the audit into git hooks via composer', function () {
+    $composer = json_decode(file_get_contents(base_path('composer.json')), true);
+
+    $gitHooks = $composer['scripts']['git:hooks'] ?? [];
+    $postAutoload = $composer['scripts']['post-autoload-dump'] ?? [];
+
+    expect(implode(' ', (array) $gitHooks))->toContain('core.hooksPath', '.githooks')
+        ->and($postAutoload)->toContain('@composer git:hooks')
+        ->and(file_exists(base_path('.githooks/pre-commit')))->toBeTrue()
+        ->and(file_exists(base_path('.githooks/pre-push')))->toBeTrue();
+
+    $preCommit = file_get_contents(base_path('.githooks/pre-commit'));
+    $prePush = file_get_contents(base_path('.githooks/pre-push'));
+
+    expect($preCommit)->toContain('security:audit-deps', '--lock-only', '--fail-on=high')
+        ->and($prePush)->toContain('security:audit-deps', '--scan-vendor');
+});
+
 it('can generate and consume a baseline file', function () {
     $source = base_path('tests/Fixtures/DependencyAudit/suspicious');
     $fixture = sys_get_temp_dir().'/dependency-audit-'.uniqid();

@@ -88,9 +88,13 @@
             "@composer insights",
             "@php artisan test --compact --ansi"
         ],
+        "git:hooks": [
+            "test -d .git && git config core.hooksPath .githooks 2>/dev/null || true"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@composer git:hooks"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",

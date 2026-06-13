@@ -17,7 +17,8 @@
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/acme/safe-lib/zipball/1234567890abcdef",
-                "reference": "1234567890abcdef"
+                "reference": "1234567890abcdef",
+                "shasum": "safe-lib-sha"
             }
         }
     ],

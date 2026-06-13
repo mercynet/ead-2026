@@ -410,6 +410,16 @@ final class DependencyAuditService
             $version = (string) ($package['version'] ?? 'unknown');
             $vendorComposerPath = $vendorPath.'/'.$packageName.'/composer.json';
 
+            if (isset($installedPackages[$packageName])) {
+                $this->compareInstalledMetadata(
+                    $findings,
+                    $package,
+                    $installedPackages[$packageName],
+                    $installedPath,
+                    $rootPath,
+                );
+            }
+
             if (! isset($installedPackages[$packageName]) || ! is_file($vendorComposerPath)) {
                 $findings[] = new Finding(
                     'locked_package_missing_from_vendor',
@@ -426,10 +436,80 @@ final class DependencyAuditService
 
             $vendorComposer = $this->readJsonFile($vendorComposerPath, $this->relativePath($vendorComposerPath, $rootPath));
             $this->compareVendorMetadata($findings, $package, $vendorComposer, $vendorComposerPath, $rootPath);
-            $this->scanPackageEntrypoints($findings, $package, $vendorPath.'/'.$packageName, $rootPath);
+            $this->scanPackageEntrypoints($findings, $package, $vendorPath.'/'.$packageName, $rootPath, $config);
         }
 
         return $findings;
+    }
+
+    /**
+     * @param  list<Finding>  $findings
+     * @param  array<string, mixed>  $lockedPackage
+     * @param  array<string, mixed>  $installedPackage
+     */
+    private function compareInstalledMetadata(
+        array &$findings,
+        array $lockedPackage,
+        array $installedPackage,
+        string $installedPath,
+        string $rootPath,
+    ): void {
+        $packageName = (string) ($lockedPackage['name'] ?? 'unknown/package');
+        $version = (string) ($lockedPackage['version'] ?? 'unknown');
+
+        $checks = [
+            'version' => [
+                $lockedPackage['version'] ?? null,
+                $installedPackage['version'] ?? null,
+            ],
+            'source.type' => [
+                Arr::get($lockedPackage, 'source.type'),
+                Arr::get($installedPackage, 'source.type'),
+            ],
+            'source.url' => [
+                Arr::get($lockedPackage, 'source.url'),
+                Arr::get($installedPackage, 'source.url'),
+            ],
+            'source.reference' => [
+                Arr::get($lockedPackage, 'source.reference'),
+                Arr::get($installedPackage, 'source.reference'),
+            ],
+            'dist.type' => [
+                Arr::get($lockedPackage, 'dist.type'),
+                Arr::get($installedPackage, 'dist.type'),
+            ],
+            'dist.url' => [
+                Arr::get($lockedPackage, 'dist.url'),
+                Arr::get($installedPackage, 'dist.url'),
+            ],
+            'dist.reference' => [
+                Arr::get($lockedPackage, 'dist.reference'),
+                Arr::get($installedPackage, 'dist.reference'),
+            ],
+        ];
+
+        if (($lockedPackage['dist']['shasum'] ?? '') !== '' || ($installedPackage['dist']['shasum'] ?? '') !== '') {
+            $checks['dist.shasum'] = [
+                Arr::get($lockedPackage, 'dist.shasum'),
+                Arr::get($installedPackage, 'dist.shasum'),
+            ];
+        }
+
+        foreach ($checks as $field => [$expected, $actual]) {
+            if ($actual === null || $actual === '' || $expected === $actual) {
+                continue;
+            }
+
+            $findings[] = new Finding(
+                'vendor_installed_metadata_drift',
+                Severity::High,
+                $packageName,
+                $version,
+                $this->relativePath($installedPath, $rootPath),
+                "{$field} differs between lock and installed vendor metadata",
+                'Reinstall dependencies and investigate whether installed metadata diverged from the lockfile or the upstream artifact was rewritten.',
+            );
+        }
     }
 
     /**
@@ -477,9 +557,11 @@ final class DependencyAuditService
     /**
      * @param  list<Finding>  $findings
      * @param  array<string, mixed>  $package
+     * @param  array{trusted_vendor_entrypoints?: array<string, list<string>>}  $config
      */
-    private function scanPackageEntrypoints(array &$findings, array $package, string $packagePath, string $rootPath): void
+    private function scanPackageEntrypoints(array &$findings, array $package, string $packagePath, string $rootPath, array $config): void
     {
+        $packageName = (string) ($package['name'] ?? 'unknown/package');
         $entryFiles = [];
 
         foreach (Arr::get($package, 'autoload.files', []) as $relativeFile) {
@@ -495,7 +577,19 @@ final class DependencyAuditService
                 continue;
             }
 
-            $signal = $this->matchSuspiciousCode((string) file_get_contents($entryFile));
+            $relativeEntrypoint = ltrim(str_replace($packagePath.'/', '', str_replace('\\', '/', $entryFile)), '/');
+
+            if (in_array($relativeEntrypoint, $config['trusted_vendor_entrypoints'][$packageName] ?? [], true)) {
+                continue;
+            }
+
+            $contents = (string) file_get_contents($entryFile);
+
+            if ($this->looksBinary($contents)) {
+                continue;
+            }
+
+            $signal = $this->matchSuspiciousCode($contents);
             if ($signal === null) {
                 continue;
             }
@@ -503,7 +597,7 @@ final class DependencyAuditService
             $findings[] = new Finding(
                 'suspicious_vendor_entrypoint',
                 Severity::High,
-                (string) ($package['name'] ?? 'unknown/package'),
+                $packageName,
                 (string) ($package['version'] ?? 'unknown'),
                 $this->relativePath($entryFile, $rootPath),
                 "Entrypoint contains {$signal}",
@@ -555,9 +649,6 @@ final class DependencyAuditService
         return [$active, $suppressed];
     }
 
-    /**
-     * @param  list<Finding>  $findings
-     */
     private function findingSorter(Finding $left, Finding $right): int
     {
         return $right->severity->value <=> $left->severity->value
@@ -611,10 +702,13 @@ final class DependencyAuditService
 
     private function matchSuspiciousCode(string $contents): ?string
     {
+        $hasStringAssert = preg_match('/\bassert\s*\(\s*[\'"]/i', $contents) === 1;
+        $hasObfuscationCombo = preg_match('/\b(base64_decode|gzinflate)\s*\(/i', $contents) === 1
+            && preg_match('/\b(eval|assert)\s*\(/i', $contents) === 1;
+
         $patterns = [
             '/\b(shell_exec|exec|system|passthru|proc_open|popen)\s*\(/i' => 'process execution',
             '/\b(curl_exec|curl_init|fsockopen|stream_socket_client)\s*\(/i' => 'network primitives',
-            '/\b(base64_decode|gzinflate|assert)\s*\(/i' => 'obfuscation/dynamic execution primitive',
             '/(\.env|auth\.json|\/proc\/|id_rsa|github_token|aws_|kube|vault)/i' => 'secret access pattern',
         ];
 
@@ -624,7 +718,20 @@ final class DependencyAuditService
             }
         }
 
+        if ($hasStringAssert || $hasObfuscationCombo) {
+            return 'obfuscation/dynamic execution primitive';
+        }
+
         return null;
+    }
+
+    private function looksBinary(string $contents): bool
+    {
+        if ($contents === '') {
+            return false;
+        }
+
+        return preg_match('/[\x00-\x08\x0E-\x1F]/', $contents) === 1;
     }
 
     /**

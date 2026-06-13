@@ -21,10 +21,15 @@ return [
 
     'trusted_vendor_bins' => [
         'laravel/pint' => ['builds/pint'],
+        'laravel/sail' => ['bin/sail'],
         'pestphp/pest' => ['bin/pest'],
         'phpstan/phpstan' => ['phpstan'],
         'larastan/larastan' => ['extension.neon'],
     ],
 
     'trusted_laravel_providers' => [],
+
+    'trusted_vendor_entrypoints' => [
+        'laravel/sail' => ['bin/sail'],
+    ],
 ];

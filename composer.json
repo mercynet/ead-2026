@@ -74,6 +74,10 @@
         "docs": [
             "php artisan scribe:generate"
         ],
+        "qa:deps": [
+            "@php artisan security:audit-deps --scan-vendor --include-dev --format=json --fail-on=high",
+            "@composer audit --locked"
+        ],
         "qa:gate": [
             "@composer validate --strict",
             "@php artisan config:clear --ansi",

@@ -59,6 +59,9 @@ jobs:
           cp .env.example .env
           php artisan key:generate --ansi
 
+      - name: Run dependency supply-chain audit
+        run: composer qa:deps
+        continue-on-error: true
+
       - name: Run QA Gate
         run: composer qa:gate
-

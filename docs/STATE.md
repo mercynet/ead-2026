@@ -6,70 +6,47 @@
 
 ## Sessão
 
-- 2026-06-13 — **Replanejamento fundamental: ÁREAS + reuso do eadIA.** Definidas as **5 áreas**
-  (Mzrt, Admin, Instructor, Student, Home/público), separadas por **namespace de API**
-  (`/api/v1/{area}/...`), Home por último. Contrato em
-  `docs/specs/00-architecture/areas-surfaces.md` (**draft, a ratificar**). Referência de
-  domínio/plugins/financeiro = projeto `../eadIA` (o plano de áreas dele está errado:
-  "Desktop"=Home, "dashboard"=Admin — não copiar). **ADR-001** (`decisions/001-...`) registra
-  baseline de pacotes + billing por abstração de gateway.
-- **Decisões fechadas:** só multi-tenant (não multi-país); conteúdo i18n traduzível; comissão de
-  instrutor é domínio (3ª camada de billing); gateways = **plugins financeiros** tenant-seleção
-  (Stripe no MVP via `laravel/cashier` sob `PaymentGatewayInterface`); deps aprovadas e estagiadas
-  (cashier→task Stripe, telescope→dev, impersonate→feature de impersonação).
-- **Pacotes:** ead2026 já tem multitenancy/permission/activitylog **ligados** e medialibrary
-  instalado (usar p/ materiais/PDF). Não reinventar.
-- **Revisão crítica das migrations do eadIA** gravada em
-  `docs/specs/00-architecture/eadia-port-review.md` (adotar/adaptar/rejeitar + problemas pegos).
-  Itens de reuso espalhados nos `tasks.md` de 20/40/50 (seção "Reuso eadIA").
-- **Estratégia de porte (decidida com Paulo): just-in-time por domínio.** Ao desenvolver um
-  domínio, revisar as migrations do eadIA daquele domínio + ligadas, decidir o que compensa, trazer
-  **adaptado** (modular, cents, `encrypted:json`, FK inteiro, i18n+fallback) com teste — nunca `cp`.
-  **Courses já revisado** (verdito no `20-catalog-learning/tasks.md` §Reuso): ead2026 mais rico;
-  trazer só i18n traduzível + `is_fifo` + `meta_title/meta_description`.
-- **`areas-surfaces.md` RATIFICADA (2026-06-13):** maturity `stable`. Sub-decisões fechadas:
-  **(A)** URL área-first puro `v1/{area}/{resource}`; **(B)** middleware `area.guard` dedicado;
-  **(D)** re-slot incremental começando por `/admin`. **(C)** (estratégia de Resource) segue aberta
-  — decide ao implementar 2ª área.
-- **Slice entregue — 1º da área Admin:** `GET /courses/{id}` re-slotado para
-  `GET /api/v1/admin/courses/{id}`. Scaffold criado: `Area` enum + `UserType::rank()`,
-  `EnsureAreaAccess` (`area.guard`, alias em `bootstrap/app.php`), `AreaAccessDeniedException`
-  (envelope `area_forbidden` 403), `Routes/admin.php`, `Http/Controllers/Admin/CourseController`.
-  Rota antiga `/v1/learning/courses/{id}` removida (sem frontend consumindo). student/instructor
-  agora barrados pela guarda. **Verde:** Feature CourseCrud 17/17, Architecture 14/14, Area unit
-  7/7, E2E `courses-show` 7/7.
+- 2026-06-13 — **`security:audit-deps` endurecido no scan lock↔vendor.** O serviço agora compara
+  metadata do `composer.lock` com `vendor/composer/installed.json` (`version`, `source.*`,
+  `dist.*`, incluindo `dist.shasum` quando presente) e abre finding de drift explícito.
+- **Rollout do gate decidido para não quebrar o repo por passivo pré-existente:** em vez de tornar
+  o `qa:gate` bloqueante imediatamente, foi criado `composer qa:deps` e o workflow
+  `.github/workflows/qa-gate.yml` o executa em modo **report-only** (`continue-on-error: true`).
+- **Cobertura adicionada:** fixtures clean/suspicious atualizadas para metadata drift; testes de
+  console cobrem scan-vendor limpo, drift em installed metadata e wiring de `qa:deps` no CI.
+- **Validação:** `SecurityAuditDepsCommandTest` verde (6 testes / 36 asserts), `composer validate`
+  verde, Pint rodado.
 
 ## Próximos passos (1-3)
 
-1. **Próximo slice área-first.** Candidatos: re-slotar outros endpoints de course (modules/CRUD)
-   em `/admin`, ou abrir área `instructor`/`student` (aí decide **sub-decisão C** = base Resource
-   compartilhada vs independente por área).
-2. **Porte do Financial** seguindo `eadia-port-review.md` + ADR-001: `PaymentGatewayInterface` +
-   `TenantPaymentGateway` (`encrypted:json`) + `Order/OrderItem` polimórfico em **cents** +
-   `StripeGateway` (Cashier). Corrigir colisão de PK em `plugins` antes de portar plugin tables.
-3. Alternativa: continuar trilha Learning (`publish/unpublish`, attach categories) já no namespace
-   da área correspondente.
+1. **Tratar o passivo revelado por `composer qa:deps`.** Há findings high do scanner heurístico e
+   advisories reais do `composer audit --locked`; decidir o que vira baseline/allowlist, regex a
+   refinar e quais upgrades de pacotes entram primeiro.
+2. **Fechar os gaps restantes da spec do auditor**, se priorizado: scan de providers resolvidos,
+   symlinks/binários inesperados e `replace`/`provide`.
+3. Retomar a trilha principal do produto (áreas/Financial/Learning) quando a janela de segurança
+   estiver suficiente para não bloquear trabalho não relacionado.
 
 ## Para depois (parqueado — não é o foco agora)
 
-- **Auditor de supply chain `security:audit-deps`** — **ENTREGUE** (commit `1996c01`). Comando +
-  `DependencyAuditService` + fixtures clean/suspicious + `.githooks/{pre-commit,pre-push}`. Hooks
-  são **opt-in**: `git config core.hooksPath .githooks` pra ativar (ainda não ativado).
+- **Auditor de supply chain `security:audit-deps`** — **ENTREGUE e endurecido localmente** (base:
+  commit `1996c01`; working tree atual adiciona drift lock↔installed metadata + `qa:deps`
+  report-only no CI). Hooks seguem **opt-in**: `git config core.hooksPath .githooks`.
 - **Upgrade Laravel 13 / PHP 8.5** — task dedicada; hoje bloqueado por deps em `^12`
   (scribe/boost/sanctum/larastan/spatie). Ver `ROADMAP.md` §"Meta de stack".
 
 ## Decisões abertas
 
+- **Qual severidade/ruído aceitável para o futuro gate bloqueante de deps?** Hoje `qa:deps` é só
+  report-only porque o repo ainda reprova no estado atual.
 - **Sub-decisão (C)** de `areas-surfaces.md`: estratégia anti-repetição de Resource (base
   compartilhada + subclasses por área vs independentes). Decide ao implementar a 2ª área.
-- **Disciplina de contexto (Paulo)**: `clear` por endpoint; retomar via `AGENTS.md` + STATE +
-  `spec-task-planning`.
 - Dívidas pré-existentes: allowlist `ModuleBoundaryTest` → Events/Contracts; phpstan level 5
-  (~156 erros). Sem regressão nova.
+  (~156 erros); findings/advisories de dependências pendentes.
 
 ## Último commit
 
-- `1996c01` — `feat(security): supply-chain dependency auditor (security:audit-deps)`
-- `48968fa` — `feat(learning): area-first guard + re-slot GET /admin/courses/{id}`
-- Branch `harness/specs-foundation`. **Ainda NÃO pushed** (3e9a02c era o último push).
-  Working tree limpo após estes 2 commits + este update de STATE.
+- `c2ed39e` — Branch `harness/specs-foundation` no momento do checkpoint.
+- Últimos commits relevantes: `1996c01` (`feat(security): supply-chain dependency auditor`) e
+  `48968fa` (`feat(learning): area-first guard + re-slot GET /admin/courses/{id}`).
+- Working tree **não está limpo**: há mudanças locais desta task ainda não commitadas/pushadas.

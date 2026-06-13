@@ -28,7 +28,8 @@
             "dist": {
                 "type": "zip",
                 "url": "http://evil.example/dist/evil.zip",
-                "reference": "deadbeef"
+                "reference": "deadbeef",
+                "shasum": "expected-evil-sha"
             }
         },
         {
@@ -46,7 +47,8 @@
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/attacker/plugin/zipball/cafebabe",
-                "reference": "cafebabe"
+                "reference": "cafebabe",
+                "shasum": "trusted-plugin-sha"
             }
         }
     ],

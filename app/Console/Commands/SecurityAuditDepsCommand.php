@@ -6,7 +6,10 @@ use App\Support\DependencyAudit\AuditReport;
 use App\Support\DependencyAudit\DependencyAuditService;
 use App\Support\DependencyAudit\Severity;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 use RuntimeException;
+
+use function Termwind\render;
 
 class SecurityAuditDepsCommand extends Command
 {
@@ -15,7 +18,7 @@ class SecurityAuditDepsCommand extends Command
         {--lock-only : Audit only composer.json and composer.lock}
         {--scan-vendor : Also verify vendor consistency and scan autoload/bin entrypoints}
         {--include-dev : Include require-dev and packages-dev}
-        {--format=table : table or json}
+        {--format=pretty : pretty, table, or json}
         {--fail-on= : Override severity threshold}
         {--no-baseline : Ignore the configured baseline file}
         {--baseline= : Override baseline file path}
@@ -101,13 +104,40 @@ class SecurityAuditDepsCommand extends Command
             return;
         }
 
-        $this->components->info('Dependency Audit');
-        $this->line('Root: '.$report->rootPath);
-        $this->line('Scope: '.($report->scannedVendor ? 'composer.json + composer.lock + vendor' : 'composer.json + composer.lock'));
-        $this->line('Findings: '.count($report->findings).' | Suppressed by baseline: '.count($report->suppressed));
+        $scope = $report->scannedVendor
+            ? 'composer.json + composer.lock + vendor'
+            : 'composer.json + composer.lock';
+        $status = $report->findings === [] ? 'PASS' : 'FAIL';
+        $statusClass = $report->findings === [] ? 'bg-green-600 text-black' : 'bg-yellow-400 text-black';
+
+        render(<<<HTML
+<div class="mx-1 mb-1">
+    <div class="mb-1">
+        <span class="font-bold text-cyan-400">Dependency Audit</span>
+        <span class="ml-2 px-1 {$statusClass}">{$status}</span>
+    </div>
+    <div class="text-gray-300">Root: <span class="text-white">{$report->rootPath}</span></div>
+    <div class="text-gray-300">Scope: <span class="text-white">{$scope}</span></div>
+    <div class="text-gray-300">Threshold summary: <span class="text-white">{$report->highestSeverity()->label()}</span> highest severity, <span class="text-white">{$this->formatCount(count($report->findings))}</span> active findings, <span class="text-white">{$this->formatCount(count($report->suppressed))}</span> suppressed</div>
+</div>
+HTML);
+
+        $severityRows = collect(Severity::cases())
+            ->map(fn (Severity $severity): array => [
+                strtoupper($severity->label()),
+                (string) ($report->countsBySeverity()[$severity->label()] ?? 0),
+            ])
+            ->filter(fn (array $row): bool => $row[1] !== '0')
+            ->values()
+            ->all();
+
+        if ($severityRows !== []) {
+            $this->newLine();
+            $this->table(['Severity', 'Count'], $severityRows);
+        }
 
         if ($report->findings === []) {
-            $this->components->info('No findings above the current baseline/threshold.');
+            render('<div class="mx-1 mt-1 text-green-400">No findings above the current baseline / threshold.</div>');
 
             return;
         }
@@ -123,15 +153,61 @@ class SecurityAuditDepsCommand extends Command
             }
 
             $this->newLine();
-            $this->warn(strtoupper($severity->label()));
+            render(sprintf(
+                '<div class="mx-1 mb-1 %s">%s · %s finding(s)</div>',
+                $this->severityHeadingClasses($severity),
+                strtoupper($severity->label()),
+                count($findings),
+            ));
+
+            $this->table(
+                ['Rule', 'Package', 'Version', 'File'],
+                array_map(fn ($finding): array => [
+                    $finding->rule,
+                    $finding->package,
+                    $finding->version,
+                    Str::limit($finding->file, 48),
+                ], $findings),
+            );
+
+            if (! $severity->meetsOrExceeds(Severity::High)) {
+                continue;
+            }
 
             foreach ($findings as $finding) {
-                $this->line("[{$finding->rule}] {$finding->package} {$finding->version}");
-                $this->line('  file: '.$finding->file);
-                $this->line('  evidence: '.$finding->evidence);
-                $this->line('  recommendation: '.$finding->recommendation);
-                $this->line('  fingerprint: '.$finding->fingerprint);
+                render(sprintf(
+                    '<div class="mx-1 mb-1">
+                        <div><span class="text-cyan-400">%s</span> <span class="text-white">%s %s</span></div>
+                        <div class="text-gray-300">Evidence: <span class="text-white">%s</span></div>
+                        <div class="text-gray-300">Recommendation: <span class="text-white">%s</span></div>
+                        <div class="text-gray-500">Fingerprint: %s</div>
+                    </div>',
+                    $finding->rule,
+                    $finding->package,
+                    $finding->version,
+                    htmlspecialchars($finding->evidence, ENT_QUOTES),
+                    htmlspecialchars($finding->recommendation, ENT_QUOTES),
+                    $finding->fingerprint,
+                ));
             }
         }
+
+        render('<div class="mx-1 mt-1 text-gray-500">Tip: use --format=json for machine output.</div>');
+    }
+
+    private function severityHeadingClasses(Severity $severity): string
+    {
+        return match ($severity) {
+            Severity::Critical => 'font-bold text-red-400',
+            Severity::High => 'font-bold text-yellow-400',
+            Severity::Medium => 'font-bold text-cyan-400',
+            Severity::Low => 'font-bold text-blue-400',
+            Severity::Info => 'font-bold text-gray-400',
+        };
+    }
+
+    private function formatCount(int $count): string
+    {
+        return number_format($count);
     }
 }

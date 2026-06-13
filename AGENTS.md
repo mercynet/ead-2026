@@ -96,7 +96,14 @@ Helpers em `tests/Pest.php` (`actingAsUserType`, `tenantHeaders`, `assertApiErro
 - **Laravel Boost MCP** (`search-docs`, `tinker`, `database-schema`, …) para docs e inspeção; não chute API de pacote.
 - `php artisan make:` para gerar arquivos; `--no-interaction`.
 - FormRequest para validação **e** filtros de listagem (com `queryParameters()` p/ Scribe).
-- **Skills sob demanda** (planejar / construir / testar) — não sempre-ligadas.
+- **Skills sob demanda** (planejar / construir / testar / auditar) — não sempre-ligadas.
+  Home canônico **tool-agnóstico**: `.agents/skills/<nome>/SKILL.md` (fonte única; o `description:`
+  do frontmatter é o catálogo — **não** mantenha lista de skills aqui, evita drift). Cada ferramenta
+  resolve a mesma dir via symlink: Claude Code (`.claude/skills/`), Codex (`.codex/skills/`),
+  OpenCode (`.opencode/skills/`) → `.agents/skills/` (symlink **da dir inteira**, não por-skill).
+  Ferramenta sem auto-descoberta: escaneie `.agents/skills/*/SKILL.md` e abra o relevante pelo
+  `description:`. Skill nova: só criar `.agents/skills/<nome>/SKILL.md` — os três a herdam sozinhos,
+  sem passo manual de symlink.
 - **Economia de modelo (não gastar token à toa)**: tarefa **mecânica e bem especificada** vai para
   **subagente de modelo barato/rápido** (ex.: Haiku) — boilerplate (FormRequest, Resource, factory,
   seeder), rascunho de docs/skills, varreduras de arquivos, renomeações repetitivas. O modelo

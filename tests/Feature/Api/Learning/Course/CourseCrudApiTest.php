@@ -11,6 +11,188 @@ use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
+it('creates a course as admin', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-create-course@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->postJson('/api/v1/learning/courses', [
+        'title' => 'Novo Curso',
+        'description' => 'Descrição do novo curso',
+        'price_cents' => 9900,
+        'access_days' => 365,
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.title', 'Novo Curso')
+        ->assertJsonPath('data.slug', 'novo-curso')
+        ->assertJsonPath('data.status', 'draft')
+        ->assertJsonPath('data.price_cents', 9900);
+
+    $course = Course::query()->where('title', 'Novo Curso')->first();
+    expect($course)->not->toBeNull();
+    expect((int) $course->tenant_id)->toBe($tenant->id);
+    expect((int) $course->instructor_id)->toBe($admin->id);
+});
+
+it('creates a course as instructor', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $instructor = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Instructor,
+        'name' => 'Instructor',
+        'email' => 'instructor-create-course@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $instructor->assignRole('instructor');
+
+    $token = $instructor->createToken('instructor-token')->plainTextToken;
+
+    $this->postJson('/api/v1/learning/courses', [
+        'title' => 'Curso do Instrutor',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.title', 'Curso do Instrutor')
+        ->assertJsonPath('data.status', 'draft');
+});
+
+it('publishes immediately when created with published status', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-create-published@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->postJson('/api/v1/learning/courses', [
+        'title' => 'Curso Publicado',
+        'status' => 'published',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'published');
+
+    $course = Course::query()->where('title', 'Curso Publicado')->first();
+    expect($course->published_at)->not->toBeNull();
+});
+
+it('forbids student from creating a course', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $student = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Student,
+        'name' => 'Student',
+        'email' => 'student-create-course@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $student->assignRole('student');
+
+    $token = $student->createToken('student-token')->plainTextToken;
+
+    $this->postJson('/api/v1/learning/courses', [
+        'title' => 'Tentativa de Criar',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertForbidden();
+});
+
+it('requires authentication to create a course', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->postJson('/api/v1/learning/courses', [
+        'title' => 'Sem Auth',
+    ], [
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertUnauthorized();
+});
+
+it('validates required title when creating a course', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-validate-course@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->postJson('/api/v1/learning/courses', [
+        'description' => 'Sem título',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertStatus(422);
+});
+
 it('updates a course as admin', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',

@@ -50,6 +50,20 @@ class CoursePolicy
             && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.view');
     }
 
+    public function create(User $authenticatedUser, ?Tenant $tenant = null): bool
+    {
+        if ($authenticatedUser->isDeveloper()) {
+            return true;
+        }
+
+        if ($tenant === null) {
+            return false;
+        }
+
+        return $authenticatedUser->belongsToTenant($tenant)
+            && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.create');
+    }
+
     public function update(User $authenticatedUser, Tenant $tenant, Course $course): bool
     {
         if ($authenticatedUser->isDeveloper()) {

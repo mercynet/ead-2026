@@ -6,54 +6,35 @@
 
 ## Sessão
 
-- 2026-06-10 — **Migração modular concluída (item B)** — commit `ea9d83a` (pushed):
-  código movido para `app/Modules/{Core,Learning,Assessment}` + `app/Shared`
-  (ApiContext, base Controller, exceptions); middleware de tenancy em `Core/Http/Middleware`.
-  Gates e rotas por módulo em `Providers/<M>ServiceProvider` (registrados em
-  `bootstrap/providers.php`); `routes/api.php` e `api.php.bak` removidos (`withRouting` sem `api:`).
-  Factories: `protected $model` + `protected static string $factory` nos models (descoberta por
-  convenção não cobre `App\Modules\*`). Learning controllers limpos (queries/abort/try-catch →
-  Actions novas: `GetCourseAction`, `DeleteCourseAction`, `GetCategoryAction`,
-  `DeleteCategoryAction`, `GetLessonAction::progressFor`); autorização unificada em
-  `Gate::forUser()->authorize`. **`ControllerLeannessTest` destravado** (sem skip) e
-  **`ModuleBoundaryTest` criado**: shared kernel = `Core\Models|Enums` importável por todos;
-  Core não importa módulos; dívida Eloquent cross-module congelada em allowlist
-  (`User→QuizAttempt/Certificate`, `Course→Certificate`, Assessment→Learning models).
-  Spec `backend-patterns.md` e `AGENTS.md` atualizados (migração concluída + exceção shared kernel).
-  `phpstan.neon`: ignores re-apontados para paths novos.
-- 2026-06-10 (cont.) — **Migrations por módulo**: movidas para
-  `app/Modules/<M>/Database/Migrations` (`loadMigrationsFrom` no provider); framework/pacotes e
-  plugins (até existir `Ecosystem`) seguem em `database/migrations/`. `make:migration` de módulo
-  exige `--path`. Decisões do Paulo: manter `Http/` aninhado; granularidade segue bounded context
-  (`Learning`, não `Courses`). **Skills consolidadas**: canônicas em `.agents/skills/`,
-  `.claude/skills/` é 100% symlink; adotadas do catálogo tech-leads-club (adaptadas):
-  `create-adr` (saída em `docs/specs/00-architecture/decisions/`) e `coupling-analysis`
-  (auditoria pontual; grafo de partida = allowlist do `ModuleBoundaryTest`).
+- 2026-06-13 — **Validação E2E dos endpoints de cursos existentes**: mapeado 1 spec atual de
+  cursos (`tests/e2e/learning/courses-store.php` → `POST /api/v1/learning/courses`). O runner
+  falhou no host por `DB_HOST=mysql` inacessível fora da rede do compose e, no container,
+  `APP_URL=http://localhost:8099` apontava para a porta publicada do host; execução validada via
+  Sail com `./vendor/bin/sail artisan e2e:run learning/courses-store --base=http://127.0.0.1`
+  e resultado **8/8 verde**. Há outras rotas de courses sem spec E2E (`GET /courses`,
+  `GET /courses/{slug}`, `GET /courses/{courseId}/modules`, `PATCH /courses/{id}`,
+  `DELETE /courses/{id}`, `GET /courses/{courseId}/enrollment`).
 
 ## Próximos passos (1-3)
 
-1. Slices TDD (item C) via skills `vertical-slice` + `pest-api-tests`.
-2. Converter a dívida da allowlist do `ModuleBoundaryTest` em Events/Contracts (começar pelas
-   relações inversas `User→QuizAttempt/Certificate` e `Course→Certificate`, que invertem o grafo);
-   rodar `coupling-analysis` antes pra priorizar.
-3. Sanar dívida de tipos do phpstan (156 erros, level 5 — pré-existente, ver Observações).
+1. Se quiser ampliar a cobertura E2E de courses, autorar specs para listagem/detalhe/update/delete
+   e enrollment/modules usando `endpoint-e2e`.
+2. Decidir se `APP_URL`/runner deve ganhar default compatível com execução dentro do container
+   (`http://127.0.0.1` ou `--base` documentado) para evitar falso vermelho.
+3. Continuar a task principal em andamento no working tree de Learning antes de qualquer commit.
 
 ## Decisões abertas
 
-- **Catálogo tech-leads-club/agent-skills**: parecer dado (adotar no máximo `coupling-analysis`
-  one-off e `create-adr` adaptada para `docs/specs/00-architecture/`); aguarda decisão do Paulo.
-- **Nomenclatura policy-backed** (`core.users.show`, `learning.catalog.courses.{list,show}` fora
-  do config) segue dívida — cuidado com bypass do `Gate::before` ao renomear.
+- Nenhuma para esta validação E2E; segue aberta apenas a decisão operacional sobre default do
+  `--base`/`APP_URL` no runner.
 
 ## Observações operacionais
 
-- `composer analyse` **não era verde antes da migração**: HEAD tinha 161 erros phpstan
-  (level 5, dívida de tipos pré-existente); pós-migração = 156. Não tratar como regressão.
-- Suíte: **110 passed, 0 skipped (372 asserts)**; Architecture: 14 passed (zero skips).
-- Pint formatou `bootstrap/cache/*.php` (gitignored, regenerável — irrelevante).
+- Working tree **não está limpo**; há mudanças locais pré-existentes/em andamento em Learning,
+  console e specs E2E. Não confundir a validação E2E verde com task consolidada em git.
+- Para este repo, o runner E2E funcionou de forma confiável via `./vendor/bin/sail ...` com
+  `--base=http://127.0.0.1`.
 
 ## Último commit
 
-- `5ec0c8f` (skills .agents/symlinks; `ea9d83a` = migração modular) —
-  branch `harness/specs-foundation`, **pushed**, working tree limpo.
-  Suíte: 110 passed, 0 skipped (372 asserts); Architecture 14/14.
+- `8cc56cd` — branch `harness/specs-foundation`; existem mudanças locais não commitadas.

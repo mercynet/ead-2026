@@ -5,13 +5,16 @@ namespace App\Modules\Learning\Http\Controllers\Course;
 use App\Modules\Learning\Actions\Course\DeleteCourseAction;
 use App\Modules\Learning\Actions\Course\GetCourseAction;
 use App\Modules\Learning\Actions\Course\GetCourseModulesAction;
+use App\Modules\Learning\Actions\Course\StoreCourseAction;
 use App\Modules\Learning\Actions\Course\UpdateCourseAction;
+use App\Modules\Learning\Http\Requests\Course\StoreCourseRequest;
 use App\Modules\Learning\Http\Requests\Course\UpdateCourseRequest;
 use App\Modules\Learning\Http\Resources\Catalog\CourseDetailResource;
 use App\Modules\Learning\Http\Resources\Course\CourseModulesResource;
 use App\Modules\Learning\Models\Course;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
@@ -25,9 +28,43 @@ class CourseController extends Controller
     public function __construct(
         private readonly GetCourseModulesAction $getCourseModulesAction,
         private readonly GetCourseAction $getCourseAction,
+        private readonly StoreCourseAction $storeCourseAction,
         private readonly UpdateCourseAction $updateCourseAction,
         private readonly DeleteCourseAction $deleteCourseAction,
     ) {}
+
+    /**
+     * Criar Curso
+     *
+     * Cria um novo curso no tenant atual.
+     *
+     * @response 201 scenario="Curso criado com sucesso"
+     * {
+     *   "data": {
+     *     "id": 1,
+     *     "title": "Novo Curso",
+     *     "slug": "novo-curso",
+     *     "status": "draft",
+     *     "price_cents": 0,
+     *     "is_free": true
+     *   }
+     * }
+     * @response 403 scenario="Sem permissão"
+     * {
+     *   "data": null,
+     *   "errors": [{"code": "access_denied", "message": "Acesso negado."}]
+     * }
+     */
+    public function store(StoreCourseRequest $request, ApiContext $context): JsonResponse
+    {
+        Gate::forUser($context->requiredUser())->authorize('learning.courses.create-check', [$context->tenant]);
+
+        $course = $this->storeCourseAction->handle($context, $request->validated());
+
+        return CourseDetailResource::make($course)
+            ->response()
+            ->setStatusCode(201);
+    }
 
     /**
      * Listar Módulos

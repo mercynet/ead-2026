@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-06-10
+last-updated: 2026-06-13
 ---
 
 # Tasks — Catalog & Learning
@@ -21,6 +21,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `PUT /catalog/categories/{id}`.
 - [x] `DELETE /catalog/categories/{id}`.
 - [x] `GET /courses/{id}/modules`.
+- [x] `POST /courses` (criar curso).
 - [x] `PATCH /courses/{id}` (atualizar curso).
 - [x] `DELETE /courses/{id}`.
 - [x] `GET /courses/{id}/enrollment`.
@@ -35,7 +36,6 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 ## Pending
 
 ### Courses
-- [ ] `POST /courses` (criar curso).
 - [ ] `GET /courses/{id}` (admin view).
 - [ ] `POST /courses/{id}/publish` + `POST /courses/{id}/unpublish`.
 - [ ] Attach categories to courses.

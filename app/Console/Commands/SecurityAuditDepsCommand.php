@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Support\DependencyAudit\AuditReport;
 use App\Support\DependencyAudit\DependencyAuditService;
+use App\Support\DependencyAudit\Finding;
 use App\Support\DependencyAudit\Severity;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
@@ -23,7 +24,8 @@ class SecurityAuditDepsCommand extends Command
         {--no-baseline : Ignore the configured baseline file}
         {--baseline= : Override baseline file path}
         {--generate-baseline : Write current findings to the baseline file and exit successfully}
-        {--update-baseline : Alias of --generate-baseline}';
+        {--update-baseline : Alias of --generate-baseline}
+        {--all : Expand every finding, including non-blocking signals below the threshold}';
 
     protected $description = 'Audita dependências Composer em busca de sinais locais de supply-chain risk';
 
@@ -52,9 +54,9 @@ class SecurityAuditDepsCommand extends Command
             return $this->writeBaseline($report);
         }
 
-        $this->render($report);
-
         $threshold = $this->failureThreshold();
+
+        $this->render($report, $threshold);
 
         return $report->highestSeverity()->meetsOrExceeds($threshold)
             ? self::FAILURE
@@ -96,7 +98,7 @@ class SecurityAuditDepsCommand extends Command
         return self::SUCCESS;
     }
 
-    private function render(AuditReport $report): void
+    private function render(AuditReport $report, Severity $threshold): void
     {
         if ($this->option('format') === 'json') {
             $this->line(json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -107,74 +109,77 @@ class SecurityAuditDepsCommand extends Command
         $scope = $report->scannedVendor
             ? 'composer.json + composer.lock + vendor'
             : 'composer.json + composer.lock';
-        $status = $report->findings === [] ? 'PASS' : 'FAIL';
-        $statusClass = $report->findings === [] ? 'bg-green-600 text-black' : 'bg-yellow-400 text-black';
+
+        $blocking = array_values(array_filter(
+            $report->findings,
+            fn (Finding $finding): bool => $finding->severity->meetsOrExceeds($threshold),
+        ));
+        $belowThreshold = array_values(array_filter(
+            $report->findings,
+            fn (Finding $finding): bool => ! $finding->severity->meetsOrExceeds($threshold),
+        ));
+
+        [$status, $statusClass, $headline, $headlineClass] = match (true) {
+            $report->findings === [] => ['PASS', 'bg-green-600 text-black', 'Nenhum sinal de risco. Seguro para commitar.', 'text-green-400'],
+            $blocking !== [] => ['FAIL', 'bg-red-600 text-white', count($blocking).' problema(s) bloqueante(s) — NÃO commitar antes de resolver.', 'text-red-400'],
+            default => ['REVIEW', 'bg-yellow-500 text-black', count($belowThreshold).' sinal(is) abaixo do limite — não bloqueia; revise quando der.', 'text-yellow-400'],
+        };
+
+        $activeCount = $this->formatCount(count($report->findings));
+        $suppressedCount = $this->formatCount(count($report->suppressed));
+        $thresholdLabel = strtoupper($threshold->label());
 
         render(<<<HTML
-<div class="mx-1 mb-1">
-    <div class="mb-1">
-        <span class="font-bold text-cyan-400">Dependency Audit</span>
-        <span class="ml-2 px-1 {$statusClass}">{$status}</span>
+<div class="mx-1 my-1">
+    <div>
+        <span class="px-1 font-bold {$statusClass}"> {$status} </span>
+        <span class="ml-1 font-bold text-cyan-400">Dependency Audit</span>
     </div>
-    <div class="text-gray-300">Root: <span class="text-white">{$report->rootPath}</span></div>
-    <div class="text-gray-300">Scope: <span class="text-white">{$scope}</span></div>
-    <div class="text-gray-300">Threshold summary: <span class="text-white">{$report->highestSeverity()->label()}</span> highest severity, <span class="text-white">{$this->formatCount(count($report->findings))}</span> active findings, <span class="text-white">{$this->formatCount(count($report->suppressed))}</span> suppressed</div>
+    <div class="mt-1 {$headlineClass}">{$headline}</div>
+    <div class="mt-1 text-gray-500">Root {$report->rootPath}</div>
+    <div class="text-gray-500">Scope {$scope}  ·  fail-on {$thresholdLabel}  ·  {$activeCount} ativo(s)  ·  {$suppressedCount} suprimido(s)</div>
 </div>
 HTML);
 
-        $severityRows = collect(Severity::cases())
-            ->map(fn (Severity $severity): array => [
-                strtoupper($severity->label()),
-                (string) ($report->countsBySeverity()[$severity->label()] ?? 0),
-            ])
-            ->filter(fn (array $row): bool => $row[1] !== '0')
-            ->values()
-            ->all();
-
-        if ($severityRows !== []) {
-            $this->newLine();
-            $this->table(['Severity', 'Count'], $severityRows);
-        }
-
         if ($report->findings === []) {
-            render('<div class="mx-1 mt-1 text-green-400">No findings above the current baseline / threshold.</div>');
-
             return;
         }
 
+        $showAll = (bool) $this->option('all');
+
         foreach (array_reverse(Severity::cases()) as $severity) {
-            $findings = array_values(array_filter(
+            $rows = array_values(array_filter(
                 $report->findings,
-                fn ($finding): bool => $finding->severity === $severity,
+                fn (Finding $finding): bool => $finding->severity === $severity,
             ));
 
-            if ($findings === []) {
+            if ($rows === []) {
                 continue;
+            }
+
+            if (! $severity->meetsOrExceeds($threshold) && ! $showAll) {
+                continue; // resumido em uma linha abaixo
             }
 
             $this->newLine();
             render(sprintf(
-                '<div class="mx-1 mb-1 %s">%s · %s finding(s)</div>',
+                '<div class="mx-1 mb-1 %s">%s · %d finding(s)</div>',
                 $this->severityHeadingClasses($severity),
                 strtoupper($severity->label()),
-                count($findings),
+                count($rows),
             ));
 
             $this->table(
                 ['Rule', 'Package', 'Version', 'File'],
-                array_map(fn ($finding): array => [
+                array_map(fn (Finding $finding): array => [
                     $finding->rule,
                     $finding->package,
                     $finding->version,
                     Str::limit($finding->file, 48),
-                ], $findings),
+                ], $rows),
             );
 
-            if (! $severity->meetsOrExceeds(Severity::High)) {
-                continue;
-            }
-
-            foreach ($findings as $finding) {
+            foreach ($rows as $finding) {
                 render(sprintf(
                     '<div class="mx-1 mb-1">
                         <div><span class="text-cyan-400">%s</span> <span class="text-white">%s %s</span></div>
@@ -192,7 +197,30 @@ HTML);
             }
         }
 
-        render('<div class="mx-1 mt-1 text-gray-500">Tip: use --format=json for machine output.</div>');
+        if (! $showAll && $belowThreshold !== []) {
+            $this->newLine();
+            render(sprintf(
+                '<div class="mx-1">
+                    <div class="text-gray-400">Abaixo do limite (%d, não bloqueia): <span class="text-white">%s</span></div>
+                    <div class="text-gray-500">--all para detalhar · --generate-baseline para aceitar · --format=json para máquina</div>
+                </div>',
+                count($belowThreshold),
+                $this->summariseByRule($belowThreshold),
+            ));
+        }
+    }
+
+    /**
+     * @param  list<Finding>  $findings
+     */
+    private function summariseByRule(array $findings): string
+    {
+        return collect($findings)
+            ->countBy(fn (Finding $finding): string => $finding->rule)
+            ->sortDesc()
+            ->map(fn (int $count, string $rule): string => "{$rule} ×{$count}")
+            ->values()
+            ->implode(', ');
     }
 
     private function severityHeadingClasses(Severity $severity): string

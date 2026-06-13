@@ -14,6 +14,7 @@ final readonly class Finding
         public string $file,
         public string $evidence,
         public string $recommendation,
+        public string $integrity = '',
     ) {
         $this->fingerprint = sha1(implode('|', [
             $this->rule,
@@ -22,6 +23,7 @@ final readonly class Finding
             $this->version,
             $this->file,
             $this->evidence,
+            $this->integrity,
         ]));
     }
 
@@ -38,6 +40,7 @@ final readonly class Finding
             'file' => $this->file,
             'evidence' => $this->evidence,
             'recommendation' => $this->recommendation,
+            'integrity' => $this->integrity,
             'fingerprint' => $this->fingerprint,
         ];
     }

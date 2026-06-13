@@ -51,8 +51,8 @@ it('renders a readable pretty summary for humans', function () {
     expect($exitCode)->toBe(0)
         ->and($output)->toContain('Dependency Audit')
         ->and($output)->toContain('PASS')
-        ->and($output)->toContain('Root:')
-        ->and($output)->toContain('No findings above the current baseline / threshold.');
+        ->and($output)->toContain('Root')
+        ->and($output)->toContain('Nenhum sinal de risco');
 });
 
 it('reports risky manifest and lock signals in json output', function () {
@@ -258,6 +258,108 @@ it('can generate and consume a baseline file', function () {
             ->and($verifyExit)->toBe(0)
             ->and($output['findings'])->toHaveCount(0)
             ->and($output['suppressed'])->toBeGreaterThan(0);
+    } finally {
+        removeFixtureDirectory($fixture);
+    }
+});
+
+it('shows a non-blocking REVIEW verdict for sub-threshold signals', function () {
+    $fixture = sys_get_temp_dir().'/dependency-audit-review-'.uniqid();
+    @mkdir($fixture, 0777, true);
+
+    file_put_contents($fixture.'/composer.json', json_encode([
+        'name' => 'acme/app',
+        'require' => ['acme/widget' => '^1.0'],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    file_put_contents($fixture.'/composer.lock', json_encode([
+        'packages' => [[
+            'name' => 'acme/widget',
+            'version' => '1.0.0',
+            'type' => 'library',
+            'autoload' => ['files' => ['src/helpers.php']],
+            'source' => ['type' => 'git', 'url' => 'https://github.com/acme/widget.git', 'reference' => 'ref-aaa'],
+            'dist' => ['type' => 'zip', 'url' => 'https://api.github.com/repos/acme/widget/zipball/ref-aaa', 'reference' => 'ref-aaa'],
+        ]],
+        'packages-dev' => [],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    try {
+        $exitCode = Artisan::call('security:audit-deps', [
+            '--path' => $fixture,
+            '--lock-only' => true,
+            '--no-baseline' => true,
+        ]);
+
+        $output = Artisan::output();
+
+        expect($exitCode)->toBe(0)
+            ->and($output)->toContain('REVIEW')
+            ->and($output)->toContain('Abaixo do limite')
+            ->and($output)->toContain('autoload_files')
+            ->and($output)->not->toContain('Fingerprint:');
+    } finally {
+        removeFixtureDirectory($fixture);
+    }
+});
+
+it('re-surfaces a baselined finding when the artifact reference changes for the same version', function () {
+    $fixture = sys_get_temp_dir().'/dependency-audit-retag-'.uniqid();
+    @mkdir($fixture, 0777, true);
+    $baseline = $fixture.'/baseline.json';
+
+    $lock = fn (string $reference): string => json_encode([
+        'packages' => [[
+            'name' => 'acme/widget',
+            'version' => '1.0.0',
+            'type' => 'library',
+            'autoload' => ['files' => ['src/helpers.php']],
+            'dist' => ['type' => 'zip', 'url' => 'https://api.github.com/repos/acme/widget/zipball/'.$reference, 'reference' => $reference],
+        ]],
+        'packages-dev' => [],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    file_put_contents($fixture.'/composer.json', json_encode([
+        'name' => 'acme/app',
+        'require' => ['acme/widget' => '^1.0'],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    try {
+        // Baseline the legit artifact.
+        file_put_contents($fixture.'/composer.lock', $lock('ref-legit'));
+        Artisan::call('security:audit-deps', [
+            '--path' => $fixture,
+            '--lock-only' => true,
+            '--baseline' => $baseline,
+            '--generate-baseline' => true,
+        ]);
+
+        // Same lock → suppressed.
+        $suppressedExit = Artisan::call('security:audit-deps', [
+            '--path' => $fixture,
+            '--lock-only' => true,
+            '--baseline' => $baseline,
+            '--format' => 'json',
+        ]);
+        $suppressed = json_decode(Artisan::output(), true);
+
+        // Malicious re-tag: SAME version, NEW reference → must re-surface past the baseline.
+        file_put_contents($fixture.'/composer.lock', $lock('ref-malicious'));
+        $retagExit = Artisan::call('security:audit-deps', [
+            '--path' => $fixture,
+            '--lock-only' => true,
+            '--baseline' => $baseline,
+            '--format' => 'json',
+        ]);
+        $retag = json_decode(Artisan::output(), true);
+        $rules = collect($retag['findings'])->pluck('rule')->all();
+
+        expect($suppressedExit)->toBe(0)
+            ->and($suppressed['findings'])->toHaveCount(0)
+            ->and($suppressed['suppressed'])->toBeGreaterThan(0)
+            ->and($retagExit)->toBe(0)
+            ->and($retag['findings'])->not->toHaveCount(0)
+            ->and($rules)->toContain('autoload_files');
     } finally {
         removeFixtureDirectory($fixture);
     }

@@ -243,6 +243,7 @@ final class DependencyAuditService
             $packageName = (string) ($package['name'] ?? 'unknown/package');
             $version = (string) ($package['version'] ?? 'unknown');
             $file = $this->relativePath($composerLockPath);
+            $integrity = $this->packageIntegrity($package);
 
             if (($package['type'] ?? null) === 'composer-plugin') {
                 $severity = array_key_exists($packageName, $config['trusted_composer_plugins'] ?? [])
@@ -257,6 +258,7 @@ final class DependencyAuditService
                     $file,
                     'Package type is composer-plugin',
                     'Review plugin necessity and keep allow-plugins policy explicit.',
+                    $integrity,
                 );
             }
 
@@ -270,6 +272,7 @@ final class DependencyAuditService
                     $file,
                     'autoload.files: '.implode(', ', $autoloadFiles),
                     'Review auto-loaded files because they execute during bootstrap.',
+                    $integrity,
                 );
             }
 
@@ -285,6 +288,7 @@ final class DependencyAuditService
                     $file,
                     'extra.laravel.providers: '.implode(', ', $untrustedProviders),
                     'Review Laravel package discovery and baseline only trusted providers.',
+                    $integrity,
                 );
             }
 
@@ -302,6 +306,7 @@ final class DependencyAuditService
                         $file,
                         'bin: '.implode(', ', $unexpectedBins),
                         'Review vendor binaries and allowlist only expected executables.',
+                        $integrity,
                     );
                 }
             }
@@ -315,6 +320,7 @@ final class DependencyAuditService
                     $file,
                     'Package is marked as abandoned',
                     'Replace or justify abandoned packages before they become a maintenance liability.',
+                    $integrity,
                 );
             }
 
@@ -333,6 +339,7 @@ final class DependencyAuditService
                         $file,
                         "{$originType}.url uses insecure http: {$url}",
                         'Use https package origins only.',
+                        $integrity,
                     );
 
                     continue;
@@ -348,6 +355,7 @@ final class DependencyAuditService
                         $file,
                         "{$originType}.url points to untrusted host {$host}",
                         'Prefer package origins hosted on trusted registries or audited mirrors.',
+                        $integrity,
                     );
                 }
             }
@@ -647,6 +655,24 @@ final class DependencyAuditService
         }
 
         return [$active, $suppressed];
+    }
+
+    /**
+     * Pinned artifact reference of a locked package. Folded into the finding fingerprint so a
+     * same-version malicious re-tag (force-pushed tag → new dist.reference, unchanged version
+     * string) re-surfaces past a baseline instead of being silently suppressed. A normal version
+     * bump already changes the version, so this adds no review churn — it only closes the re-tag hole.
+     *
+     * @param  array<string, mixed>  $package
+     */
+    private function packageIntegrity(array $package): string
+    {
+        return (string) (
+            Arr::get($package, 'dist.reference')
+            ?: Arr::get($package, 'dist.shasum')
+            ?: Arr::get($package, 'source.reference')
+            ?: ''
+        );
     }
 
     private function findingSorter(Finding $left, Finding $right): int

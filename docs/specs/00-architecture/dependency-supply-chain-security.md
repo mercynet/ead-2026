@@ -108,12 +108,27 @@ de supply chain. O comando é **offline por padrão**, determinístico e gratuit
 - `--fail-on=low|medium|high|critical` — threshold de falha.
 - `--no-baseline` — ignora baseline.
 - `--generate-baseline` / `--update-baseline` — fluxo controlado de ruído conhecido.
+- `--all` — expande também os sinais **abaixo do threshold** (por padrão eles são resumidos em
+  uma linha agregada por regra, para o output ficar legível em emergência).
 
 ### Saída e exit codes
 
-- `0` → nenhum finding acima do threshold.
-- `1` → findings acima do threshold.
-- `2` → erro operacional/configuração.
+Veredito de um relance (banner), pensado para decisão rápida (ex.: commit em emergência):
+
+- **PASS** (verde) — nenhum finding ativo. Exit `0`.
+- **REVIEW** (amarelo) — há findings, mas **todos abaixo do threshold**. Não bloqueia. Exit `0`.
+  O detalhe é colapsado em uma linha (`autoload_files ×24, ...`); use `--all`/`--format=json`.
+- **FAIL** (vermelho) — há finding **no nível do threshold ou acima**. Exit `1`. Só os bloqueantes
+  são detalhados (tabela + evidência + recomendação + fingerprint); o resto vai para a linha-resumo.
+
+> O banner reflete o **mesmo critério do exit code** (`highestSeverity ≥ fail-on`). Não pode haver
+> "FAIL visual com exit 0" — foi o bug corrigido.
+
+| Exit | Quando |
+|------|--------|
+| `0` | PASS (sem findings) **ou** REVIEW (todos abaixo do threshold) |
+| `1` | FAIL (finding ≥ threshold) |
+| `2` | erro operacional/configuração |
 
 Cada finding expõe:
 
@@ -124,7 +139,8 @@ Cada finding expõe:
 - `file`
 - `evidence`
 - `recommendation`
-- `fingerprint`
+- `integrity` — referência fixada do artefato (`dist.reference` / `shasum` / `source.reference`)
+- `fingerprint` — inclui `version` **e** `integrity` (ver baseline)
 
 ## Regras mínimas do scanner
 
@@ -200,7 +216,10 @@ Cada entrada precisa de:
 Regras:
 
 1. baseline nunca ignora “pacote inteiro” por wildcard.
-2. mudança de versão reabre finding.
+2. mudança de versão **ou de `dist.reference` (re-tag malicioso na mesma versão)** reabre finding —
+   o `fingerprint` inclui `integrity`, então um artefato trocado sob a mesma string de versão
+   re-surge em vez de ser silenciosamente suprimido. Custo de churn zero: update legítimo já muda
+   a versão. (Esse é o vetor do incidente laravel-lang.)
 3. expiração é obrigatória.
 4. findings `critical` não entram em baseline sem decisão arquitetural explícita.
 

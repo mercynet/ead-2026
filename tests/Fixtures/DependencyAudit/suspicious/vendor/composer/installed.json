@@ -1,0 +1,16 @@
+{
+    "packages": [
+        {
+            "name": "evil/pkg",
+            "version": "9.9.9"
+        },
+        {
+            "name": "attacker/plugin",
+            "version": "1.2.3"
+        },
+        {
+            "name": "rogue/extra",
+            "version": "0.1.0"
+        }
+    ]
+}

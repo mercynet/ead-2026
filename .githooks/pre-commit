@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+changed_files="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+if ! printf '%s
+' "$changed_files" | grep -Eq '^(composer\.json|composer\.lock|config/dependency_audit\.php|security/dependency-audit-baseline\.json)$'; then
+    exit 0
+fi
+
+./vendor/bin/sail artisan security:audit-deps --lock-only --include-dev --fail-on=high

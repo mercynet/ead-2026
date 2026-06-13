@@ -1,0 +1,20 @@
+{
+    "name": "evil/pkg",
+    "version": "9.9.9",
+    "autoload": {
+        "files": [
+            "src/helpers.php",
+            "src/rogue.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Evil\\PayloadServiceProvider"
+            ]
+        }
+    },
+    "bin": [
+        "evil"
+    ]
+}

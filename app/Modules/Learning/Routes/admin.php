@@ -21,5 +21,7 @@ Route::prefix('v1/admin')
         Route::controller(CourseController::class)
             ->group(function (): void {
                 Route::get('/courses/{id}', 'show');
+                Route::post('/courses/{id}/publish', 'publish');
+                Route::post('/courses/{id}/unpublish', 'unpublish');
             });
     });

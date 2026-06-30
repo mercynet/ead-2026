@@ -21,7 +21,6 @@ class UpdateCourseAction
             'requirements',
             'what_you_will_learn',
             'what_you_will_build',
-            'status',
             'thumbnail',
             'banner',
             'level',
@@ -40,10 +39,6 @@ class UpdateCourseAction
             if (array_key_exists($field, $attributes)) {
                 $course->{$field} = $attributes[$field];
             }
-        }
-
-        if (isset($attributes['status']) && $attributes['status'] === 'published' && ! $course->published_at) {
-            $course->published_at = now();
         }
 
         $course->save();

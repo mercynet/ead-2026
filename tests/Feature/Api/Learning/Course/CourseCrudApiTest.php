@@ -8,6 +8,7 @@ use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -85,7 +86,7 @@ it('creates a course as instructor', function (): void {
         ->assertJsonPath('data.status', 'draft');
 });
 
-it('publishes immediately when created with published status', function (): void {
+it('creates courses always as draft', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',
         'domain' => 'tenant-a.local',
@@ -114,10 +115,10 @@ it('publishes immediately when created with published status', function (): void
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertCreated()
-        ->assertJsonPath('data.status', 'published');
+        ->assertJsonPath('data.status', 'draft');
 
     $course = Course::query()->where('title', 'Curso Publicado')->first();
-    expect($course->published_at)->not->toBeNull();
+    expect($course->published_at)->toBeNull();
 });
 
 it('forbids student from creating a course', function (): void {
@@ -485,7 +486,6 @@ it('updates a course as admin', function (): void {
 
     $this->patchJson('/api/v1/learning/courses/'.$course->id, [
         'title' => 'Curso Atualizado',
-        'status' => 'published',
         'price_cents' => 9900,
     ], [
         'Authorization' => 'Bearer '.$token,
@@ -494,8 +494,351 @@ it('updates a course as admin', function (): void {
         ->assertSuccessful()
         ->assertJsonPath('data.title', 'Curso Atualizado')
         ->assertJsonPath('data.slug', 'curso-atualizado')
-        ->assertJsonPath('data.status', 'published')
+        ->assertJsonPath('data.status', 'draft')
         ->assertJsonPath('data.price_cents', 9900);
+});
+
+it('publishes and unpublishes a course as admin', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-publish-course@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso para Publicar',
+        'slug' => 'curso-para-publicar',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', 'published');
+
+    $course->refresh();
+    expect($course->published_at)->not->toBeNull();
+    $publishedAt = $course->published_at;
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/unpublish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', 'draft');
+
+    $course->refresh();
+    expect($course->published_at)->toEqual($publishedAt);
+});
+
+it('forbids publish without publish permission in admin area', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-no-publish@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+
+    $role = Role::query()->create([
+        'name' => 'admin-no-publish',
+        'guard_name' => 'web',
+    ]);
+
+    $role->syncPermissions(collect(config('permissions'))
+        ->keys()
+        ->reject(fn (string $permission): bool => $permission === 'learning.courses.publish')
+        ->all());
+
+    $admin->assignRole('admin-no-publish');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso Sem Publish',
+        'slug' => 'curso-sem-publish',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertForbidden();
+});
+
+it('requires authentication to publish a course', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso Sem Auth',
+        'slug' => 'curso-sem-auth',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], [
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertUnauthorized();
+});
+
+it('returns 404 publishing a course from another tenant', function (): void {
+    $tenantA = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+    $tenantB = Tenant::query()->create([
+        'name' => 'Tenant B',
+        'domain' => 'tenant-b.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenantB->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin B',
+        'email' => 'admin-b-publish@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenantA->id,
+        'title' => 'Curso A',
+        'slug' => 'curso-a-publish',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenantB->id,
+    ])->assertNotFound();
+});
+
+it('rejects archived course publish and unpublish', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-archived@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso Arquivado',
+        'slug' => 'curso-arquivado',
+        'description' => 'Descrição',
+        'status' => 'archived',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertStatus(422)
+        ->assertJsonPath('errors.0.message', 'Archived courses cannot be published.');
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/unpublish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertStatus(422)
+        ->assertJsonPath('errors.0.message', 'Archived courses cannot be unpublished.');
+});
+
+it('blocks patch bypass from publishing without publish permission', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Admin,
+        'name' => 'Admin',
+        'email' => 'admin-patch-bypass@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $admin->assignRole('admin');
+    $admin->revokePermissionTo('learning.courses.publish');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso Bypass',
+        'slug' => 'curso-bypass',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $admin->createToken('admin-token')->plainTextToken;
+
+    $this->patchJson('/api/v1/learning/courses/'.$course->id, [
+        'status' => 'published',
+    ], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', 'draft');
+
+    $course->refresh();
+    expect($course->status)->toBe('draft');
+    expect($course->published_at)->toBeNull();
+});
+
+it('forbids non-admin roles from admin publish surface', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $student = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Student,
+        'name' => 'Student',
+        'email' => 'student-publish@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $student->assignRole('student');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso',
+        'slug' => 'curso-publish-forbidden',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $student->createToken('student-token')->plainTextToken;
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertForbidden();
+});
+
+it('allows developer to publish through the admin surface', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $developer = User::query()->create([
+        'tenant_id' => null,
+        'user_type' => UserType::Developer,
+        'name' => 'Developer',
+        'email' => 'developer-publish@test.local',
+        'password' => Hash::make('password123'),
+    ]);
+    $developer->assignRole('developer');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Curso Dev',
+        'slug' => 'curso-dev-publish',
+        'description' => 'Descrição',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $token = $developer->createToken('dev-token')->plainTextToken;
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', 'published');
 });
 
 it('deletes a course as admin', function (): void {

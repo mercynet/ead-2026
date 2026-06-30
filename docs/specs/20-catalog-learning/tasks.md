@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-06-13
+last-updated: 2026-06-30
 ---
 
 # Tasks — Catalog & Learning
@@ -23,7 +23,9 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `GET /courses/{id}/modules`.
 - [x] ~~`GET /courses/{id}` (admin view)~~ → **re-slotado área-first** para `GET /api/v1/admin/courses/{id}` (2026-06-13): `area.guard:admin` (admin+developer por hierarquia, student/instructor → 403 `area_forbidden`) + `learning.courses.view-check` + `CourseDetailResource`. 1º slice da área Admin: carrega scaffold (`Area` enum, `EnsureAreaAccess`, `Routes/admin.php`, `Http/Controllers/Admin/`).
 - [x] `POST /courses` (criar curso).
+- [x] `POST /courses` cria sempre em `draft`; publicação fica exclusiva da área Admin (`learning.courses.publish`).
 - [x] `PATCH /courses/{id}` (atualizar curso).
+- [x] `POST /api/v1/admin/courses/{id}/publish` + `POST /api/v1/admin/courses/{id}/unpublish` (2026-06-30): área Admin, `learning.courses.publish-check`, `published_at` preservado como primeira publicação, bloqueio de `archived`, bypass de publish fechado no `POST/PATCH /api/v1/learning/courses`.
 - [x] `DELETE /courses/{id}`.
 - [x] `GET /courses/{id}/enrollment`.
 - [x] `GET /lessons/{id}`.
@@ -48,7 +50,6 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Re-slot área-first: system → Mzrt (`v1/mzrt`), tenant → Admin (`v1/admin`); `CategoryPolicy` decide por `is_system`.
 
 ### Courses
-- [ ] `POST /courses/{id}/publish` + `POST /courses/{id}/unpublish`.
 - [ ] Attach categories to courses (usa pivô dedicado + `order`/`is_featured`).
 
 ### Modules

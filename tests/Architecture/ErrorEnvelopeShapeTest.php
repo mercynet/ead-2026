@@ -54,6 +54,14 @@ it('renders 403 access_denied in the canonical envelope', function (): void {
     assertApiErrorEnvelope($response, 403, 'access_denied');
 });
 
+it('renders 422 validation_error in the canonical envelope', function (): void {
+    [$admin, $headers] = actingAsUserType(UserType::Admin);
+
+    $response = $this->postJson('/api/v1/learning/courses', [], $headers);
+
+    assertApiErrorEnvelope($response, 422, 'validation_error');
+});
+
 it('renders findOrFail 404 in the canonical envelope', function (): void {
     [$developer, $headers] = actingAsUserType(UserType::Developer);
 

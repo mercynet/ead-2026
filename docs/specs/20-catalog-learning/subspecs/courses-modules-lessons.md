@@ -75,13 +75,13 @@ Verificado contra o schema atual **e** o legado `eadIA`: o "conflito" não exist
 
 | Método | Path | Descrição | Permission |
 |--------|------|-----------|------------|
-| POST | `/api/v1/learning/courses` | Criar curso | `learning.courses.create` |
-| GET | `/api/v1/learning/courses/{id}` | Ver curso (admin) | `learning.courses.view` |
+| POST | `/api/v1/learning/courses` | Criar curso (sempre nasce `draft`) | `learning.courses.create` |
+| GET | `/api/v1/admin/courses/{id}` | Ver curso (Admin area-first) | `learning.courses.view` |
 | PATCH | `/api/v1/learning/courses/{id}` | Atualizar curso | `learning.courses.update` |
 | DELETE | `/api/v1/learning/courses/{id}` | Deletar curso | `learning.courses.delete` |
 | GET | `/api/v1/learning/courses/{id}/modules` | Árvore do curso + tracking | `learning.courses.view` |
-| POST | `/api/v1/learning/courses/{id}/publish` | Publicar curso | `learning.courses.publish` |
-| POST | `/api/v1/learning/courses/{id}/unpublish` | Despublicar curso | `learning.courses.publish` |
+| POST | `/api/v1/admin/courses/{id}/publish` | Publicar curso (Admin) | `learning.courses.publish` |
+| POST | `/api/v1/admin/courses/{id}/unpublish` | Despublicar curso (Admin) | `learning.courses.publish` |
 | POST | `/api/v1/learning/modules` | Criar módulo | `learning.modules.create` |
 | GET | `/api/v1/learning/modules/{id}` | Ver módulo | `learning.modules.view` |
 | PATCH | `/api/v1/learning/modules/{id}` | Atualizar módulo | `learning.modules.update` |
@@ -106,6 +106,8 @@ Matriz por UserType em [`../../00-architecture/rbac.md`](../../00-architecture/r
 
 - Config de certificado mora nas colunas `certificate_*` de `courses`; lógica de emissão é do
   domínio Assessment (`30-assessment/subspecs/certificates.md`).
+- `POST/PATCH /api/v1/learning/courses` não publicam nem arquivam curso; a transição de status fica
+  concentrada na superfície Admin via `publish/unpublish`.
 - Acesso à aula resolve pre-signed URL (sem proxy binário) — ver
   [`media-ratings.md`](media-ratings.md) e
   [`../../00-architecture/performance-scalability.md`](../../00-architecture/performance-scalability.md).

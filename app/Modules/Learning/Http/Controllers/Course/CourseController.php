@@ -37,6 +37,7 @@ class CourseController extends Controller
      * Criar Curso
      *
      * Cria um novo curso no tenant atual.
+     * O curso sempre nasce como `draft`; publicar é tarefa da área Admin.
      *
      * @response 201 scenario="Curso criado com sucesso"
      * {
@@ -86,6 +87,7 @@ class CourseController extends Controller
      * Atualizar Curso
      *
      * Atualiza um curso existente.
+     * Não gerencia publicação; o status é alterado apenas na área Admin.
      *
      * @response 200 scenario="Curso atualizado com sucesso"
      * {
@@ -94,7 +96,7 @@ class CourseController extends Controller
      *     "title": "Curso Atualizado",
      *     "slug": "curso-atualizado",
      *     "description": "Descrição atualizada",
-     *     "status": "published",
+     *     "status": "draft",
      *     "price_cents": 9900,
      *     "level": "beginner",
      *     "is_featured": true,

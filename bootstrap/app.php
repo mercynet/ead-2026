@@ -10,6 +10,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -145,5 +146,23 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ],
             ], 404);
+        });
+
+        $exceptions->render(function (ValidationException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            $message = collect($exception->errors())->flatten()->first() ?? $exception->getMessage();
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'validation_error',
+                        'message' => $message,
+                    ],
+                ],
+            ], 422);
         });
     })->create();

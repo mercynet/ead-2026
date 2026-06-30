@@ -21,7 +21,6 @@ class UpdateCourseRequest extends FormRequest
             'requirements' => ['nullable', 'string'],
             'what_you_will_learn' => ['nullable', 'string'],
             'what_you_will_build' => ['nullable', 'string'],
-            'status' => ['sometimes', 'required', 'string', 'in:draft,published,archived'],
             'thumbnail' => ['nullable', 'string', 'max:500'],
             'banner' => ['nullable', 'string', 'max:500'],
             'level' => ['nullable', 'string', 'in:beginner,intermediate,advanced,all'],
@@ -43,7 +42,6 @@ class UpdateCourseRequest extends FormRequest
             'title.required' => 'Course title is required.',
             'title.string' => 'Course title must be a string.',
             'title.max' => 'Course title must not exceed 200 characters.',
-            'status.in' => 'Status must be one of: draft, published, archived.',
             'price_cents.integer' => 'Price must be a valid integer (cents).',
             'price_cents.min' => 'Price cannot be negative.',
             'level.in' => 'Level must be one of: beginner, intermediate, advanced, all.',
@@ -70,10 +68,6 @@ class UpdateCourseRequest extends FormRequest
             'short_description' => [
                 'description' => 'Descrição curta (para cartões)',
                 'example' => 'Curso completo de desenvolvimento web.',
-            ],
-            'status' => [
-                'description' => 'Status do curso',
-                'example' => 'draft',
             ],
             'price_cents' => [
                 'description' => 'Preço em centavos',

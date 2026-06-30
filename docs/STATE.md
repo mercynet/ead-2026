@@ -6,32 +6,34 @@
 
 ## Sessão
 
-- 2026-06-13 — **`security:audit-deps` endurecido no scan lock↔vendor.** O serviço agora compara
-  metadata do `composer.lock` com `vendor/composer/installed.json` (`version`, `source.*`,
-  `dist.*`, incluindo `dist.shasum` quando presente) e abre finding de drift explícito.
-- **Rollout do gate decidido para não quebrar o repo por passivo pré-existente:** em vez de tornar
-  o `qa:gate` bloqueante imediatamente, foi criado `composer qa:deps` e o workflow
-  `.github/workflows/qa-gate.yml` o executa em modo **report-only** (`continue-on-error: true`).
-- **Cobertura adicionada:** fixtures clean/suspicious atualizadas para metadata drift; testes de
-  console cobrem scan-vendor limpo, drift em installed metadata e wiring de `qa:deps` no CI.
-- **Validação:** `SecurityAuditDepsCommandTest` verde (6 testes / 36 asserts), `composer validate`
-  verde, Pint rodado.
+- 2026-06-30 — **Checkpoint reconciliado com o git real.** HEAD atual é `291cc31`
+  (`fix(security): ativa os git hooks do audit-deps (estavam mortos)`), após a sequência recente do
+  auditor de supply chain (`428fe03`, `291cc31`). Working tree está **limpo** neste reinício.
+- A trilha de segurança ficou no ponto de **triagem do passivo** (`composer qa:deps` em report-only
+  no CI), mas o próximo trabalho escolhido para retomar o desenvolvimento da API é voltar ao fluxo
+  principal de produto em **Catalog/Learning**.
+- Slice concluído nesta retomada: **`POST /api/v1/admin/courses/{id}/publish` e
+  `POST /api/v1/admin/courses/{id}/unpublish`** com gate/policy dedicados, `published_at` como
+  primeira publicação, bloqueio de `archived`, create/update comuns sem bypass de status e envelope
+  canônico para `ValidationException` em `api/*`.
+- O harness de testes local foi saneado: `optimize:clear` + `migrate:fresh` no banco `testing`
+  estabilizaram a revalidação de Feature + Architecture.
 
 ## Próximos passos (1-3)
 
-1. **Tratar o passivo revelado por `composer qa:deps`.** Há findings high do scanner heurístico e
-   advisories reais do `composer audit --locked`; decidir o que vira baseline/allowlist, regex a
-   refinar e quais upgrades de pacotes entram primeiro.
-2. **Fechar os gaps restantes da spec do auditor**, se priorizado: scan de providers resolvidos,
-   symlinks/binários inesperados e `replace`/`provide`.
-3. Retomar a trilha principal do produto (áreas/Financial/Learning) quando a janela de segurança
-   estiver suficiente para não bloquear trabalho não relacionado.
+1. Escolher o próximo slice de **Catalog/Learning** após publish/unpublish — hoje os candidatos mais
+   claros são attach de categorias em cursos (se aceitar depender do redesign do pivô) ou o 1º
+   endpoint de módulos (`POST /modules`) em vez do pacote CRUD inteiro.
+2. Se a estabilidade do harness voltar a oscilar, repetir o saneamento do banco `testing`
+   (`optimize:clear` + `migrate:fresh`) antes de interpretar falhas como regressão de código.
+3. Em trilha paralela futura, voltar ao passivo de `composer qa:deps` (baseline/allowlist, ruído,
+   upgrades prioritários) sem bloquear trabalho funcional não relacionado.
 
 ## Para depois (parqueado — não é o foco agora)
 
-- **Auditor de supply chain `security:audit-deps`** — **ENTREGUE e endurecido localmente** (base:
-  commit `1996c01`; working tree atual adiciona drift lock↔installed metadata + `qa:deps`
-  report-only no CI). Hooks seguem **opt-in**: `git config core.hooksPath .githooks`.
+- **Auditor de supply chain `security:audit-deps`** — **ENTREGUE e endurecido localmente**;
+  sequência recente consolidada até `291cc31` (hooks religados automaticamente + correções no
+  veredito/fingerprint). Próxima etapa é política de tratamento do passivo, não implementação-base.
 - **Upgrade Laravel 13 / PHP 8.5** — task dedicada; hoje bloqueado por deps em `^12`
   (scribe/boost/sanctum/larastan/spatie). Ver `ROADMAP.md` §"Meta de stack".
 
@@ -46,7 +48,9 @@
 
 ## Último commit
 
-- `c2ed39e` — Branch `harness/specs-foundation` no momento do checkpoint.
-- Últimos commits relevantes: `1996c01` (`feat(security): supply-chain dependency auditor`) e
-  `48968fa` (`feat(learning): area-first guard + re-slot GET /admin/courses/{id}`).
-- Working tree **não está limpo**: há mudanças locais desta task ainda não commitadas/pushadas.
+- `291cc31` — último commit antes desta retomada; mudanças atuais ainda estão só em working tree.
+- Últimos commits relevantes antes da task: `291cc31` (`fix(security): ativa os git hooks do audit-deps`),
+  `428fe03` (`fix(security): banner tri-state + fingerprint integrity no audit-deps`) e `48968fa`
+  (`feat(learning): area-first guard + re-slot GET /admin/courses/{id}`).
+- Working tree **não está limpo** agora: contém o slice concluído de publish/unpublish + ajustes de
+  contrato/specs/harness desta sessão, ainda sem commit.

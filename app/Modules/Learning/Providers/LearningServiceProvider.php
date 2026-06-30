@@ -26,6 +26,7 @@ class LearningServiceProvider extends ServiceProvider
         Gate::define('learning.courses.view-check', [CoursePolicy::class, 'show']);
         Gate::define('learning.courses.create-check', [CoursePolicy::class, 'create']);
         Gate::define('learning.courses.update-check', [CoursePolicy::class, 'update']);
+        Gate::define('learning.courses.publish-check', [CoursePolicy::class, 'publish']);
         Gate::define('learning.courses.delete-check', [CoursePolicy::class, 'delete']);
 
         Gate::define('learning.categories.list', [CategoryPolicy::class, 'list']);

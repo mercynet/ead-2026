@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-06-30
+last-updated: 2026-07-01
 ---
 
 # Tasks — Catalog & Learning
@@ -34,7 +34,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## In Progress
 
-- _(nenhuma)_
+- [ ] Lesson reorder.
 
 ## Pending
 
@@ -53,12 +53,17 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Attach categories to courses (usa pivô dedicado + `order`/`is_featured`).
 
 ### Modules
-- [ ] `POST/GET/PATCH/DELETE /modules` (CRUD).
-- [ ] `PATCH /modules/reorder`.
+- [x] `POST /modules` (criação mínima; tenant isolation + sort_order automático).
+- [x] `GET /modules/{id}`.
+- [x] `PATCH /modules/{id}`.
+- [x] `DELETE /modules/{id}`.
+- [x] `PATCH /modules/reorder`.
 
 ### Lessons
-- [ ] `POST/PATCH/DELETE /lessons` (CRUD).
-- [ ] Lesson reorder.
+- [x] `POST/PATCH/DELETE /lessons` (CRUD).
+- [x] `POST /lessons`.
+- [x] `DELETE /lessons/{id}`.
+- [x] `PATCH /lessons/{id}`.
 - [ ] Preview de cursos draft para instrutor/admin.
 
 ### Enrollment & Progress

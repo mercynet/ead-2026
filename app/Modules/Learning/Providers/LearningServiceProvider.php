@@ -5,7 +5,9 @@ namespace App\Modules\Learning\Providers;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
 use App\Modules\Learning\Policies\CategoryPolicy;
+use App\Modules\Learning\Policies\CourseModulePolicy;
 use App\Modules\Learning\Policies\CoursePolicy;
+use App\Modules\Learning\Policies\LessonPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -42,6 +44,46 @@ class LearningServiceProvider extends ServiceProvider
 
         Gate::define('learning.categories.tenant.update-check', [CategoryPolicy::class, 'update']);
         Gate::define('learning.categories.tenant.delete-check', [CategoryPolicy::class, 'delete']);
+
+        Gate::define('learning.modules.create-check', function (User $user, ?Tenant $tenant = null): bool {
+            return app(CourseModulePolicy::class)->create($user, $tenant);
+        });
+
+        Gate::define('learning.modules.view', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+            return app(CourseModulePolicy::class)->view($user, $tenant, $courseModule);
+        });
+
+        Gate::define('learning.modules.update', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+            return app(CourseModulePolicy::class)->update($user, $tenant, $courseModule);
+        });
+
+        Gate::define('learning.modules.delete', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+            return app(CourseModulePolicy::class)->delete($user, $tenant, $courseModule);
+        });
+
+        Gate::define('learning.modules.reorder', function (User $user, ?Tenant $tenant = null): bool {
+            return app(CourseModulePolicy::class)->reorder($user, $tenant);
+        });
+
+        Gate::define('learning.lessons.view', function (User $user, ?Tenant $tenant = null): bool {
+            return app(LessonPolicy::class)->view($user, $tenant);
+        });
+
+        Gate::define('learning.lessons.create', function (User $user, ?Tenant $tenant = null): bool {
+            return app(LessonPolicy::class)->create($user, $tenant);
+        });
+
+        Gate::define('learning.progress.update', function (User $user, ?Tenant $tenant = null): bool {
+            return app(LessonPolicy::class)->progress($user, $tenant);
+        });
+
+        Gate::define('learning.lessons.update', function (User $user, ?Tenant $tenant = null): bool {
+            return app(LessonPolicy::class)->update($user, $tenant);
+        });
+
+        Gate::define('learning.lessons.delete', function (User $user, ?Tenant $tenant = null): bool {
+            return app(LessonPolicy::class)->delete($user, $tenant);
+        });
     }
 
     private function registerRoutes(): void

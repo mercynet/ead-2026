@@ -49,6 +49,163 @@ it('shows lesson with can_access true for free lesson', function (): void {
         ->assertJsonPath('data.is_free', true);
 });
 
+it('creates a lesson in the current tenant', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson 1',
+        'slug' => 'lesson-1',
+        'status' => 'draft',
+        'sort_order' => 2,
+        'is_free' => true,
+        'is_active' => true,
+    ]);
+
+    $this->postJson('/api/v1/learning/lessons', [
+        'course_module_id' => $module->id,
+        'title' => 'New Lesson',
+    ], $headers)
+        ->assertCreated()
+        ->assertJsonPath('data.title', 'New Lesson')
+        ->assertJsonPath('data.sort_order', 3)
+        ->assertJsonPath('data.is_free', false);
+
+    $this->assertDatabaseHas('lessons', [
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'New Lesson',
+        'slug' => 'new-lesson',
+        'status' => 'draft',
+        'sort_order' => 3,
+        'is_free' => false,
+        'is_active' => true,
+    ]);
+});
+
+it('returns 403 for a student when creating a lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $this->postJson('/api/v1/learning/lessons', [
+        'course_module_id' => $module->id,
+        'title' => 'New Lesson',
+    ], $headers)
+        ->assertForbidden();
+});
+
+it('returns 422 for invalid payload when creating a lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $this->postJson('/api/v1/learning/lessons', [], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error');
+});
+
+it('returns 422 for missing or foreign module when creating a lesson', function (): void {
+    $tenantA = makeTenant(['domain' => 'tenant-a.local']);
+    $tenantB = makeTenant(['domain' => 'tenant-b.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenantA);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenantB->id,
+        'title' => 'Course B',
+        'slug' => 'course-b',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenantB->id,
+        'course_id' => $course->id,
+        'title' => 'Module B',
+        'sort_order' => 1,
+    ]);
+
+    $this->postJson('/api/v1/learning/lessons', [
+        'course_module_id' => 999999,
+        'title' => 'New Lesson',
+    ], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error');
+
+    $this->postJson('/api/v1/learning/lessons', [
+        'course_module_id' => $module->id,
+        'title' => 'New Lesson',
+    ], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error');
+});
+
+it('returns 401 without authentication when creating a lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $this->postJson('/api/v1/learning/lessons', [
+        'course_module_id' => $module->id,
+        'title' => 'New Lesson',
+    ], tenantHeaders($tenant))
+        ->assertUnauthorized();
+});
+
 it('denies access to paid lesson without enrollment', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
     [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
@@ -252,4 +409,350 @@ it('marks lesson as completed and updates enrollment progress', function (): voi
     $enrollment->refresh();
     expect($enrollment->progress_percentage)->toBe(100);
     expect($enrollment->status)->toBe('completed');
+});
+
+it('allows an instructor to delete a lesson in the current tenant', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson A',
+        'slug' => 'lesson-a',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->deleteJson('/api/v1/learning/lessons/'.$lesson->id, [], $headers)
+        ->assertOk()
+        ->assertJsonPath('message', 'Lesson deleted successfully.');
+
+    $this->assertSoftDeleted('lessons', ['id' => $lesson->id]);
+});
+
+it('returns 403 for a student without permission when deleting a lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson A',
+        'slug' => 'lesson-a',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->deleteJson('/api/v1/learning/lessons/'.$lesson->id, [], $headers)
+        ->assertForbidden();
+});
+
+it('returns 404 for a missing or foreign lesson when deleting', function (): void {
+    $tenantA = makeTenant(['domain' => 'tenant-a.local']);
+    $tenantB = makeTenant(['domain' => 'tenant-b.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenantA);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenantB->id,
+        'title' => 'Course B',
+        'slug' => 'course-b',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenantB->id,
+        'course_id' => $course->id,
+        'title' => 'Module B',
+        'sort_order' => 1,
+    ]);
+
+    $foreignLesson = Lesson::query()->create([
+        'tenant_id' => $tenantB->id,
+        'course_module_id' => $module->id,
+        'title' => 'Foreign lesson',
+        'slug' => 'foreign-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->deleteJson('/api/v1/learning/lessons/999999', [], $headers)
+        ->assertNotFound();
+
+    $this->deleteJson('/api/v1/learning/lessons/'.$foreignLesson->id, [], $headers)
+        ->assertNotFound();
+});
+
+it('returns 401 without authentication when deleting a lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson A',
+        'slug' => 'lesson-a',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->deleteJson('/api/v1/learning/lessons/'.$lesson->id, [], tenantHeaders($tenant))
+        ->assertUnauthorized();
+});
+
+it('allows an instructor to update a lesson title in the current tenant', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Old title',
+        'slug' => 'lesson-a',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/'.$lesson->id, [
+        'title' => 'Updated title',
+    ], $headers)
+        ->assertOk()
+        ->assertJsonPath('data.id', $lesson->id)
+        ->assertJsonPath('data.title', 'Updated title')
+        ->assertJsonPath('data.sort_order', 1)
+        ->assertJsonPath('data.is_free', true);
+
+    expect($lesson->refresh()->title)->toBe('Updated title');
+});
+
+it('returns 403 for a student without permission when updating a lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Old title',
+        'slug' => 'lesson-a',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/'.$lesson->id, [
+        'title' => 'Updated title',
+    ], $headers)
+        ->assertForbidden();
+});
+
+it('returns 404 for a missing or foreign lesson when updating', function (): void {
+    $tenantA = makeTenant(['domain' => 'tenant-a.local']);
+    $tenantB = makeTenant(['domain' => 'tenant-b.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenantA);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenantB->id,
+        'title' => 'Course B',
+        'slug' => 'course-b',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenantB->id,
+        'course_id' => $course->id,
+        'title' => 'Module B',
+        'sort_order' => 1,
+    ]);
+
+    $foreignLesson = Lesson::query()->create([
+        'tenant_id' => $tenantB->id,
+        'course_module_id' => $module->id,
+        'title' => 'Foreign lesson',
+        'slug' => 'foreign-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/999999', [
+        'title' => 'Updated title',
+    ], $headers)->assertNotFound();
+
+    $this->patchJson('/api/v1/learning/lessons/'.$foreignLesson->id, [
+        'title' => 'Updated title',
+    ], $headers)->assertNotFound();
+});
+
+it('returns 401 without authentication when updating a lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Old title',
+        'slug' => 'lesson-a',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/'.$lesson->id, [
+        'title' => 'Updated title',
+    ], tenantHeaders($tenant))
+        ->assertUnauthorized();
+});
+
+it('returns 422 for invalid lesson update payload', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Old title',
+        'slug' => 'lesson-a',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/'.$lesson->id, [], $headers)
+        ->assertStatus(422)
+        ->assertJsonPath('errors.0.code', 'validation_error');
 });

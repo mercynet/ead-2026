@@ -6,29 +6,20 @@
 
 ## Sessão
 
-- 2026-06-30 — **Retomada concluída e publicada.** O slice de Learning/Admin para publicação de
-  cursos foi implementado, testado e **pushado** em `origin/harness/specs-foundation`.
-- A trilha de segurança ficou no ponto de **triagem do passivo** (`composer qa:deps` em report-only
-  no CI), mas o próximo trabalho escolhido para retomar o desenvolvimento da API é voltar ao fluxo
-  principal de produto em **Catalog/Learning**.
-- Slice concluído nesta retomada: **`POST /api/v1/admin/courses/{id}/publish` e
-  `POST /api/v1/admin/courses/{id}/unpublish`** com gate/policy dedicados, `published_at` como
-  primeira publicação, bloqueio de `archived`, create/update comuns sem bypass de status e envelope
-  canônico para `ValidationException` em `api/*`.
-- O harness de testes local foi saneado: `optimize:clear` + `migrate:fresh` no banco `testing`
-  estabilizaram a revalidação de Feature + Architecture.
-- O bloqueio do `pre-push` por advisories em Guzzle foi resolvido com upgrade de dependências
-  (`guzzlehttp/guzzle`, `guzzlehttp/psr7` e transientes), seguido de `composer audit` verde.
+- 2026-07-01 — Learning/Catalog concluiu o slice **`POST /api/v1/learning/lessons`**:
+  `StoreLessonRequest` + `StoreLessonAction` com `course_module_id` tenant-scoped, `slug` derivado,
+  `status=draft`, `sort_order` automático por módulo, gate `learning.lessons.create`, resposta 201 via
+  `LessonResource` e Feature tests cobrindo 201/401/403/422. Revalidação local verde com Pint,
+  `LessonApiTest` e suite Architecture; quando o harness oscilou, o saneamento
+  `optimize:clear` + `migrate:fresh --env=testing` resolveu antes da rerodada sequencial.
 
 ## Próximos passos (1-3)
 
-1. Escolher o próximo slice de **Catalog/Learning** após publish/unpublish — hoje os candidatos mais
-   claros são attach de categorias em cursos (se aceitar depender do redesign do pivô) ou o 1º
-   endpoint de módulos (`POST /modules`) em vez do pacote CRUD inteiro.
-2. Se a estabilidade do harness voltar a oscilar, repetir o saneamento do banco `testing`
-   (`optimize:clear` + `migrate:fresh`) antes de interpretar falhas como regressão de código.
-3. Em trilha paralela futura, voltar ao passivo de `composer qa:deps` (baseline/allowlist, ruído,
-   upgrades prioritários) sem bloquear trabalho funcional não relacionado.
+1. Seguir em Learning com o próximo slice fino: **Lesson reorder**.
+2. Depois do reorder, avaliar **preview de cursos draft para instrutor/admin** antes de voltar para
+   `attach categories to courses`.
+3. Se o harness oscilar de novo, evitar validação paralela no banco `testing` e repetir o saneamento
+   (`optimize:clear` + `migrate:fresh --env=testing`) antes de ler a falha como regressão real.
 
 ## Para depois (parqueado — não é o foco agora)
 
@@ -49,7 +40,9 @@
 
 ## Último commit
 
-- `82658ac` — `chore(deps): bump guzzle security fixes`.
-- Commit funcional imediatamente anterior: `8aa044d` — `feat(learning): add admin course publish workflow`.
-- Branch `harness/specs-foundation` está sincronizada com `origin/harness/specs-foundation`; working
-  tree está **limpo** no fechamento deste checkpoint.
+- `114ac8b` — `chore: refresh STATE after publish push`.
+- Commit funcional anterior consolidado: `8aa044d` — `feat(learning): add admin course publish workflow`.
+- Branch `harness/specs-foundation`; a sessão atual consolidou os slices
+  `PATCH /api/v1/learning/modules/reorder`, `POST /api/v1/learning/lessons`,
+  `DELETE /api/v1/learning/lessons/{id}` e `PATCH /api/v1/learning/lessons/{id}`
+  (mais ajustes de `tasks.md`/`STATE.md`).

@@ -4,6 +4,7 @@ namespace App\Modules\Learning\Models;
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Enrollment extends Model
 {
+    public const STATUSES = ['pending', 'active', 'cancelled', 'expired'];
+
+    public const CURRENT_STATUSES = ['pending', 'active'];
+
     protected static string $factory = \Database\Factories\EnrollmentFactory::class;
 
     use HasFactory;
@@ -46,6 +51,26 @@ class Enrollment extends Model
         return $this->hasMany(LessonProgress::class);
     }
 
+    public function scopeForTenantUserCourse(Builder $query, int $tenantId, int $userId, int $courseId): Builder
+    {
+        return $query
+            ->where('tenant_id', $tenantId)
+            ->where('user_id', $userId)
+            ->where('course_id', $courseId);
+    }
+
+    public function scopeCurrentStatuses(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::CURRENT_STATUSES);
+    }
+
+    public function scopeOrderedByCurrentStatusPriority(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw("CASE WHEN status IN ('pending', 'active') THEN 0 ELSE 1 END")
+            ->orderByDesc('id');
+    }
+
     public function isActive(): bool
     {
         if ($this->status !== 'active') {
@@ -61,12 +86,11 @@ class Enrollment extends Model
 
     public function isExpired(): bool
     {
-        return ! $this->isActive();
-    }
+        if ($this->status === 'expired') {
+            return true;
+        }
 
-    public function isCompleted(): bool
-    {
-        return $this->status === 'completed' || $this->completed_at !== null;
+        return $this->status === 'active' && $this->access_expires_at?->isPast() === true;
     }
 
     protected function casts(): array

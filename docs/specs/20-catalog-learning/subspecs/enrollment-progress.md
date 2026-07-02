@@ -2,7 +2,7 @@
 domain: catalog-learning
 parent: ../spec.md
 resource: enrollment-progress
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-01
 ---
 
 # Enrollment & Progress
@@ -13,10 +13,8 @@ last-reviewed: 2026-06-10
 enrollments
 - id
 - tenant_id, user_id, course_id   // FK
-- status                 // active | completed | expired | cancelled
-- progress_percentage    // 0-100
+- status                 // pending | active | expired | cancelled
 - enrolled_at
-- completed_at
 - access_expires_at      // expiração de acesso
 - created_at, updated_at
 
@@ -24,7 +22,7 @@ lesson_progress
 - id
 - tenant_id, user_id, lesson_id, enrollment_id  // FK
 - status                 // not_started | in_progress | completed
-- progress_percent       // 0-100
+- progress_percentage    // 0-100
 - time_spent_seconds
 - completed_at
 - created_at, updated_at
@@ -32,20 +30,23 @@ lesson_progress
 
 ## Rules
 
-- **Enrollment** é o aggregate root do cálculo de conclusão. Um aluno tem **uma matrícula ativa
-  por curso**.
-- Status: `active` (em andamento), `completed` (100%), `expired`, `cancelled`.
+- **Enrollment** representa o vínculo de acesso/participação no curso. Um aluno tem **no máximo
+  uma matrícula `active` por curso**; matrículas históricas inativas podem coexistir.
+- Status da matrícula: `pending`, `active`, `expired`, `cancelled`.
+- Conclusão do curso **não** é status da matrícula; pertence ao domínio de progresso.
 - Matrícula `expired` ainda vê a vitrine (`canViewCourse=true`) mas não consome conteúdo pago
   (`canAccessPaidContent=false`).
+- Rematrícula é permitida quando a matrícula anterior estiver `cancelled` ou `expired`; não faz
+  sentido enquanto houver matrícula `pending` ou `active`.
 - **Cálculo de progresso (assíncrono):** ao marcar `is_completed=true` numa aula, dispara
   `LessonCompletedEvent`; um job recalcula o percentual com base nos módulos/aulas concluídos. Ao
-  atingir 100%, `Enrollment.status = completed` e (se config) engatilha certificado.
+  atingir 100%, o progresso do curso é marcado como concluído e (se config) engatilha certificado.
 - **Heartbeat de progresso:** o frontend envia `POST /lessons/{id}/progress` periodicamente com
-  `{ duration_watched / progress_percent, is_completed / time_spent_seconds }` para atualizar o
+  `{ duration_watched / progress_percentage, is_completed / time_spent_seconds }` para atualizar o
   tracking.
 - A `ProgressStrategy` (ex.: `80_percent`, `full_duration`, `manual`, `time_based`) é configurável
   por aula e define quando a meta de conclusão é batida.
-- **Auditoria financeira:** toda matrícula, mesmo gratuita, gera registro espelho no Financial.
+- **Auditoria financeira:** toda matrícula, mesmo gratuita, idealmente gera registro espelho no Financial.
 
 ## Endpoints
 
@@ -68,7 +69,7 @@ learning.progress.view   // instrutor/admin: ver progresso dos alunos
 
 ## Notes
 
-- Matrícula automática a partir de `OrderPaidEvent` (Financial) via `EnrollService` — código de
-  matrícula não fica espalhado nas rotas financeiras.
+- Matrícula automática a partir de `OrderPaidEvent` (Financial) via `EnrollService` é alvo
+  planejado — código de matrícula não deve ficar espalhado nas rotas financeiras.
 - Matrícula manual por instrutor (switch do tenant_admin); cobrança `external` pode cair como
   `pending` para aprovação do tenant_admin.

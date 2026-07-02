@@ -182,6 +182,11 @@ return [
         'user_types' => ['developer', 'admin', 'instructor'],
     ],
 
+    'learning.lessons.reorder' => [
+        'label' => 'Reordenar aulas',
+        'user_types' => ['developer', 'admin', 'instructor'],
+    ],
+
     // ─────────────────────────────────────────────
     // Learning — Matrículas
     // ─────────────────────────────────────────────

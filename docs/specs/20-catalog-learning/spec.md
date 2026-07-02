@@ -1,7 +1,7 @@
 ---
 domain: catalog-learning
 maturity: stable
-last-reviewed: 2026-06-13
+last-reviewed: 2026-07-01
 owners: [paulo]
 related:
   - ../00-architecture/api-conventions.md
@@ -45,7 +45,7 @@ Recursos detalhados nas subspecs:
 | `Course` | `courses` | Agrupador raiz; soft deletes; status publicação; preço em centavos; config de certificado. |
 | `CourseModule` | `course_modules` | Pertence a um único curso; reordenável (`sort_order`). |
 | `Lesson` | `lessons` | Conteúdo da aula; pode ser gratuita (`is_free`); reordenável. |
-| `Enrollment` | `enrollments` | Aggregate root de conclusão; uma matrícula ativa por aluno/curso. |
+| `Enrollment` | `enrollments` | Vínculo de acesso/participação no curso; no máximo uma matrícula `active` por aluno/curso, permitindo histórico inativo (`cancelled`/`expired`). |
 | `LessonProgress` | `lesson_progress` | Tracking granular por aula. |
 | `LessonView` | `lesson_views` | Estatística: 1 registro por acesso (replay). |
 | `Rating` / `RatingStats` | `ratings` / `rating_stats` | Avaliação 1-5 + like/dislike; rollup agregado em cache. |
@@ -65,19 +65,23 @@ Recursos detalhados nas subspecs:
   [`subspecs/catalog.md`](subspecs/catalog.md).
 - **Catálogo esconde cursos já comprados** pelo aluno logado.
 - **Access control na lição:** acesso à mídia se o curso for gratuito, ou a aula for degustação
-  (`is_free`), ou houver `Enrollment` ativo não expirado. Matrícula expirada ainda vê a vitrine
+  (`is_free`), ou houver `Enrollment` `active` não expirado. Matrícula `expired` ainda vê a vitrine
   (`canViewCourse`), mas não consome conteúdo pago (`canAccessPaidContent`).
 - **Drafts:** cursos `draft` só acessíveis em rota de preview por instrutor dono, tenant_admin ou developer.
 - **Reassistir:** aula concluída permanece `is_completed=true`; cada acesso gera `LessonView`.
 - **Progresso assíncrono:** `LessonCompletedEvent` recalcula a grade em background e pode
-  engatilhar certificado.
+  engatilhar certificado. Conclusão do curso é atributo de **progresso**, não status da matrícula.
+- **Lifecycle da matrícula:** `pending` (aguardando confirmação/pagamento), `active`, `cancelled`,
+  `expired`. `completed` não faz parte do status da matrícula; pertence ao domínio de progresso.
+- **Rematrícula:** permitida quando a matrícula anterior estiver `cancelled` ou `expired`; não faz
+  sentido enquanto houver matrícula `pending` ou `active`.
 - **Matrículas manuais por instrutor** (switch do tenant_admin); cobrança `external` pode cair
   como `pending` para aprovação.
 - **Auditoria financeira:** toda matrícula (mesmo gratuita) origina registro espelho no Financial.
 
 ## Domain Boundaries
 
-- **Consome:** `OrderPaidEvent` (Financial) → matrícula automática via `EnrollService`.
+- **Consome (planejado):** `OrderPaidEvent` (Financial) → matrícula automática via `EnrollService`.
 - **Emite:** `LessonCompletedEvent` (recalcula progresso; pode engatilhar Assessment/Certificate),
   `EnrollmentCreated`, `LessonViewedEvent`.
 - Mecânica de transporte (RabbitMQ → MariaDB stats) em

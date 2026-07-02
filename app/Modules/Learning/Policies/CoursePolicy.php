@@ -36,6 +36,39 @@ class CoursePolicy
             && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.view');
     }
 
+    public function preview(User $authenticatedUser, ?Tenant $tenant, ?Course $course = null): bool
+    {
+        if ($authenticatedUser->isDeveloper()) {
+            return true;
+        }
+
+        if ($tenant === null || $course === null) {
+            return false;
+        }
+
+        if (! $authenticatedUser->belongsToTenant($tenant)) {
+            return false;
+        }
+
+        if ((int) $course->tenant_id !== (int) $tenant->id) {
+            return false;
+        }
+
+        if (! $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.view')) {
+            return false;
+        }
+
+        if ($authenticatedUser->isStudent()) {
+            return false;
+        }
+
+        if ($authenticatedUser->isInstructor()) {
+            return (int) $course->instructor_id === (int) $authenticatedUser->id;
+        }
+
+        return $authenticatedUser->isAdmin();
+    }
+
     public function modules(User $authenticatedUser, ?Tenant $tenant): bool
     {
         if ($authenticatedUser->isDeveloper()) {

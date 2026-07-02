@@ -77,6 +77,7 @@ Verificado contra o schema atual **e** o legado `eadIA`: o "conflito" não exist
 |--------|------|-----------|------------|
 | POST | `/api/v1/learning/courses` | Criar curso (sempre nasce `draft`) | `learning.courses.create` |
 | GET | `/api/v1/admin/courses/{id}` | Ver curso (Admin area-first) | `learning.courses.view` |
+| GET | `/api/v1/learning/courses/{id}/preview` | Preview de curso draft para owner/admin/developer | `learning.courses.view` |
 | PATCH | `/api/v1/learning/courses/{id}` | Atualizar curso | `learning.courses.update` |
 | DELETE | `/api/v1/learning/courses/{id}` | Deletar curso | `learning.courses.delete` |
 | GET | `/api/v1/learning/courses/{id}/modules` | Árvore do curso + tracking | `learning.courses.view` |

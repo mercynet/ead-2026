@@ -31,4 +31,9 @@ class LessonPolicy
     {
         return $user->tenant_id === $tenant->id && ! $user->isStudent();
     }
+
+    public function reorder(User $user, Tenant $tenant): bool
+    {
+        return $user->tenant_id === $tenant->id && ! $user->isStudent();
+    }
 }

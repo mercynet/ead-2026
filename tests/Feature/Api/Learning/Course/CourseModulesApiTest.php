@@ -14,7 +14,7 @@ use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-it('returns course modules with lesson progress for enrolled user', function (): void {
+it('returns course modules with lesson progress from the current enrollment', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',
         'domain' => 'tenant-a.local',
@@ -74,6 +74,30 @@ it('returns course modules with lesson progress for enrolled user', function ():
         'is_active' => true,
     ]);
 
+    $historicalEnrollment = Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'cancelled',
+        'enrolled_at' => now()->subDays(20),
+        'progress_percentage' => 15,
+    ]);
+
+    LessonProgress::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'enrollment_id' => $historicalEnrollment->id,
+        'lesson_id' => $lesson1->id,
+        'is_completed' => true,
+        'progress_percentage' => 100,
+        'time_spent_seconds' => 300,
+        'current_time_seconds' => 300,
+        'total_time_seconds' => 300,
+        'started_at' => now()->subHours(2),
+        'completed_at' => now()->subHour(),
+    ]);
+
     $enrollment = Enrollment::query()->create([
         'tenant_id' => $tenant->id,
         'user_id' => $student->id,
@@ -81,7 +105,7 @@ it('returns course modules with lesson progress for enrolled user', function ():
         'status' => 'active',
         'enrolled_at' => now(),
         'access_expires_at' => now()->addDays(30),
-        'progress_percentage' => 0,
+        'progress_percentage' => 20,
     ]);
 
     LessonProgress::query()->create([
@@ -90,13 +114,13 @@ it('returns course modules with lesson progress for enrolled user', function ():
         'course_id' => $course->id,
         'enrollment_id' => $enrollment->id,
         'lesson_id' => $lesson1->id,
-        'is_completed' => true,
-        'progress_percentage' => 100,
-        'time_spent_seconds' => 300,
-        'current_time_seconds' => 300,
+        'is_completed' => false,
+        'progress_percentage' => 20,
+        'time_spent_seconds' => 120,
+        'current_time_seconds' => 60,
         'total_time_seconds' => 300,
         'started_at' => now()->subHour(),
-        'completed_at' => now(),
+        'completed_at' => null,
     ]);
 
     $token = $student->createToken('test-token')->plainTextToken;
@@ -109,12 +133,13 @@ it('returns course modules with lesson progress for enrolled user', function ():
         ->assertJsonPath('data.0.id', $module->id)
         ->assertJsonPath('data.0.title', 'Module 1')
         ->assertJsonPath('data.0.lessons.0.id', $lesson1->id)
-        ->assertJsonPath('data.0.lessons.0.progress.is_completed', true)
+        ->assertJsonPath('data.0.lessons.0.progress.is_completed', false)
+        ->assertJsonPath('data.0.lessons.0.progress.progress_percentage', 20)
         ->assertJsonPath('data.0.lessons.1.id', $lesson2->id)
         ->assertJsonPath('data.0.lessons.1.progress', null);
 });
 
-it('returns modules without progress for non-enrolled user', function (): void {
+it('returns modules without progress when only historical enrollment exists', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',
         'domain' => 'tenant-a.local',
@@ -152,7 +177,7 @@ it('returns modules without progress for non-enrolled user', function (): void {
         'sort_order' => 1,
     ]);
 
-    Lesson::query()->create([
+    $lesson = Lesson::query()->create([
         'tenant_id' => $tenant->id,
         'course_module_id' => $module->id,
         'title' => 'Lesson 1',
@@ -161,6 +186,31 @@ it('returns modules without progress for non-enrolled user', function (): void {
         'sort_order' => 1,
         'is_free' => false,
         'is_active' => true,
+    ]);
+
+    $historicalEnrollment = Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'expired',
+        'enrolled_at' => now()->subDays(40),
+        'access_expires_at' => now()->subDay(),
+        'progress_percentage' => 80,
+    ]);
+
+    LessonProgress::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'enrollment_id' => $historicalEnrollment->id,
+        'lesson_id' => $lesson->id,
+        'is_completed' => true,
+        'progress_percentage' => 100,
+        'time_spent_seconds' => 300,
+        'current_time_seconds' => 300,
+        'total_time_seconds' => 300,
+        'started_at' => now()->subDays(2),
+        'completed_at' => now()->subDay(),
     ]);
 
     $token = $student->createToken('test-token')->plainTextToken;

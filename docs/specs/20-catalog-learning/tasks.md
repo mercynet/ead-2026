@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-07-01
+last-updated: 2026-07-02
 ---
 
 # Tasks — Catalog & Learning
@@ -28,13 +28,15 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `POST /api/v1/admin/courses/{id}/publish` + `POST /api/v1/admin/courses/{id}/unpublish` (2026-06-30): área Admin, `learning.courses.publish-check`, `published_at` preservado como primeira publicação, bloqueio de `archived`, bypass de publish fechado no `POST/PATCH /api/v1/learning/courses`.
 - [x] `DELETE /courses/{id}`.
 - [x] `GET /courses/{id}/enrollment`.
+- [x] `POST /enrollments` (matrícula manual).
+- [x] `GET/PATCH/DELETE /enrollments` (CRUD).
 - [x] `GET /lessons/{id}`.
 - [x] `POST /lessons/{id}/progress`.
 - [x] `LessonCompletedEvent`.
 
 ## In Progress
 
-- [ ] Lesson reorder.
+- [ ] Fluxo do aluno: enrollment → access → progress.
 
 ## Pending
 
@@ -64,12 +66,12 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `POST /lessons`.
 - [x] `DELETE /lessons/{id}`.
 - [x] `PATCH /lessons/{id}`.
-- [ ] Preview de cursos draft para instrutor/admin.
+- [x] Lesson reorder.
+- [x] Preview de cursos draft para instrutor/admin.
 
 ### Enrollment & Progress
-- [ ] `POST /enrollments` (matrícula manual + auto via OrderPaidEvent).
-- [ ] `GET/PATCH/DELETE /enrollments` (CRUD).
-- [ ] Fluxo do aluno: enrollment → access → progress.
+
+- [x] Regras de acesso a curso/aula devem consumir a matrícula corrente (`pending|active`) sem ambiguidade com histórico.
 
 ### Media & Ratings
 - [ ] `CourseMaterial` model + download tracking (`MaterialDownload`/`MaterialStats`).
@@ -79,6 +81,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] `LessonMedia` / `LessonMediaProgress` + `ProgressStrategy` configurável.
 
 ### Eventos
+- [ ] Consumir `OrderPaidEvent` (Financial) para matrícula automática via `EnrollService`.
 - [ ] Disparar `EnrollmentCreated`.
 
 ### Reuso eadIA (a importar — ver ADR-001)
@@ -97,7 +100,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Needs Review
 
-- _(nenhuma)_
+- [x] Alinhar implementação de `Enrollment` ao contrato revisado: status `pending|active|cancelled|expired`, rematrícula para `cancelled/expired`, progresso fora do status da matrícula.
 
 ## Open Questions
 

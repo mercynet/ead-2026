@@ -42,6 +42,7 @@ Route::prefix('v1/learning')
             Route::controller(CourseController::class)
                 ->group(function (): void {
                     Route::get('/courses/{courseId}/modules', 'modules');
+                    Route::get('/courses/{id}/preview', 'preview');
                     Route::post('/courses', 'store');
                     Route::patch('/courses/{id}', 'update');
                     Route::delete('/courses/{id}', 'destroy');
@@ -49,11 +50,17 @@ Route::prefix('v1/learning')
 
             Route::controller(EnrollmentController::class)
                 ->group(function (): void {
+                    Route::get('/enrollments', 'index');
+                    Route::get('/enrollments/{id}', 'showById');
+                    Route::patch('/enrollments/{id}', 'update');
+                    Route::delete('/enrollments/{id}', 'destroy');
+                    Route::post('/enrollments', 'store');
                     Route::get('/courses/{courseId}/enrollment', 'show');
                 });
 
             Route::controller(LessonController::class)
                 ->group(function (): void {
+                    Route::patch('/lessons/reorder', 'reorder');
                     Route::post('/lessons', 'store');
                     Route::get('/lessons/{id}', 'show');
                     Route::patch('/lessons/{id}', 'update');

@@ -10,9 +10,12 @@ class GetEnrollmentAction
     public function handle(ApiContext $context, int $courseId): ?Enrollment
     {
         return Enrollment::query()
-            ->where('tenant_id', $context->requiredTenant()->id)
-            ->where('user_id', $context->requiredUser()->id)
-            ->where('course_id', $courseId)
+            ->forTenantUserCourse(
+                $context->requiredTenant()->id,
+                $context->requiredUser()->id,
+                $courseId
+            )
+            ->orderedByCurrentStatusPriority()
             ->with(['course:id,title,slug'])
             ->first();
     }

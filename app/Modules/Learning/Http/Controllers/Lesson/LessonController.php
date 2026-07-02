@@ -4,9 +4,11 @@ namespace App\Modules\Learning\Http\Controllers\Lesson;
 
 use App\Modules\Learning\Actions\Lesson\DeleteLessonAction;
 use App\Modules\Learning\Actions\Lesson\GetLessonAction;
+use App\Modules\Learning\Actions\Lesson\ReorderLessonAction;
 use App\Modules\Learning\Actions\Lesson\StoreLessonAction;
 use App\Modules\Learning\Actions\Lesson\UpdateLessonAction;
 use App\Modules\Learning\Actions\Lesson\UpdateProgressAction;
+use App\Modules\Learning\Http\Requests\Lesson\ReorderLessonRequest;
 use App\Modules\Learning\Http\Requests\Lesson\ShowLessonRequest;
 use App\Modules\Learning\Http\Requests\Lesson\StoreLessonRequest;
 use App\Modules\Learning\Http\Requests\Lesson\StoreProgressRequest;
@@ -30,6 +32,7 @@ class LessonController extends Controller
     public function __construct(
         private readonly GetLessonAction $getLessonAction,
         private readonly StoreLessonAction $storeLessonAction,
+        private readonly ReorderLessonAction $reorderLessonAction,
         private readonly DeleteLessonAction $deleteLessonAction,
         private readonly UpdateLessonAction $updateLessonAction,
         private readonly UpdateProgressAction $updateProgressAction,
@@ -44,6 +47,15 @@ class LessonController extends Controller
         return LessonResource::make($lesson)
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function reorder(ReorderLessonRequest $request, ApiContext $context): JsonResponse
+    {
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.reorder', [$context->requiredTenant()]);
+
+        $lessons = $this->reorderLessonAction->handle($context, $request->validated());
+
+        return LessonResource::collection($lessons)->response();
     }
 
     /**

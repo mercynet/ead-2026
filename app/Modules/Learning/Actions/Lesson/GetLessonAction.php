@@ -30,11 +30,7 @@ class GetLessonAction
             return true;
         }
 
-        $enrollment = Enrollment::query()
-            ->where('tenant_id', $context->requiredTenant()->id)
-            ->where('user_id', $context->requiredUser()->id)
-            ->where('course_id', $course->id)
-            ->first();
+        $enrollment = $this->currentEnrollment($context, $course->id);
 
         if ($enrollment === null) {
             return false;
@@ -45,10 +41,30 @@ class GetLessonAction
 
     public function progressFor(Lesson $lesson, ApiContext $context): ?LessonProgress
     {
+        $enrollment = $this->currentEnrollment($context, $lesson->courseModule->course->id);
+
+        if ($enrollment === null) {
+            return null;
+        }
+
         return LessonProgress::query()
             ->where('tenant_id', $context->requiredTenant()->id)
             ->where('user_id', $context->requiredUser()->id)
+            ->where('enrollment_id', $enrollment->id)
             ->where('lesson_id', $lesson->id)
+            ->first();
+    }
+
+    private function currentEnrollment(ApiContext $context, int $courseId): ?Enrollment
+    {
+        return Enrollment::query()
+            ->forTenantUserCourse(
+                $context->requiredTenant()->id,
+                $context->requiredUser()->id,
+                $courseId
+            )
+            ->currentStatuses()
+            ->orderByDesc('id')
             ->first();
     }
 }

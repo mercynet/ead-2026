@@ -103,6 +103,208 @@ it('creates a lesson in the current tenant', function (): void {
     ]);
 });
 
+it('reorders lessons for an authorized user in the current tenant', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson1 = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson 1',
+        'slug' => 'lesson-1',
+        'status' => 'draft',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    $lesson2 = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson 2',
+        'slug' => 'lesson-2',
+        'status' => 'draft',
+        'sort_order' => 2,
+        'is_free' => false,
+    ]);
+
+    $lesson3 = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson 3',
+        'slug' => 'lesson-3',
+        'status' => 'draft',
+        'sort_order' => 3,
+        'is_free' => false,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/reorder', [
+        'course_module_id' => $module->id,
+        'lesson_ids' => [$lesson3->id, $lesson1->id, $lesson2->id],
+    ], $headers)
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $lesson3->id)
+        ->assertJsonPath('data.0.sort_order', 1)
+        ->assertJsonPath('data.1.id', $lesson1->id)
+        ->assertJsonPath('data.1.sort_order', 2)
+        ->assertJsonPath('data.2.id', $lesson2->id)
+        ->assertJsonPath('data.2.sort_order', 3);
+
+    expect($lesson1->refresh()->sort_order)->toBe(2);
+    expect($lesson2->refresh()->sort_order)->toBe(3);
+    expect($lesson3->refresh()->sort_order)->toBe(1);
+});
+
+it('returns 403 for a student without permission when reordering lessons', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson 1',
+        'slug' => 'lesson-1',
+        'status' => 'draft',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/reorder', [
+        'course_module_id' => $module->id,
+        'lesson_ids' => [$lesson->id],
+    ], $headers)
+        ->assertForbidden();
+});
+
+it('returns 401 without authentication when reordering lessons', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Course A',
+        'slug' => 'course-a',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module A',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson 1',
+        'slug' => 'lesson-1',
+        'status' => 'draft',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/reorder', [
+        'course_module_id' => $module->id,
+        'lesson_ids' => [$lesson->id],
+    ], tenantHeaders($tenant))
+        ->assertUnauthorized();
+});
+
+it('returns 422 for invalid lesson reorder payloads', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $this->patchJson('/api/v1/learning/lessons/reorder', [], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error');
+});
+
+it('returns 422 for missing or foreign lessons when reordering', function (): void {
+    $tenantA = makeTenant(['domain' => 'tenant-a.local']);
+    $tenantB = makeTenant(['domain' => 'tenant-b.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenantA);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenantB->id,
+        'title' => 'Course B',
+        'slug' => 'course-b',
+        'description' => 'Course description',
+        'status' => 'draft',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenantB->id,
+        'course_id' => $course->id,
+        'title' => 'Module B',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenantB->id,
+        'course_module_id' => $module->id,
+        'title' => 'Foreign lesson',
+        'slug' => 'foreign-lesson',
+        'status' => 'draft',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    $this->patchJson('/api/v1/learning/lessons/reorder', [
+        'course_module_id' => $module->id,
+        'lesson_ids' => [999999],
+    ], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error');
+
+    $this->patchJson('/api/v1/learning/lessons/reorder', [
+        'course_module_id' => $module->id,
+        'lesson_ids' => [$lesson->id],
+    ], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error');
+});
+
 it('returns 403 for a student when creating a lesson', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
     [, $headers] = actingAsUserType(UserType::Student, $tenant);
@@ -290,6 +492,109 @@ it('allows access to paid lesson with active enrollment', function (): void {
         ->assertJsonPath('data.can_access', true);
 });
 
+it('shows paid lesson vitrine but denies content access for expired enrollment', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Expired Course',
+        'slug' => 'expired-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Expired Lesson',
+        'slug' => 'expired-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'expired',
+        'enrolled_at' => now()->subDays(40),
+        'access_expires_at' => now()->subDay(),
+        'progress_percentage' => 80,
+    ]);
+
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $lesson->id)
+        ->assertJsonPath('data.title', 'Expired Lesson')
+        ->assertJsonPath('data.course.id', $course->id)
+        ->assertJsonPath('data.module.id', $module->id)
+        ->assertJsonPath('data.can_access', false)
+        ->assertJsonPath('data.progress', null);
+});
+
+it('forbids progress updates for paid lesson with expired enrollment', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Expired Progress Course',
+        'slug' => 'expired-progress-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Expired Progress Lesson',
+        'slug' => 'expired-progress-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'expired',
+        'enrolled_at' => now()->subDays(40),
+        'access_expires_at' => now()->subDay(),
+        'progress_percentage' => 80,
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'time_spent_seconds' => 120,
+        'current_time_seconds' => 60,
+        'total_time_seconds' => 300,
+        'progress_percentage' => 20,
+        'is_completed' => false,
+    ], $headers)->assertForbidden();
+});
+
 it('updates lesson progress', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
     [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
@@ -408,7 +713,73 @@ it('marks lesson as completed and updates enrollment progress', function (): voi
 
     $enrollment->refresh();
     expect($enrollment->progress_percentage)->toBe(100);
-    expect($enrollment->status)->toBe('completed');
+    expect($enrollment->status)->toBe('active');
+    expect($enrollment->completed_at)->toBeNull();
+});
+
+it('updates progress on the current enrollment when historical rows exist', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Historical Progress Course',
+        'slug' => 'historical-progress-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson 1',
+        'slug' => 'lesson-1',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    $historicalEnrollment = Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'cancelled',
+        'enrolled_at' => now()->subDays(20),
+        'progress_percentage' => 20,
+    ]);
+
+    $currentEnrollment = Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now()->subDay(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'time_spent_seconds' => 300,
+        'current_time_seconds' => 300,
+        'total_time_seconds' => 300,
+        'progress_percentage' => 100,
+        'is_completed' => true,
+    ], $headers)
+        ->assertSuccessful();
+
+    expect($currentEnrollment->refresh()->progress_percentage)->toBe(100);
+    expect($currentEnrollment->refresh()->status)->toBe('active');
+    expect($historicalEnrollment->refresh()->progress_percentage)->toBe(20);
 });
 
 it('allows an instructor to delete a lesson in the current tenant', function (): void {

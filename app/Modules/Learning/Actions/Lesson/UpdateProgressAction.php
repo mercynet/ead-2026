@@ -16,9 +16,13 @@ class UpdateProgressAction
         $course = $lesson->courseModule->course;
 
         $enrollment = Enrollment::query()
-            ->where('tenant_id', $context->requiredTenant()->id)
-            ->where('user_id', $context->requiredUser()->id)
-            ->where('course_id', $course->id)
+            ->forTenantUserCourse(
+                $context->requiredTenant()->id,
+                $context->requiredUser()->id,
+                $course->id
+            )
+            ->currentStatuses()
+            ->orderByDesc('id')
             ->firstOrFail();
 
         $wasCompleted = LessonProgress::query()
@@ -86,8 +90,6 @@ class UpdateProgressAction
 
         $enrollment->update([
             'progress_percentage' => min($percentage, 100),
-            'status' => $percentage >= 100 ? 'completed' : $enrollment->status,
-            'completed_at' => $percentage >= 100 ? now() : null,
         ]);
     }
 }

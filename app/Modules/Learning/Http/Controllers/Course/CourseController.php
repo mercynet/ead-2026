@@ -5,6 +5,7 @@ namespace App\Modules\Learning\Http\Controllers\Course;
 use App\Modules\Learning\Actions\Course\DeleteCourseAction;
 use App\Modules\Learning\Actions\Course\GetCourseAction;
 use App\Modules\Learning\Actions\Course\GetCourseModulesAction;
+use App\Modules\Learning\Actions\Course\PreviewCourseAction;
 use App\Modules\Learning\Actions\Course\StoreCourseAction;
 use App\Modules\Learning\Actions\Course\UpdateCourseAction;
 use App\Modules\Learning\Http\Requests\Course\StoreCourseRequest;
@@ -28,6 +29,7 @@ class CourseController extends Controller
     public function __construct(
         private readonly GetCourseModulesAction $getCourseModulesAction,
         private readonly GetCourseAction $getCourseAction,
+        private readonly PreviewCourseAction $previewCourseAction,
         private readonly StoreCourseAction $storeCourseAction,
         private readonly UpdateCourseAction $updateCourseAction,
         private readonly DeleteCourseAction $deleteCourseAction,
@@ -81,6 +83,15 @@ class CourseController extends Controller
         $modules = $this->getCourseModulesAction->handle($context, $courseId);
 
         return CourseModulesResource::collection($modules);
+    }
+
+    public function preview(ApiContext $context, int $id): CourseDetailResource
+    {
+        $course = $this->previewCourseAction->handle($context, $id);
+
+        Gate::forUser($context->requiredUser())->authorize('learning.courses.preview-check', [$context->requiredTenant(), $course]);
+
+        return CourseDetailResource::make($course);
     }
 
     /**

@@ -17,7 +17,7 @@ class EnrollmentFactory extends Factory
             'tenant_id' => Tenant::factory(),
             'user_id' => User::factory(),
             'course_id' => Course::factory(),
-            'status' => fake()->randomElement(['active', 'expired', 'pending', 'completed']),
+            'status' => fake()->randomElement(['active', 'expired', 'pending', 'cancelled']),
             'enrolled_at' => now(),
             'completed_at' => null,
             'access_expires_at' => fake()->optional()->dateTimeBetween('+1 day', '+1 year'),
@@ -41,12 +41,19 @@ class EnrollmentFactory extends Factory
         ]);
     }
 
-    public function completed(): static
+    public function pending(): static
     {
         return $this->state(fn (): array => [
-            'status' => 'completed',
-            'progress_percentage' => 100,
-            'completed_at' => now(),
+            'status' => 'pending',
+            'access_expires_at' => null,
+        ]);
+    }
+
+    public function cancelled(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => 'cancelled',
+            'access_expires_at' => null,
         ]);
     }
 }

@@ -6,20 +6,20 @@
 
 ## Sessão
 
-- 2026-07-01 — Learning/Catalog concluiu o slice **`POST /api/v1/learning/lessons`**:
-  `StoreLessonRequest` + `StoreLessonAction` com `course_module_id` tenant-scoped, `slug` derivado,
-  `status=draft`, `sort_order` automático por módulo, gate `learning.lessons.create`, resposta 201 via
-  `LessonResource` e Feature tests cobrindo 201/401/403/422. Revalidação local verde com Pint,
-  `LessonApiTest` e suite Architecture; quando o harness oscilou, o saneamento
-  `optimize:clear` + `migrate:fresh --env=testing` resolveu antes da rerodada sequencial.
+- 2026-07-02 — Learning consolidou o slice de matrícula/acesso do aluno: CRUD de `Enrollment`,
+  matrícula corrente sem ambiguidade com histórico, preview de curso/aula respeitando `expired`
+  e reorder de lesson cobertos por testes.
 
 ## Próximos passos (1-3)
 
-1. Seguir em Learning com o próximo slice fino: **Lesson reorder**.
-2. Depois do reorder, avaliar **preview de cursos draft para instrutor/admin** antes de voltar para
-   `attach categories to courses`.
-3. Se o harness oscilar de novo, evitar validação paralela no banco `testing` e repetir o saneamento
-   (`optimize:clear` + `migrate:fresh --env=testing`) antes de ler a falha como regressão real.
+1. Decidir o próximo slice do fluxo do aluno após matrícula corrente + `expired` (ex.: extrair
+   helpers explícitos `canViewCourse`/`canAccessPaidContent` ou ampliar a árvore de módulos para
+   sinalizar vitrine/acesso por lesson).
+2. Se o harness oscilar de novo, evitar validação paralela no banco `testing` e repetir o
+   saneamento (`optimize:clear` + `migrate:fresh --env=testing`) antes de ler a falha como
+   regressão real.
+3. Retomar o backlog de `Enrollment & Progress`: matrícula manual por instrutor, auto-enroll via
+   `OrderPaidEvent` e eventos próprios de matrícula.
 
 ## Para depois (parqueado — não é o foco agora)
 
@@ -40,9 +40,5 @@
 
 ## Último commit
 
-- `114ac8b` — `chore: refresh STATE after publish push`.
-- Commit funcional anterior consolidado: `8aa044d` — `feat(learning): add admin course publish workflow`.
-- Branch `harness/specs-foundation`; a sessão atual consolidou os slices
-  `PATCH /api/v1/learning/modules/reorder`, `POST /api/v1/learning/lessons`,
-  `DELETE /api/v1/learning/lessons/{id}` e `PATCH /api/v1/learning/lessons/{id}`
-  (mais ajustes de `tasks.md`/`STATE.md`).
+- `775e969` — `feat(learning): add enrollment management and access flow`.
+- Branch `harness/specs-foundation`.

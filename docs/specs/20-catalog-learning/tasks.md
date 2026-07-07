@@ -43,10 +43,11 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `MaterialStats` rollup/counters sobre `MaterialDownload`.
 - [x] `POST /courses/{courseId}/materials/{materialId}/downloads` devolve URL temporária de download (sem proxy binário).
 - [x] Pre-signed URLs para `LessonMedia` `internal`/`s3` no `GET /lessons/{id}`.
+- [x] Fechar contrato de providers externos de `LessonMedia` (ex.: Vimeo/embed) no mesmo envelope de leitura.
 
 ## In Progress
 
-- [ ] Fechar contrato de providers externos de `LessonMedia` (ex.: Vimeo/embed) no mesmo envelope de leitura.
+- [ ] Definir subtipos/contrato avançado de `LessonMedia` (YouTube/Vimeo/AWS) junto de `LessonMediaProgress` e `ProgressStrategy`.
 
 ## Pending
 

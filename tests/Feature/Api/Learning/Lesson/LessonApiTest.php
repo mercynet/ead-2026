@@ -618,6 +618,7 @@ it('returns active lesson media for accessible paid lesson', function (): void {
         ->assertJsonPath('data.media.0.provider', 'embed')
         ->assertJsonPath('data.media.0.provider_ref', 'active-video')
         ->assertJsonPath('data.media.0.url', 'https://video.example/active')
+        ->assertJsonPath('data.media.0.url_kind', 'player')
         ->assertJsonPath('data.media.0.url_expires_at', null)
         ->assertJsonPath('data.media.0.duration_seconds', 300)
         ->assertJsonCount(1, 'data.media');
@@ -692,6 +693,7 @@ it('resolves a temporary URL for internal lesson media when the lesson is access
     $response->assertSuccessful()
         ->assertJsonPath('data.can_access', true)
         ->assertJsonPath('data.media.0.provider', 'internal')
+        ->assertJsonPath('data.media.0.url_kind', 'temporary')
         ->assertJsonPath('data.media.0.url_expires_at', now()->addMinutes(5)->toIso8601String());
 
     expect($response->json('data.media.0.url'))
@@ -699,6 +701,106 @@ it('resolves a temporary URL for internal lesson media when the lesson is access
         ->toContain('/storage/');
 
     Date::setTestNow();
+});
+
+it('uses metadata player_url for embed lesson media when available', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::factory()->for($tenant)->create([
+        'price_cents' => 10000,
+        'status' => 'published',
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Embed Player Lesson',
+        'slug' => 'embed-player-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::factory()->for($tenant)->for($student)->for($course)->active()->create();
+
+    LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'embed',
+        'provider_ref' => 'embed-player',
+        'url' => 'https://video.example/fallback',
+        'duration_seconds' => 420,
+        'sort_order' => 1,
+        'is_active' => true,
+        'metadata' => [
+            'player_url' => 'https://player.example/embed-player',
+        ],
+    ]);
+
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.media.0.provider', 'embed')
+        ->assertJsonPath('data.media.0.url', 'https://player.example/embed-player')
+        ->assertJsonPath('data.media.0.url_kind', 'player')
+        ->assertJsonPath('data.media.0.url_expires_at', null);
+});
+
+it('builds a canonical player url for vimeo lesson media from provider_ref', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::factory()->for($tenant)->create([
+        'price_cents' => 10000,
+        'status' => 'published',
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Vimeo Lesson',
+        'slug' => 'vimeo-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::factory()->for($tenant)->for($student)->for($course)->active()->create();
+
+    LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'vimeo',
+        'provider_ref' => '123456789',
+        'url' => null,
+        'duration_seconds' => 420,
+        'sort_order' => 1,
+        'is_active' => true,
+        'metadata' => [],
+    ]);
+
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.media.0.provider', 'vimeo')
+        ->assertJsonPath('data.media.0.url', 'https://player.vimeo.com/video/123456789')
+        ->assertJsonPath('data.media.0.url_kind', 'player')
+        ->assertJsonPath('data.media.0.url_expires_at', null);
 });
 
 it('shows paid lesson vitrine but denies content access for expired enrollment', function (): void {

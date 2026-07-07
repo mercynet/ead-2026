@@ -12,6 +12,7 @@ class LessonMediaResource extends JsonResource
         mixed $resource,
         private readonly ?string $resolvedUrl = null,
         private readonly ?CarbonInterface $resolvedUrlExpiresAt = null,
+        private readonly ?string $resolvedUrlKind = null,
     ) {
         parent::__construct($resource);
     }
@@ -25,6 +26,7 @@ class LessonMediaResource extends JsonResource
             'provider' => $this->provider,
             'provider_ref' => $this->provider_ref,
             'url' => $this->resolvedUrl ?? $this->url,
+            'url_kind' => $this->resolvedUrlKind,
             'url_expires_at' => $this->resolvedUrlExpiresAt?->toIso8601String(),
             'content' => $this->content,
             'duration_seconds' => $this->duration_seconds,

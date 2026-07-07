@@ -52,6 +52,10 @@ rating_stats             // cache agregado por curso (média, total, distribuiç
 - Para providers `internal`/`s3`, o caminho lógico do arquivo vive em `metadata.storage_path`
   (e opcionalmente `metadata.storage_disk`); o `GET /lessons/{id}` devolve `url` temporária
   já resolvida + `url_expires_at`.
+- Para providers externos, o `GET /lessons/{id}` devolve `url` já consumível pelo cliente e marca
+  `url_kind` para remover ambiguidade: `player` (Vimeo/YouTube/embed) ou `direct` quando houver URL
+  externa simples. `embed` pode informar `metadata.player_url`; `youtube`/`vimeo` podem resolver a
+  player URL canônica a partir de `provider_ref`.
 - Múltiplos provedores começam como strings validadas no domínio; enum dedicado entra quando houver
   adapter/provider real.
 - Integrações devolvem IDs; a camada Laravel envelopa em Player URL configurável (chaves globais

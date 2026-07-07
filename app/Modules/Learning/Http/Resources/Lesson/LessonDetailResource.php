@@ -43,6 +43,7 @@ class LessonDetailResource extends JsonResource
                         $media,
                         $this->resolvedMediaUrls[$media->id]['url'] ?? $media->url,
                         $this->resolvedMediaUrls[$media->id]['expires_at'] ?? null,
+                        $this->resolvedMediaUrls[$media->id]['kind'] ?? null,
                     ))
                     ->values()
                 : null,

@@ -5,6 +5,7 @@ namespace App\Modules\Learning\Http\Controllers\Lesson;
 use App\Modules\Learning\Actions\Lesson\DeleteLessonAction;
 use App\Modules\Learning\Actions\Lesson\GetLessonAction;
 use App\Modules\Learning\Actions\Lesson\ReorderLessonAction;
+use App\Modules\Learning\Actions\Lesson\ResolveLessonMediaUrlAction;
 use App\Modules\Learning\Actions\Lesson\StoreLessonAction;
 use App\Modules\Learning\Actions\Lesson\UpdateLessonAction;
 use App\Modules\Learning\Actions\Lesson\UpdateProgressAction;
@@ -31,6 +32,7 @@ class LessonController extends Controller
 {
     public function __construct(
         private readonly GetLessonAction $getLessonAction,
+        private readonly ResolveLessonMediaUrlAction $resolveLessonMediaUrlAction,
         private readonly StoreLessonAction $storeLessonAction,
         private readonly ReorderLessonAction $reorderLessonAction,
         private readonly DeleteLessonAction $deleteLessonAction,
@@ -73,13 +75,19 @@ class LessonController extends Controller
         $canAccess = $this->getLessonAction->canAccess($lesson, $context);
 
         $progress = $canAccess ? $this->getLessonAction->progressFor($lesson, $context) : null;
+        $resolvedMediaUrls = $canAccess
+            ? $lesson->media
+                ->mapWithKeys(fn ($media): array => [$media->id => $this->resolveLessonMediaUrlAction->handle($media)])
+                ->all()
+            : [];
 
         return LessonDetailResource::make(
             $lesson,
             $canAccess,
             $progress?->time_spent_seconds,
             $progress?->isCompleted() ?? false,
-            $progress?->current_time_seconds
+            $progress?->current_time_seconds,
+            $resolvedMediaUrls,
         );
     }
 

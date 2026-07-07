@@ -78,8 +78,8 @@ class StoreLessonMediaRequest extends FormRequest
                 'example' => true,
             ],
             'metadata' => [
-                'description' => 'Payload JSON flexível para configurações adicionais do provider.',
-                'example' => ['quality' => 'hd'],
+                'description' => 'Payload JSON flexível para configurações adicionais do provider. Para `internal`/`s3`, envie `storage_path` e opcionalmente `storage_disk`.',
+                'example' => ['quality' => 'hd', 'storage_path' => 'tenants/12/lessons/lesson-01.mp4', 'storage_disk' => 'local'],
             ],
         ];
     }

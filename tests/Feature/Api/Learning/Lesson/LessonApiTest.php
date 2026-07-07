@@ -7,6 +7,8 @@ use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
 use App\Modules\Learning\Models\LessonMedia;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -616,8 +618,87 @@ it('returns active lesson media for accessible paid lesson', function (): void {
         ->assertJsonPath('data.media.0.provider', 'embed')
         ->assertJsonPath('data.media.0.provider_ref', 'active-video')
         ->assertJsonPath('data.media.0.url', 'https://video.example/active')
+        ->assertJsonPath('data.media.0.url_expires_at', null)
         ->assertJsonPath('data.media.0.duration_seconds', 300)
         ->assertJsonCount(1, 'data.media');
+});
+
+it('resolves a temporary URL for internal lesson media when the lesson is accessible', function (): void {
+    Date::setTestNow('2026-07-07 15:00:00');
+
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Internal Media Course',
+        'slug' => 'internal-media-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Internal Media Lesson',
+        'slug' => 'internal-media-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $storagePath = 'tenants/'.$tenant->id.'/lessons/internal-media-lesson.mp4';
+    Storage::disk(config('filesystems.default'))->put($storagePath, 'video-body');
+
+    LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'internal',
+        'provider_ref' => 'internal-media-lesson',
+        'url' => null,
+        'content' => null,
+        'duration_seconds' => 600,
+        'sort_order' => 1,
+        'is_active' => true,
+        'metadata' => [
+            'storage_disk' => config('filesystems.default'),
+            'storage_path' => $storagePath,
+        ],
+    ]);
+
+    $response = $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers);
+
+    $response->assertSuccessful()
+        ->assertJsonPath('data.can_access', true)
+        ->assertJsonPath('data.media.0.provider', 'internal')
+        ->assertJsonPath('data.media.0.url_expires_at', now()->addMinutes(5)->toIso8601String());
+
+    expect($response->json('data.media.0.url'))
+        ->toBeString()
+        ->toContain('/storage/');
+
+    Date::setTestNow();
 });
 
 it('shows paid lesson vitrine but denies content access for expired enrollment', function (): void {

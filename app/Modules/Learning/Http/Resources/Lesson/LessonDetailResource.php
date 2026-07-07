@@ -14,6 +14,7 @@ class LessonDetailResource extends JsonResource
         private readonly ?int $timeSpentSeconds = null,
         private readonly bool $isCompleted = false,
         private readonly ?int $currentTimeSeconds = null,
+        private readonly array $resolvedMediaUrls = [],
     ) {
         parent::__construct($resource);
     }
@@ -36,7 +37,15 @@ class LessonDetailResource extends JsonResource
                 'title' => $this->courseModule->course->title,
                 'slug' => $this->courseModule->course->slug,
             ],
-            'media' => $this->canAccess ? LessonMediaResource::collection($this->media) : null,
+            'media' => $this->canAccess
+                ? $this->media
+                    ->map(fn ($media): LessonMediaResource => new LessonMediaResource(
+                        $media,
+                        $this->resolvedMediaUrls[$media->id]['url'] ?? $media->url,
+                        $this->resolvedMediaUrls[$media->id]['expires_at'] ?? null,
+                    ))
+                    ->values()
+                : null,
             'progress' => $this->canAccess ? [
                 'time_spent_seconds' => $this->timeSpentSeconds,
                 'current_time_seconds' => $this->currentTimeSeconds,

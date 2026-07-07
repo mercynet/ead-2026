@@ -49,6 +49,9 @@ rating_stats             // cache agregado por curso (média, total, distribuiç
 - Mídias resolvem **pre-signed URLs** apontando para o storage do tenant (AWS S3) ou provider
   externo (Vimeo). Backend nunca faz proxy binário de arquivos grandes. Ver
   [`../../00-architecture/performance-scalability.md`](../../00-architecture/performance-scalability.md).
+- Para providers `internal`/`s3`, o caminho lógico do arquivo vive em `metadata.storage_path`
+  (e opcionalmente `metadata.storage_disk`); o `GET /lessons/{id}` devolve `url` temporária
+  já resolvida + `url_expires_at`.
 - Múltiplos provedores começam como strings validadas no domínio; enum dedicado entra quando houver
   adapter/provider real.
 - Integrações devolvem IDs; a camada Laravel envelopa em Player URL configurável (chaves globais

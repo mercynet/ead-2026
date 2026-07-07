@@ -3,8 +3,10 @@
 use App\Modules\Learning\Http\Controllers\Catalog\CategoryController;
 use App\Modules\Learning\Http\Controllers\Catalog\CourseController as CatalogCourseController;
 use App\Modules\Learning\Http\Controllers\Course\CourseController;
+use App\Modules\Learning\Http\Controllers\Course\CourseMaterialController;
 use App\Modules\Learning\Http\Controllers\Enrollment\EnrollmentController;
 use App\Modules\Learning\Http\Controllers\Lesson\LessonController;
+use App\Modules\Learning\Http\Controllers\Lesson\LessonMediaController;
 use App\Modules\Learning\Http\Controllers\Module\ModuleController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +50,12 @@ Route::prefix('v1/learning')
                     Route::delete('/courses/{id}', 'destroy');
                 });
 
+            Route::controller(CourseMaterialController::class)
+                ->group(function (): void {
+                    Route::post('/courses/{courseId}/materials', 'store');
+                    Route::post('/courses/{courseId}/materials/{materialId}/downloads', 'storeDownload');
+                });
+
             Route::controller(EnrollmentController::class)
                 ->group(function (): void {
                     Route::get('/enrollments', 'index');
@@ -66,6 +74,13 @@ Route::prefix('v1/learning')
                     Route::patch('/lessons/{id}', 'update');
                     Route::post('/lessons/{id}/progress', 'progress');
                     Route::delete('/lessons/{id}', 'destroy');
+                });
+
+            Route::controller(LessonMediaController::class)
+                ->group(function (): void {
+                    Route::post('/lessons/{lessonId}/media', 'store');
+                    Route::patch('/lessons/{lessonId}/media/{mediaId}', 'update');
+                    Route::delete('/lessons/{lessonId}/media/{mediaId}', 'destroy');
                 });
         });
     });

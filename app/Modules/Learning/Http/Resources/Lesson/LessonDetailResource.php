@@ -36,6 +36,7 @@ class LessonDetailResource extends JsonResource
                 'title' => $this->courseModule->course->title,
                 'slug' => $this->courseModule->course->slug,
             ],
+            'media' => $this->canAccess ? LessonMediaResource::collection($this->media) : null,
             'progress' => $this->canAccess ? [
                 'time_spent_seconds' => $this->timeSpentSeconds,
                 'current_time_seconds' => $this->currentTimeSeconds,

@@ -6,20 +6,20 @@
 
 ## Sessão
 
-- 2026-07-02 — Learning consolidou o slice de matrícula/acesso do aluno: CRUD de `Enrollment`,
-  matrícula corrente sem ambiguidade com histórico, preview de curso/aula respeitando `expired`
-  e reorder de lesson cobertos por testes.
+- 2026-07-07 — Learning avançou em mídia/materiais: CRUD de `LessonMedia`, acesso de aula
+  alinhado à matrícula corrente, `CourseMaterial` + `MaterialDownload`/`MaterialStats`, e agora o
+  endpoint de download devolve URL temporária do arquivo sem proxy binário. Validação recente
+  verde em `CourseMaterialApiTest`, `CourseMaterialDownloadApiTest`, `LessonMediaApiTest`,
+  `LessonApiTest`, `CourseModulesApiTest`, `CatalogLearningSchemaTest` e `testsuite=Architecture`.
 
 ## Próximos passos (1-3)
 
-1. Decidir o próximo slice do fluxo do aluno após matrícula corrente + `expired` (ex.: extrair
-   helpers explícitos `canViewCourse`/`canAccessPaidContent` ou ampliar a árvore de módulos para
-   sinalizar vitrine/acesso por lesson).
-2. Se o harness oscilar de novo, evitar validação paralela no banco `testing` e repetir o
-   saneamento (`optimize:clear` + `migrate:fresh --env=testing`) antes de ler a falha como
-   regressão real.
-3. Retomar o backlog de `Enrollment & Progress`: matrícula manual por instrutor, auto-enroll via
-   `OrderPaidEvent` e eventos próprios de matrícula.
+1. Próximo slice de Learning: resolver pre-signed URL de `LessonMedia` (`internal`/S3/Vimeo) no
+   `GET /api/v1/learning/lessons/{id}`.
+2. Depois do delta de `LessonMedia`, decidir se Learning continua em mídia/material ou se vale
+   pivotar para matrícula manual por instrutor.
+3. Se o harness oscilar de novo, manter validação **sequencial** no banco `testing` e repetir
+   `optimize:clear` + `migrate:fresh --env=testing` antes de tratar a falha como regressão real.
 
 ## Para depois (parqueado — não é o foco agora)
 
@@ -37,8 +37,10 @@
   compartilhada + subclasses por área vs independentes). Decide ao implementar a 2ª área.
 - Dívidas pré-existentes: allowlist `ModuleBoundaryTest` → Events/Contracts; phpstan level 5
   (~156 erros); findings/advisories de dependências pendentes.
+- Após fechar pre-signed de `LessonMedia`, manter Learning em mídia/material ou pivotar para
+  matrícula manual por instrutor.
 
 ## Último commit
 
-- `775e969` — `feat(learning): add enrollment management and access flow`.
+- `41d9a6c`.
 - Branch `harness/specs-foundation`.

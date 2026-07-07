@@ -2,15 +2,19 @@
 
 namespace App\Modules\Learning\Actions\Course;
 
+use App\Modules\Learning\Actions\Access\EvaluateCourseAccessAction;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
-use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\LessonProgress;
 use App\Shared\Http\ApiContext;
 use Illuminate\Database\Eloquent\Collection;
 
 class GetCourseModulesAction
 {
+    public function __construct(
+        private readonly EvaluateCourseAccessAction $evaluateCourseAccessAction,
+    ) {}
+
     /**
      * @return Collection<int, CourseModule>
      */
@@ -32,15 +36,18 @@ class GetCourseModulesAction
             ->orderBy('sort_order')
             ->get();
 
-        $currentEnrollment = $this->currentEnrollment($context, $course->id);
+        $currentEnrollment = $this->evaluateCourseAccessAction->currentEnrollment($context, $course->id);
         $lessonProgress = $currentEnrollment === null
             ? collect()
             : $this->getLessonProgress($context, $course->id, $currentEnrollment->id);
+        $canAccessPaidContent = $this->evaluateCourseAccessAction->canAccessPaidContent($course, $context);
 
-        $modules->each(function ($module) use ($lessonProgress): void {
-            $module->lessons->each(function ($lesson) use ($lessonProgress): void {
+        $modules->each(function ($module) use ($context, $lessonProgress, $canAccessPaidContent): void {
+            $module->lessons->each(function ($lesson) use ($context, $lessonProgress, $canAccessPaidContent): void {
                 $progress = $lessonProgress->get($lesson->id);
                 $lesson->progress = $progress;
+                $lesson->can_access = $this->evaluateCourseAccessAction->canAccessLesson($lesson, $context);
+                $lesson->can_access_paid_content = $canAccessPaidContent;
             });
         });
 
@@ -59,18 +66,5 @@ class GetCourseModulesAction
             ->where('enrollment_id', $enrollmentId)
             ->get()
             ->keyBy('lesson_id');
-    }
-
-    private function currentEnrollment(ApiContext $context, int $courseId): ?Enrollment
-    {
-        return Enrollment::query()
-            ->forTenantUserCourse(
-                $context->requiredTenant()->id,
-                $context->requiredUser()->id,
-                $courseId
-            )
-            ->currentStatuses()
-            ->orderByDesc('id')
-            ->first();
     }
 }

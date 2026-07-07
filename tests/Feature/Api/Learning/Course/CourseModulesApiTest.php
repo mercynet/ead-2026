@@ -133,9 +133,13 @@ it('returns course modules with lesson progress from the current enrollment', fu
         ->assertJsonPath('data.0.id', $module->id)
         ->assertJsonPath('data.0.title', 'Module 1')
         ->assertJsonPath('data.0.lessons.0.id', $lesson1->id)
+        ->assertJsonPath('data.0.lessons.0.can_access', true)
+        ->assertJsonPath('data.0.lessons.0.can_access_paid_content', true)
         ->assertJsonPath('data.0.lessons.0.progress.is_completed', false)
         ->assertJsonPath('data.0.lessons.0.progress.progress_percentage', 20)
         ->assertJsonPath('data.0.lessons.1.id', $lesson2->id)
+        ->assertJsonPath('data.0.lessons.1.can_access', true)
+        ->assertJsonPath('data.0.lessons.1.can_access_paid_content', true)
         ->assertJsonPath('data.0.lessons.1.progress', null);
 });
 
@@ -221,7 +225,71 @@ it('returns modules without progress when only historical enrollment exists', fu
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.0.id', $module->id)
+        ->assertJsonPath('data.0.lessons.0.can_access', false)
+        ->assertJsonPath('data.0.lessons.0.can_access_paid_content', false)
         ->assertJsonPath('data.0.lessons.0.progress', null);
+});
+
+it('marks free preview lessons accessible without paid content access', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $student = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Student',
+        'email' => 'student-preview@tenant-a.test',
+        'password' => Hash::make('password123'),
+    ]);
+
+    Permission::query()->firstOrCreate(['name' => 'learning.courses.view', 'guard_name' => 'web']);
+    Role::query()->firstOrCreate(['name' => 'student', 'guard_name' => 'web'])
+        ->givePermissionTo('learning.courses.view');
+    $student->assignRole('student');
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Preview Course',
+        'slug' => 'preview-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 1000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Preview Lesson',
+        'slug' => 'preview-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+        'is_active' => true,
+    ]);
+
+    $token = $student->createToken('test-token')->plainTextToken;
+
+    $this->getJson("/api/v1/learning/courses/{$course->id}/modules", [
+        'Authorization' => 'Bearer '.$token,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.0.id', $module->id)
+        ->assertJsonPath('data.0.lessons.0.id', $lesson->id)
+        ->assertJsonPath('data.0.lessons.0.can_access', true)
+        ->assertJsonPath('data.0.lessons.0.can_access_paid_content', false);
 });
 
 it('returns 404 for non-existent course', function (): void {

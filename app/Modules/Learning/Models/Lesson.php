@@ -48,6 +48,11 @@ class Lesson extends Model
         return $this->hasMany(LessonProgress::class);
     }
 
+    public function media(): HasMany
+    {
+        return $this->hasMany(LessonMedia::class);
+    }
+
     public function isActive(): bool
     {
         return $this->is_active && $this->status === 'published';

@@ -15,6 +15,8 @@ class LessonWithProgressResource extends JsonResource
             'slug' => $this->slug,
             'sort_order' => $this->sort_order,
             'is_free' => $this->is_free,
+            'can_access' => (bool) $this->can_access,
+            'can_access_paid_content' => (bool) $this->can_access_paid_content,
             'duration' => $this->duration,
             'progress' => $this->progress ? [
                 'is_completed' => $this->progress->is_completed,

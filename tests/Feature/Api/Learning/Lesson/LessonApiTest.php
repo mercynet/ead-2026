@@ -5,6 +5,7 @@ use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
 use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
+use App\Modules\Learning\Models\LessonMedia;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -445,6 +446,55 @@ it('denies access to paid lesson without enrollment', function (): void {
         ->assertJsonPath('data.can_access', false);
 });
 
+it('hides paid lesson media without enrollment', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Locked Media Course',
+        'slug' => 'locked-media-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Locked Media Lesson',
+        'slug' => 'locked-media-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'embed',
+        'provider_ref' => 'locked-video',
+        'url' => 'https://video.example/locked',
+        'sort_order' => 1,
+        'is_active' => true,
+    ]);
+
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.can_access', false)
+        ->assertJsonPath('data.media', null);
+});
+
 it('allows access to paid lesson with active enrollment', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
     [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
@@ -490,6 +540,84 @@ it('allows access to paid lesson with active enrollment', function (): void {
     $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
         ->assertSuccessful()
         ->assertJsonPath('data.can_access', true);
+});
+
+it('returns active lesson media for accessible paid lesson', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Media Course',
+        'slug' => 'media-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Media Lesson',
+        'slug' => 'media-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'embed',
+        'provider_ref' => 'active-video',
+        'url' => 'https://video.example/active',
+        'content' => null,
+        'duration_seconds' => 300,
+        'sort_order' => 1,
+        'is_active' => true,
+        'metadata' => ['quality' => 'hd'],
+    ]);
+
+    LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'embed',
+        'provider_ref' => 'inactive-video',
+        'url' => 'https://video.example/inactive',
+        'sort_order' => 2,
+        'is_active' => false,
+    ]);
+
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.can_access', true)
+        ->assertJsonPath('data.media.0.media_type', 'video')
+        ->assertJsonPath('data.media.0.provider', 'embed')
+        ->assertJsonPath('data.media.0.provider_ref', 'active-video')
+        ->assertJsonPath('data.media.0.url', 'https://video.example/active')
+        ->assertJsonPath('data.media.0.duration_seconds', 300)
+        ->assertJsonCount(1, 'data.media');
 });
 
 it('shows paid lesson vitrine but denies content access for expired enrollment', function (): void {
@@ -541,6 +669,7 @@ it('shows paid lesson vitrine but denies content access for expired enrollment',
         ->assertJsonPath('data.course.id', $course->id)
         ->assertJsonPath('data.module.id', $module->id)
         ->assertJsonPath('data.can_access', false)
+        ->assertJsonPath('data.media', null)
         ->assertJsonPath('data.progress', null);
 });
 

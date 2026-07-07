@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-07-02
+last-updated: 2026-07-07
 ---
 
 # Tasks — Catalog & Learning
@@ -33,10 +33,19 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `GET /lessons/{id}`.
 - [x] `POST /lessons/{id}/progress`.
 - [x] `LessonCompletedEvent`.
+- [x] Regras explícitas `canViewCourse` / `canAccessPaidContent` / `canAccessLesson` + flags de acesso na árvore de módulos.
+- [x] E2E HTTP do fluxo aluno: módulos do curso, show de aula e heartbeat/progresso contra app rodando.
+- [x] `LessonMedia` mínimo: model/migration + mídia/conteúdo retornado só quando `canAccessLesson()` permitir.
+- [x] E2E HTTP Admin: criar módulo, criar aula, publicar e despublicar curso contra app rodando.
+- [x] CRUD/gestão de `LessonMedia` para instrutor/admin (`POST /lessons/{lessonId}/media`, `PATCH/DELETE /lessons/{lessonId}/media/{mediaId}`).
+- [x] `CourseMaterial` base: model + migration + `POST /courses/{courseId}/materials`.
+- [x] `MaterialDownload` base: model + migration + `POST /courses/{courseId}/materials/{materialId}/downloads` + `MaterialDownloadedEvent`.
+- [x] `MaterialStats` rollup/counters sobre `MaterialDownload`.
+- [x] `POST /courses/{courseId}/materials/{materialId}/downloads` devolve URL temporária de download (sem proxy binário).
 
 ## In Progress
 
-- [ ] Fluxo do aluno: enrollment → access → progress.
+- [ ] Pre-signed URLs para `LessonMedia` (AWS S3, Vimeo).
 
 ## Pending
 
@@ -74,10 +83,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] Regras de acesso a curso/aula devem consumir a matrícula corrente (`pending|active`) sem ambiguidade com histórico.
 
 ### Media & Ratings
-- [ ] `CourseMaterial` model + download tracking (`MaterialDownload`/`MaterialStats`).
 - [ ] `LessonView` (estatísticas de replay) + `LessonViewedEvent`.
 - [ ] `Rating` / `RatingStats` (1-5 estrelas, like/dislike, rollup).
-- [ ] Pre-signed URLs para mídia (AWS S3, Vimeo).
 - [ ] `LessonMedia` / `LessonMediaProgress` + `ProgressStrategy` configurável.
 
 ### Eventos
@@ -93,8 +100,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] **i18n traduzível** em `title`/`description`/`short_description` de Course/Module/Lesson/Category (JSON por locale, **com fallback**).
 - [ ] **`is_fifo`** (sequência linear) no curso.
 - [ ] **`meta_title`/`meta_description`** (JSON, SEO) — para a área Home/landing.
-- [ ] **Lesson media** (`LessonMedia` + `LessonMediaProgress`): video/streaming/audio/document, subtypes YouTube/Vimeo/AWS, `progress_strategy` (80%/full/manual/time_based), `MediaEmbedService`. Usar `medialibrary` p/ uploads.
-- [ ] **Regras de acesso** (eadIA `enrollment-access-rules.md`): `canViewCourse()`/`canAccessPaidContent()`/`canAccessLesson()` — free, is_free degustação, expirado vê vitrine mas não conteúdo pago.
+- [ ] **Lesson media avançado** (`LessonMediaProgress`): subtypes YouTube/Vimeo/AWS, `progress_strategy` (80%/full/manual/time_based), `MediaEmbedService`. Usar `medialibrary` p/ uploads.
 - [ ] **Matrícula manual por instrutor**: config tenant (`instructor_can_create_free_enrollments`, `..._mark_external_payment`, `..._requires_approval`), `enrollment_type`/`payment_type`/`created_by_instructor_id`.
 - [ ] **Ratings** (`Rating` + `RatingStats`, polimórfico curso/aula, rollup) e **Materials** (`CourseMaterial`/`MaterialDownload`/`MaterialStats` via medialibrary).
 

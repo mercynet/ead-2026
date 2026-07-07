@@ -135,7 +135,7 @@ class E2eRunCommand extends Command
         }
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $suffix = uniqid();
+        $suffix = bin2hex(random_bytes(8));
 
         $primary = Tenant::query()->create([
             'name' => "E2E Primary {$suffix}",
@@ -208,10 +208,10 @@ class E2eRunCommand extends Command
         if (! empty($case['as'])) {
             $headers['Authorization'] = 'Bearer '.$this->ctx['tokens'][$case['as']];
         }
-        $headers = array_merge($headers, $case['headers'] ?? []);
+        $headers = array_merge($headers, $this->resolveDynamicValues($case['headers'] ?? []));
 
         $request = Http::withHeaders($headers)->acceptJson();
-        $body = $case['body'] ?? [];
+        $body = $this->resolveDynamicValues($case['body'] ?? []);
 
         try {
             $response = $request->{$method}($base.$path, $body);
@@ -226,9 +226,12 @@ class E2eRunCommand extends Command
 
         $checks = [];
 
-        $expect = $case['expect'] ?? [];
+        $expect = $this->resolveDynamicValues($case['expect'] ?? []);
         if (isset($expect['status'])) {
             $checks[] = ['status', $response->status() === $expect['status'], $expect['status'], $response->status()];
+            if ($response->serverError()) {
+                $checks[] = ['response body', false, 'non-500 JSON', mb_substr($response->body(), 0, 1000)];
+            }
         }
         foreach (($expect['json'] ?? []) as $jsonPath => $expected) {
             $actual = data_get($json, $jsonPath);
@@ -255,6 +258,24 @@ class E2eRunCommand extends Command
         }
 
         return $expected == $actual;
+    }
+
+    private function resolveDynamicValues(mixed $value): mixed
+    {
+        if (is_callable($value)) {
+            return $value($this->ctx);
+        }
+
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $resolved = [];
+        foreach ($value as $key => $item) {
+            $resolved[$key] = $this->resolveDynamicValues($item);
+        }
+
+        return $resolved;
     }
 
     /**
@@ -302,7 +323,7 @@ class E2eRunCommand extends Command
                 $user->forceDelete();
             }
             foreach (['tenant', 'otherTenant'] as $key) {
-                $this->ctx[$key]?->forceDelete();
+                ($this->ctx[$key] ?? null)?->forceDelete();
             }
         } catch (Throwable $e) {
             $this->warn('teardown parcial: '.$e->getMessage());

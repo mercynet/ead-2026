@@ -44,7 +44,7 @@ RUNTIME_TOKEN_REFERENCE = re.compile(
     r"(?:\$\(\s*gh\s+auth\s+token\s*\)|\$\{?(?:ENV|[A-Za-z_][A-Za-z0-9_]*(?:TOKEN|SECRET|API_KEY))\}?|\{env:(?:ENV|[A-Za-z_][A-Za-z0-9_]*(?:TOKEN|SECRET|API_KEY))\})",
     re.IGNORECASE,
 )
-ALLOWED_ABSOLUTE_PATHS = {"/var/www/html/artisan"}
+ALLOWED_ABSOLUTE_PATHS = {"/var/www/html/artisan", "/dev/null"}
 
 
 class Reporter:

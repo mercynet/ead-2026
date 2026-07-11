@@ -111,6 +111,10 @@ class CoursePolicy
             return false;
         }
 
+        if ($this->deniedByInstructorOwnership($authenticatedUser, $course)) {
+            return false;
+        }
+
         return $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.update');
     }
 
@@ -125,6 +129,10 @@ class CoursePolicy
         }
 
         if ((int) $course->tenant_id !== (int) $tenant->id) {
+            return false;
+        }
+
+        if ($this->deniedByInstructorOwnership($authenticatedUser, $course)) {
             return false;
         }
 
@@ -145,6 +153,19 @@ class CoursePolicy
             return false;
         }
 
+        if ($this->deniedByInstructorOwnership($authenticatedUser, $course)) {
+            return false;
+        }
+
         return $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.delete');
+    }
+
+    /**
+     * Instructor só muta o próprio conteúdo (rbac.md, matriz `own`).
+     */
+    private function deniedByInstructorOwnership(User $authenticatedUser, Course $course): bool
+    {
+        return $authenticatedUser->isInstructor()
+            && (int) $course->instructor_id !== (int) $authenticatedUser->id;
     }
 }

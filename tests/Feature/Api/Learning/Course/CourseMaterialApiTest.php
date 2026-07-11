@@ -2,12 +2,14 @@
 
 use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
 use App\Modules\Learning\Models\Course;
 
-function makeCourseForTenant(Tenant $tenant): Course
+function makeCourseForTenant(Tenant $tenant, ?User $instructor = null): Course
 {
     return Course::factory()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor?->id,
         'status' => 'draft',
     ]);
 }
@@ -15,7 +17,7 @@ function makeCourseForTenant(Tenant $tenant): Course
 it('creates a course material for an authorized user in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
     [$user, $headers] = actingAsUserType(UserType::Instructor, $tenant);
-    $course = makeCourseForTenant($tenant);
+    $course = makeCourseForTenant($tenant, $user);
 
     $response = $this->postJson("/api/v1/learning/courses/{$course->id}/materials", [
         'file_path' => 'tenants/'.$tenant->id.'/materials/intro-guide.pdf',

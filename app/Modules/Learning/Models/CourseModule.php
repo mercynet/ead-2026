@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property-read Course|null $course
+ */
 class CourseModule extends Model
 {
     protected static string $factory = \Database\Factories\CourseModuleFactory::class;

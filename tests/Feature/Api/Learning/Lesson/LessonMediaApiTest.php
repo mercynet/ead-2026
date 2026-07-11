@@ -2,16 +2,18 @@
 
 use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
 use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
 use App\Modules\Learning\Models\LessonMedia;
 
-function makeLessonForTenant(Tenant $tenant): Lesson
+function makeLessonForTenant(Tenant $tenant, ?User $instructor = null): Lesson
 {
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor?->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -42,8 +44,8 @@ function makeLessonForTenant(Tenant $tenant): Lesson
 
 it('creates lesson media for an authorized user and appends sort order by default', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
-    $lesson = makeLessonForTenant($tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    $lesson = makeLessonForTenant($tenant, $instructor);
 
     LessonMedia::query()->create([
         'tenant_id' => $tenant->id,
@@ -85,8 +87,8 @@ it('creates lesson media for an authorized user and appends sort order by defaul
 
 it('creates typed lesson media payload for storage providers and time based progress', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
-    $lesson = makeLessonForTenant($tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    $lesson = makeLessonForTenant($tenant, $instructor);
 
     $this->postJson("/api/v1/learning/lessons/{$lesson->id}/media", [
         'media_type' => 'video',
@@ -296,8 +298,8 @@ it('fails safe when a storage lesson media has invalid persisted metadata', func
 
 it('updates lesson media for an authorized user in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
-    $lesson = makeLessonForTenant($tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    $lesson = makeLessonForTenant($tenant, $instructor);
     $lessonMedia = LessonMedia::query()->create([
         'tenant_id' => $tenant->id,
         'lesson_id' => $lesson->id,
@@ -332,8 +334,8 @@ it('updates lesson media for an authorized user in the current tenant', function
 
 it('updates typed lesson media payload for provider specific configuration', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
-    $lesson = makeLessonForTenant($tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    $lesson = makeLessonForTenant($tenant, $instructor);
     $lessonMedia = LessonMedia::query()->create([
         'tenant_id' => $tenant->id,
         'lesson_id' => $lesson->id,

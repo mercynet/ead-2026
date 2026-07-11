@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property-read CourseModule|null $courseModule
+ */
 class Lesson extends Model
 {
     protected static string $factory = \Database\Factories\LessonFactory::class;

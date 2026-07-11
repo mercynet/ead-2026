@@ -6,10 +6,11 @@ use App\Modules\Learning\Models\CourseModule;
 
 it('lets an instructor create a module in the current tenant and appends sort order', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -44,10 +45,11 @@ it('lets an instructor create a module in the current tenant and appends sort or
 
 it('lets an authorized user view a module in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -154,10 +156,11 @@ it('returns 401 without authentication when viewing a module', function (): void
 
 it('updates a module title for an authorized user in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -275,10 +278,11 @@ it('returns 422 for invalid module update payload', function (): void {
 
 it('deletes a module for an authorized user in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -384,10 +388,11 @@ it('returns 401 without authentication when deleting a module', function (): voi
 
 it('reorders all modules for an authorized user in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',

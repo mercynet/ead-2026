@@ -51,48 +51,60 @@ class LearningServiceProvider extends ServiceProvider
         Gate::define('learning.categories.tenant.update-check', [CategoryPolicy::class, 'update']);
         Gate::define('learning.categories.tenant.delete-check', [CategoryPolicy::class, 'delete']);
 
-        Gate::define('learning.modules.create-check', function (User $user, ?Tenant $tenant = null): bool {
-            return app(CourseModulePolicy::class)->create($user, $tenant);
+        Gate::define('learning.modules.create-check', function (User $user, ?Tenant $tenant = null, ?int $courseId = null): bool {
+            return app(CourseModulePolicy::class)->create($user, $tenant, $courseId);
         });
 
-        Gate::define('learning.modules.view', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+        Gate::define('learning.modules.view-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
             return app(CourseModulePolicy::class)->view($user, $tenant, $courseModule);
         });
 
-        Gate::define('learning.modules.update', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+        Gate::define('learning.modules.update-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
             return app(CourseModulePolicy::class)->update($user, $tenant, $courseModule);
         });
 
-        Gate::define('learning.modules.delete', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+        Gate::define('learning.modules.delete-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
             return app(CourseModulePolicy::class)->delete($user, $tenant, $courseModule);
         });
 
-        Gate::define('learning.modules.reorder', function (User $user, ?Tenant $tenant = null): bool {
-            return app(CourseModulePolicy::class)->reorder($user, $tenant);
+        Gate::define('learning.modules.reorder-check', function (User $user, ?Tenant $tenant = null, ?int $courseId = null): bool {
+            return app(CourseModulePolicy::class)->reorder($user, $tenant, $courseId);
         });
 
         Gate::define('learning.lessons.view', function (User $user, ?Tenant $tenant = null): bool {
             return app(LessonPolicy::class)->view($user, $tenant);
         });
 
-        Gate::define('learning.lessons.create', function (User $user, ?Tenant $tenant = null): bool {
-            return app(LessonPolicy::class)->create($user, $tenant);
+        Gate::define('learning.lessons.create-check', function (User $user, ?Tenant $tenant = null, ?int $courseModuleId = null): bool {
+            return app(LessonPolicy::class)->create($user, $tenant, $courseModuleId);
         });
 
         Gate::define('learning.progress.update', function (User $user, ?Tenant $tenant = null): bool {
             return app(LessonPolicy::class)->progress($user, $tenant);
         });
 
-        Gate::define('learning.lessons.update', function (User $user, ?Tenant $tenant = null): bool {
-            return app(LessonPolicy::class)->update($user, $tenant);
+        Gate::define('learning.lessons.update-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+            return app(LessonPolicy::class)->update($user, $tenant, $lesson);
         });
 
-        Gate::define('learning.lessons.delete', function (User $user, ?Tenant $tenant = null): bool {
-            return app(LessonPolicy::class)->delete($user, $tenant);
+        Gate::define('learning.lessons.delete-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+            return app(LessonPolicy::class)->delete($user, $tenant, $lesson);
         });
 
-        Gate::define('learning.lessons.reorder', function (User $user, ?Tenant $tenant = null): bool {
-            return app(LessonPolicy::class)->reorder($user, $tenant);
+        Gate::define('learning.lessons.reorder-check', function (User $user, ?Tenant $tenant = null, ?int $courseModuleId = null): bool {
+            return app(LessonPolicy::class)->reorder($user, $tenant, $courseModuleId);
+        });
+
+        Gate::define('learning.lessons.media.store-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+            return app(LessonPolicy::class)->storeMedia($user, $tenant, $lesson);
+        });
+
+        Gate::define('learning.lessons.media.update-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+            return app(LessonPolicy::class)->updateMedia($user, $tenant, $lesson);
+        });
+
+        Gate::define('learning.lessons.media.delete-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+            return app(LessonPolicy::class)->deleteMedia($user, $tenant, $lesson);
         });
 
         Gate::define('learning.enrollments.create', function (User $user, Tenant $tenant): bool {

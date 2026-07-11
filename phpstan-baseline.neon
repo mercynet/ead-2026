@@ -775,12 +775,6 @@ parameters:
 			path: app/Modules/Learning/Actions/Access/EvaluateCourseAccessAction.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Learning/Actions/Access/EvaluateCourseAccessAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$is_system\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1063,12 +1057,6 @@ parameters:
 			path: app/Modules/Learning/Actions/Enrollment/StoreEnrollmentAction.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Lesson/GetLessonAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMedia\:\:\$metadata\.$#'
 			identifier: property.notFound
 			count: 3
@@ -1105,12 +1093,6 @@ parameters:
 			path: app/Modules/Learning/Actions/Lesson/ResolveLessonMediaUrlAction.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Lesson/TrackLessonViewAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$completed_at\.$#'
 			identifier: property.notFound
 			count: 2
@@ -1144,12 +1126,6 @@ parameters:
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonProgress\:\:\$progress_percentage\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
-			identifier: property.notFound
-			count: 1
 			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
 
 		-
@@ -1931,12 +1907,6 @@ parameters:
 			identifier: property.notFound
 			count: 3
 			path: app/Modules/Learning/Policies/CourseModulePolicy.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$instructor_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Policies/CoursePolicy.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$tenant_id\.$#'

@@ -29,7 +29,7 @@ class LessonMediaController extends Controller
     {
         $lesson = $this->getLessonAction->handle($context, $lessonId);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.lessons.create', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.media.store-check', [$context->requiredTenant(), $lesson]);
 
         $lessonMedia = $this->storeLessonMediaAction->handle($context, $lesson, $request->validated());
 
@@ -40,10 +40,10 @@ class LessonMediaController extends Controller
 
     public function update(int $lessonId, int $mediaId, UpdateLessonMediaRequest $request, ApiContext $context): LessonMediaResource
     {
-        $this->getLessonAction->handle($context, $lessonId);
+        $lesson = $this->getLessonAction->handle($context, $lessonId);
         $lessonMedia = $this->getLessonMediaAction->handle($context, $lessonId, $mediaId);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.lessons.update', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.media.update-check', [$context->requiredTenant(), $lesson]);
 
         $lessonMedia = $this->updateLessonMediaAction->handle($lessonMedia, $request->validated());
 
@@ -52,10 +52,10 @@ class LessonMediaController extends Controller
 
     public function destroy(int $lessonId, int $mediaId, ApiContext $context): array
     {
-        $this->getLessonAction->handle($context, $lessonId);
+        $lesson = $this->getLessonAction->handle($context, $lessonId);
         $lessonMedia = $this->getLessonMediaAction->handle($context, $lessonId, $mediaId);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.lessons.delete', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.media.delete-check', [$context->requiredTenant(), $lesson]);
 
         $this->deleteLessonMediaAction->handle($lessonMedia);
 

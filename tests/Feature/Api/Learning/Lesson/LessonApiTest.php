@@ -63,10 +63,11 @@ it('shows lesson with can_access true for free lesson', function (): void {
 
 it('creates a lesson in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -117,10 +118,11 @@ it('creates a lesson in the current tenant', function (): void {
 
 it('reorders lessons for an authorized user in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -1642,10 +1644,11 @@ it('uses the only active lesson media when progress is reported without an expli
 
 it('allows an instructor to delete a lesson in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',
@@ -1791,10 +1794,11 @@ it('returns 401 without authentication when deleting a lesson', function (): voi
 
 it('allows an instructor to update a lesson title in the current tenant', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
-    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
 
     $course = Course::query()->create([
         'tenant_id' => $tenant->id,
+        'instructor_id' => $instructor->id,
         'title' => 'Course A',
         'slug' => 'course-a',
         'description' => 'Course description',

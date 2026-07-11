@@ -42,7 +42,7 @@ class ModuleController extends Controller
     {
         $module = $this->getModuleAction->handle($context, $id);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.modules.view', [$context->requiredTenant(), $module]);
+        Gate::forUser($context->requiredUser())->authorize('learning.modules.view-check', [$context->requiredTenant(), $module]);
 
         return ModuleResource::make($module);
     }
@@ -64,7 +64,7 @@ class ModuleController extends Controller
      */
     public function store(StoreModuleRequest $request, ApiContext $context): JsonResponse
     {
-        Gate::forUser($context->requiredUser())->authorize('learning.modules.create-check', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.modules.create-check', [$context->requiredTenant(), (int) $request->validated('course_id')]);
 
         $module = $this->storeModuleAction->handle($context, $request->validated());
 
@@ -84,7 +84,7 @@ class ModuleController extends Controller
     {
         $module = $this->getModuleAction->handle($context, $id);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.modules.update', [$context->requiredTenant(), $module]);
+        Gate::forUser($context->requiredUser())->authorize('learning.modules.update-check', [$context->requiredTenant(), $module]);
 
         $module = $this->updateModuleAction->handle($module, $request->validated());
 
@@ -98,7 +98,7 @@ class ModuleController extends Controller
      */
     public function reorder(ReorderModuleRequest $request, ApiContext $context): JsonResponse
     {
-        Gate::forUser($context->requiredUser())->authorize('learning.modules.reorder', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.modules.reorder-check', [$context->requiredTenant(), (int) $request->validated('course_id')]);
 
         $modules = $this->reorderModuleAction->handle($context, $request->validated());
 
@@ -116,7 +116,7 @@ class ModuleController extends Controller
     {
         $module = $this->getModuleAction->handle($context, $id);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.modules.delete', [$context->requiredTenant(), $module]);
+        Gate::forUser($context->requiredUser())->authorize('learning.modules.delete-check', [$context->requiredTenant(), $module]);
 
         $this->deleteModuleAction->handle($module);
 

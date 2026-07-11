@@ -44,7 +44,7 @@ class LessonController extends Controller
 
     public function store(StoreLessonRequest $request, ApiContext $context): JsonResponse
     {
-        Gate::forUser($context->requiredUser())->authorize('learning.lessons.create', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.create-check', [$context->requiredTenant(), (int) $request->validated('course_module_id')]);
 
         $lesson = $this->storeLessonAction->handle($context, $request->validated());
 
@@ -55,7 +55,7 @@ class LessonController extends Controller
 
     public function reorder(ReorderLessonRequest $request, ApiContext $context): JsonResponse
     {
-        Gate::forUser($context->requiredUser())->authorize('learning.lessons.reorder', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.reorder-check', [$context->requiredTenant(), (int) $request->validated('course_module_id')]);
 
         $lessons = $this->reorderLessonAction->handle($context, $request->validated());
 
@@ -101,7 +101,7 @@ class LessonController extends Controller
     {
         $lesson = $this->getLessonAction->handle($context, $id);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.lessons.update', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.update-check', [$context->requiredTenant(), $lesson]);
 
         $lesson = $this->updateLessonAction->handle($lesson, $request->validated());
 
@@ -138,7 +138,7 @@ class LessonController extends Controller
     {
         $lesson = $this->getLessonAction->handle($context, $id);
 
-        Gate::forUser($context->requiredUser())->authorize('learning.lessons.delete', [$context->requiredTenant()]);
+        Gate::forUser($context->requiredUser())->authorize('learning.lessons.delete-check', [$context->requiredTenant(), $lesson]);
 
         $this->deleteLessonAction->handle($lesson);
 

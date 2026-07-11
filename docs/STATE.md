@@ -24,8 +24,11 @@
    `docs/specs/30-assessment/tasks.md`.
 2. P2 da auditoria (recompra pós-cancelamento, vazamento de drafts na landing, slug único)
    e LGPD-03 (uniques tenant-scoped).
-3. Dívida PHPStan (410 erros de `@property` em models) — decidir: gerar docblocks
-   (ide-helper/larastan stubs) ou baseline.
+3. **Ratchet de qualidade** (CI destravado em 2026-07-11): PHPStan congelado em
+   `phpstan-baseline.neon` (408 erros — pagar gerando docblocks `@property` via ide-helper e
+   encolhendo o baseline) e thresholds do PHP Insights rebaixados ao nível real
+   (quality 83 / complexity 85 / architecture 75 / style 88 — subir de volta a 85/85/80/95
+   conforme a dívida for paga).
 
 ## Decisões abertas
 

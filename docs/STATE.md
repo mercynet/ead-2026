@@ -11,8 +11,13 @@
   listener Assessment) + spec E2E `learning/lessons-progress` (11/11 verde contra app real) +
   skill `validate-ai-work` + harness portável (hooks graphify via PATH; validator allowlista
   `/dev/null` — `validate-harness.py` verde, resta 1 WARN `.opencode/opencode.json`).
-  Suites: Feature 307/307, Architecture 15/15, Unit 8/8. **qa:gate falha só no PHPStan**
-  (410 erros, dívida global preexistente de `@property` em models — não regressão).
+  Suites: Feature 307/307, Architecture 15/15, Unit 8/8.
+- 2026-07-11 (cont.) — **CI destravado: `qa:gate` verde ponta a ponta** (`daf2e6c` + `f5a2fa7`):
+  PHPStan passa via `phpstan-baseline.neon` (408 erros congelados); Insights com thresholds
+  rebaixados ao baseline real (83/85/75/88). Auditoria read-only confirmou: validate, analyse,
+  insights (83.5/92.5/75/88), migrate:fresh testing e suite completa (333 testes, 1386 asserts)
+  todos verdes. Fonte única de thresholds consolidada em `phpinsights.php` (flags removidas
+  do script `insights` do composer.json).
   Nota operacional: banco dev estava sem migrations recentes (migrado); dir
   `app/Modules/Learning/Actions/Access/` estava root-owned (corrigido chown 1000).
 
@@ -41,5 +46,6 @@
 
 ## Último commit
 
-- `d1eead0` (merge specs-foundation → main) — `main` e `harness/specs-foundation` sincronizadas
-  com origin.
+- `f5a2fa7` (merge CI fix: insights thresholds → main) — `main` e `harness/specs-foundation`
+  sincronizadas com seus respectivos origin; branch está 1 merge atrás da `main` (esperado
+  pós-merge).

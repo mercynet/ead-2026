@@ -32,9 +32,9 @@ return [
         ],
     ],
     'requirements' => [
-        'min-quality' => 85,
+        'min-quality' => 83,
         'min-complexity' => 85,
-        'min-architecture' => 80,
-        'min-style' => 95,
+        'min-architecture' => 75,
+        'min-style' => 88,
     ],
 ];

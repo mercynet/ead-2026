@@ -69,7 +69,7 @@
             "vendor/bin/phpstan analyse --ansi"
         ],
         "insights": [
-            "vendor/bin/phpinsights --ansi --no-interaction --min-quality=83 --min-complexity=85 --min-architecture=75 --min-style=88"
+            "vendor/bin/phpinsights --ansi --no-interaction"
         ],
         "docs": [
             "php artisan scribe:generate"

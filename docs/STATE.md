@@ -18,15 +18,16 @@
     revalida path persistido + allowlist de disk antes de assinar (422, sem registrar download).
     Datasets negativos em `CourseMaterialApiTest`/`CourseMaterialDownloadApiTest`.
   - Suites: Feature 291/291, Architecture 15/15, Unit 8/8, Pint ok. Specs + tasks.md atualizados.
-  - **Sem commit** — tudo no working tree da branch `harness/specs-foundation` (P0.1 e P0.2
-    deveriam ir em commits separados, conforme o doc de auditoria).
+  - Working tree **commitado e pushado** em 6 commits (financial foundation, P0.1, P0.2,
+    learning ratings/views/enrollments, harness/docs, bump medialibrary 11.23.2 p/ limpar
+    CVE-2026-48557/48555 exigido pelo hook de pre-push).
 
 ## Próximos passos (1-3)
 
-1. Commitar P0.1 e P0.2 em commits separados ("não misturar itens num mesmo commit/task").
-2. Decisão de escopo de lançamento (piloto gratuito vs MVP pago) — bloqueia a ordem do resto.
-3. Se piloto: atacar P1 de Assessment (emissão de certificado + relação `Certificate::course()`
+1. Decisão de escopo de lançamento (piloto gratuito vs MVP pago) — bloqueia a ordem do resto.
+2. Se piloto: atacar P1 de Assessment (emissão de certificado + relação `Certificate::course()`
    com coluna certa) + LGPD-03 (uniques tenant-scoped) + `LessonPolicy`/`QuizAttemptPolicy` restantes.
+3. Abrir PR de `harness/specs-foundation` → `main` quando o escopo estiver decidido.
 
 ## Decisões abertas
 

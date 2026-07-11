@@ -267,23 +267,29 @@ class UpdateProgressAction
     {
         $course = $enrollment->course;
 
-        $totalLessons = Lesson::query()
+        $publishedLessonIds = Lesson::query()
             ->whereHas('courseModule', fn ($q) => $q->where('course_id', $course->id))
-            ->count();
+            ->where('status', 'published')
+            ->where('is_active', true)
+            ->pluck('id');
 
-        if ($totalLessons === 0) {
+        if ($publishedLessonIds->isEmpty()) {
             return;
         }
 
         $completedLessons = LessonProgress::query()
             ->where('enrollment_id', $enrollment->id)
+            ->whereIn('lesson_id', $publishedLessonIds)
             ->where('is_completed', true)
             ->count();
 
-        $percentage = (int) round(($completedLessons / $totalLessons) * 100);
+        $percentage = min((int) round(($completedLessons / $publishedLessonIds->count()) * 100), 100);
 
         $enrollment->update([
-            'progress_percentage' => min($percentage, 100),
+            'progress_percentage' => $percentage,
+            'completed_at' => $percentage >= 100
+                ? ($enrollment->completed_at ?? now())
+                : $enrollment->completed_at,
         ]);
     }
 }

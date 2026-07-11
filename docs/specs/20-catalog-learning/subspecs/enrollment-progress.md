@@ -41,6 +41,9 @@ lesson_progress
 - **Cálculo de progresso (assíncrono):** ao marcar `is_completed=true` numa aula, dispara
   `LessonCompletedEvent`; um job recalcula o percentual com base nos módulos/aulas concluídos. Ao
   atingir 100%, o progresso do curso é marcado como concluído e (se config) engatilha certificado.
+- **Denominador do progresso:** apenas aulas `published` + `is_active` contam (numerador e
+  denominador); drafts/inativas não travam o aluno abaixo de 100%. Ao atingir 100%,
+  `enrollment.completed_at` é estampado (set-once; não regride se o denominador crescer depois).
 - **Heartbeat de progresso:** o frontend envia `POST /lessons/{id}/progress` periodicamente com
   `{ duration_watched / progress_percentage, is_completed / time_spent_seconds }` para atualizar o
   tracking.

@@ -108,7 +108,12 @@ Ordem de ataque: P0 → P1 → P2. Não misturar itens num mesmo commit/task.
   permission do config → match de tenant do recurso).
 - **Validação**: adicionar casos `UserType::Developer` em `LessonApiTest`/`ModuleApiTest` (hoje: zero).
 
-### P1.5 Progresso de curso: denominador conta drafts e `completed_at` nunca é escrito
+### P1.5 Progresso de curso: denominador conta drafts e `completed_at` nunca é escrito — ✅ CORRIGIDO (2026-07-11)
+
+> `UpdateProgressAction::updateEnrollmentProgress`: numerador e denominador filtram lessons
+> `published + is_active`; `completed_at` estampado (set-once) ao atingir 100%. Testes em
+> `LessonApiTest` (draft/inativa fora do denominador; asserção antiga de `completed_at` null
+> atualizada — documentava o bug).
 
 - **Evidência**: `app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php:270-272` conta
   todas as lessons (sem filtro `published`/`is_active`); `enrollment.completed_at` existe no

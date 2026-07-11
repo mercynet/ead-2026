@@ -1262,7 +1262,7 @@ it('marks lesson as completed and updates enrollment progress', function (): voi
     $enrollment->refresh();
     expect($enrollment->progress_percentage)->toBe(100);
     expect($enrollment->status)->toBe('active');
-    expect($enrollment->completed_at)->toBeNull();
+    expect($enrollment->completed_at)->not->toBeNull();
 });
 
 it('updates progress on the current enrollment when historical rows exist', function (): void {
@@ -1984,4 +1984,83 @@ it('returns 422 for invalid lesson update payload', function (): void {
     $this->patchJson('/api/v1/learning/lessons/'.$lesson->id, [], $headers)
         ->assertStatus(422)
         ->assertJsonPath('errors.0.code', 'validation_error');
+});
+
+it('ignores draft and inactive lessons in course progress and stamps completed_at', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Denominator Course',
+        'slug' => 'denominator-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $publishedLesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Published Lesson',
+        'slug' => 'published-lesson',
+        'status' => 'published',
+        'is_active' => true,
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Draft Lesson',
+        'slug' => 'draft-lesson',
+        'status' => 'draft',
+        'is_active' => true,
+        'sort_order' => 2,
+        'is_free' => false,
+    ]);
+
+    Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Inactive Lesson',
+        'slug' => 'inactive-lesson',
+        'status' => 'published',
+        'is_active' => false,
+        'sort_order' => 3,
+        'is_free' => false,
+    ]);
+
+    $enrollment = Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$publishedLesson->id}/progress", [
+        'time_spent_seconds' => 300,
+        'current_time_seconds' => 300,
+        'total_time_seconds' => 300,
+        'progress_percentage' => 100,
+        'is_completed' => true,
+    ], $headers)->assertSuccessful();
+
+    $enrollment->refresh();
+
+    expect($enrollment->progress_percentage)->toBe(100)
+        ->and($enrollment->completed_at)->not->toBeNull();
 });

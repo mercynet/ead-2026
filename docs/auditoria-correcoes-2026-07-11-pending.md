@@ -63,7 +63,11 @@ Ordem de ataque: P0 → P1 → P2. Não misturar itens num mesmo commit/task.
 
 ## P1 — Alto (quebra funcional ou autorização errada)
 
-### P1.1 `access_days = 0` (vitalício) nasce expirado
+### P1.1 `access_days = 0` (vitalício) nasce expirado — ✅ CORRIGIDO (2026-07-11)
+
+> `EnrollStudentInCourseAction`: `access_days` 0/null → `access_expires_at = null`;
+> `StoreCourseRequest`/`UpdateCourseRequest` validam `access_days` contra os presets
+> (0/30/90/180/365). Testes em `EnrollmentApiTest` (vitalício ativo) e `CourseCrudApiTest`.
 
 - **Evidência**: `app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php:51` —
   `access_days === null ? null : now()->addDays($course->access_days)`; com `0`,
@@ -73,7 +77,7 @@ Ordem de ataque: P0 → P1 → P2. Não misturar itens num mesmo commit/task.
   fechada de presets (30/90/180/365/0) em `StoreCourseRequest`/`UpdateCourseRequest`.
 - **Validação**: teste de matrícula em curso `access_days=0` com acesso a conteúdo pago OK.
 
-### P1.2 `QuizAttemptPolicy::create` checa permissão errada
+### P1.2 `QuizAttemptPolicy::create` checa permissão errada — ✅ CORRIGIDO (2026-07-11, junto do P0.1)
 
 - **Evidência**: `app/Modules/Assessment/Policies/QuizAttemptPolicy.php:13,21` — `create()` checa
   `assessment.attempts.view`. No config, `.create` é `[developer, student]`, `.view` inclui

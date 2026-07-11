@@ -44,6 +44,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `MaterialDownload` base: model + migration + `POST /courses/{courseId}/materials/{materialId}/downloads` + `MaterialDownloadedEvent`.
 - [x] `MaterialStats` rollup/counters sobre `MaterialDownload`.
 - [x] `POST /courses/{courseId}/materials/{materialId}/downloads` devolve URL temporária de download (sem proxy binário).
+- [x] **P1.1 (auditoria 2026-07-11):** `access_days = 0` = vitalício (`access_expires_at = null`);
+  presets 0/30/90/180/365 validados nos FormRequests de curso.
 - [x] **P0.2 (auditoria 2026-07-11):** hardening de `file_path` de material — prefixo
   `tenants/{tenant_id}/` + anti-traversal no FormRequest; revalidação + allowlist de disk na
   geração da URL assinada (defesa em profundidade); URL gerada antes de registrar download.

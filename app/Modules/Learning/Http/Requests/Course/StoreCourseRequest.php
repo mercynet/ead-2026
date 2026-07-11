@@ -3,6 +3,7 @@
 namespace App\Modules\Learning\Http\Requests\Course;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreCourseRequest extends FormRequest
 {
@@ -26,7 +27,7 @@ class StoreCourseRequest extends FormRequest
             'level' => ['nullable', 'string', 'in:beginner,intermediate,advanced,all'],
             'price_cents' => ['nullable', 'integer', 'min:0'],
             'duration_hours' => ['nullable', 'integer', 'min:0'],
-            'access_days' => ['nullable', 'integer', 'min:0'],
+            'access_days' => ['nullable', 'integer', Rule::in([0, 30, 90, 180, 365])],
             'is_featured' => ['nullable', 'boolean'],
             'certificate_enabled' => ['nullable', 'boolean'],
             'certificate_min_progress' => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -45,6 +46,7 @@ class StoreCourseRequest extends FormRequest
             'price_cents.integer' => 'Price must be a valid integer (cents).',
             'price_cents.min' => 'Price cannot be negative.',
             'level.in' => 'Level must be one of: beginner, intermediate, advanced, all.',
+            'access_days.in' => 'Access days must be one of the presets: 0 (lifetime), 30, 90, 180 or 365.',
             'certificate_min_progress.integer' => 'Minimum progress must be a valid integer.',
             'certificate_min_progress.min' => 'Minimum progress must be at least 0.',
             'certificate_min_progress.max' => 'Minimum progress must not exceed 100.',

@@ -48,7 +48,7 @@ class EnrollStudentInCourseAction
                 'status' => $data->status,
                 'enrolled_at' => now(),
                 'progress_percentage' => 0,
-                'access_expires_at' => $course->access_days === null ? null : now()->addDays($course->access_days),
+                'access_expires_at' => $course->access_days > 0 ? now()->addDays($course->access_days) : null,
             ]);
 
             try {

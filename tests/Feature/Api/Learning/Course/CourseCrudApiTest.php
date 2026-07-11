@@ -1244,3 +1244,29 @@ it('allows developer to update any course', function (): void {
         ->assertSuccessful()
         ->assertJsonPath('data.title', 'Curso Atualizado por Developer');
 });
+
+it('rejects access_days outside the closed preset list', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-x.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+
+    assertApiErrorEnvelope(
+        $this->postJson('/api/v1/learning/courses', [
+            'title' => 'Curso Preset Inválido',
+            'access_days' => 15,
+        ], $headers),
+        422,
+        'validation_error'
+    );
+});
+
+it('accepts access_days 0 as the lifetime preset', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-x.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+
+    $this->postJson('/api/v1/learning/courses', [
+        'title' => 'Curso Vitalício',
+        'access_days' => 0,
+    ], $headers)->assertCreated();
+
+    expect(Course::query()->where('title', 'Curso Vitalício')->firstOrFail()->access_days)->toBe(0);
+});

@@ -1121,3 +1121,35 @@ it('returns not found for cross tenant enrollment actions', function (): void {
     $this->patchJson("/api/v1/learning/enrollments/{$enrollment->id}", ['status' => 'active'], $headers)->assertNotFound();
     $this->withHeaders($headers)->deleteJson("/api/v1/learning/enrollments/{$enrollment->id}")->assertNotFound();
 });
+
+it('treats access_days 0 as lifetime access', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Lifetime Course',
+        'slug' => 'lifetime-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 1500,
+        'access_days' => 0,
+        'is_featured' => false,
+    ]);
+
+    $targetUser = User::factory()->forTenant($tenant)->student()->create();
+
+    $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $targetUser->id,
+    ], $headers)->assertCreated();
+
+    $enrollment = Enrollment::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $targetUser->id)
+        ->where('course_id', $course->id)
+        ->firstOrFail();
+
+    expect($enrollment->access_expires_at)->toBeNull()
+        ->and($enrollment->isActive())->toBeTrue();
+});

@@ -6,46 +6,48 @@
 
 ## Sessão
 
-- 2026-07-11 — **Branch `harness/specs-foundation` mergeada na `main`** (`d1eead0`, --no-ff,
-  pushada): P0/P1 da auditoria + emissão automática de certificado (`CourseCompletedEvent` →
-  listener Assessment) + spec E2E `learning/lessons-progress` (11/11 verde contra app real) +
-  skill `validate-ai-work` + harness portável (hooks graphify via PATH; validator allowlista
-  `/dev/null` — `validate-harness.py` verde, resta 1 WARN `.opencode/opencode.json`).
-  Suites: Feature 307/307, Architecture 15/15, Unit 8/8.
-- 2026-07-11 (cont.) — **CI destravado: `qa:gate` verde ponta a ponta** (`daf2e6c` + `f5a2fa7`):
-  PHPStan passa via `phpstan-baseline.neon` (408 erros congelados); Insights com thresholds
-  rebaixados ao baseline real (83/85/75/88). Auditoria read-only confirmou: validate, analyse,
-  insights (83.5/92.5/75/88), migrate:fresh testing e suite completa (333 testes, 1386 asserts)
-  todos verdes. Fonte única de thresholds consolidada em `phpinsights.php` (flags removidas
-  do script `insights` do composer.json).
-  Nota operacional: banco dev estava sem migrations recentes (migrado); dir
-  `app/Modules/Learning/Actions/Access/` estava root-owned (corrigido chown 1000).
+- 2026-07-11 (noite) — **Validação independente do merge `harness/specs-foundation` + fixes CI
+  (`78bf5ab..3794fdb`) concluída via `validate-ai-work`: APROVADO COM RESSALVAS.** Reproduzido
+  verde: suite 333/1386, `composer analyse` (baseline 408 confirmado por soma de `count:`),
+  `composer insights` exit 0 (thresholds 83/85/75/88), e2e `lessons-progress` 11/11 contra app
+  real. **2 findings ALTA no fluxo novo de certificado** (confirmados no código): (1) certificado
+  duplicável sob concorrência — check-then-create sem unique em `certificates(tenant_id,
+  enrollment_id)` + enrollment lido sem lock em `UpdateProgressAction`; (2) listener de emissão
+  síncrono disparado DENTRO da `DB::transaction` do progresso — exceção na emissão = 500 + rollback
+  do progresso do aluno. Média: attempts `in_progress` legados sem backfill de snapshot ficam
+  inutilizáveis; RBAC `own` de instructor em lessons/courses/modules não implementado (spec↔código
+  divergem). Baixas registradas no relatório da sessão (colisão certificate_number, validação
+  assimétrica de material path, access_days null→500, spec drift rbac.md, dedup de lógica de path).
+  Nota operacional: `e2e:run` de dentro do container exige `APP_URL=http://localhost` (o `.env`
+  aponta a porta 8099 do host).
 
 ## Próximos passos (1-3)
 
-1. **Decisão de escopo** (piloto gratuito vs MVP pago) + **decisão P1.6** (global scope de tenant
-   — discutir e registrar ADR via `create-adr`). O trigger complementar de certificado (quiz
-   aprovado depois do curso completo) está bloqueado nessa decisão de fronteira — ver
-   `docs/specs/30-assessment/tasks.md`.
-2. P2 da auditoria (recompra pós-cancelamento, vazamento de drafts na landing, slug único)
-   e LGPD-03 (uniques tenant-scoped).
-3. **Ratchet de qualidade** (CI destravado em 2026-07-11): PHPStan congelado em
-   `phpstan-baseline.neon` (408 erros — pagar gerando docblocks `@property` via ide-helper e
-   encolhendo o baseline) e thresholds do PHP Insights rebaixados ao nível real
-   (quality 83 / complexity 85 / architecture 75 / style 88 — subir de volta a 85/85/80/95
-   conforme a dívida for paga).
+1. ~~Fix A1+A2~~ **feito e mergeado na main** (`35acbf0` → merge `7906e42`): unique
+   `certificates(tenant_id, enrollment_id)` + catch da violação, enrollment `lockForUpdate` +
+   count locking, eventos pós-commit, listener com try/catch+log. Validado: suite 335/1392,
+   analyse verde (baseline 411), insights ok, e2e lessons-progress 11/11.
+   **Workflow novo: solo dev — trabalhar direto na `main`, sem branches novas.**
+2. **Decisão de escopo** (piloto gratuito vs MVP pago) + **decisão P1.6** (global scope de tenant —
+   ADR via `create-adr`); a mesma fronteira decide o trigger complementar de certificado
+   (`docs/specs/30-assessment/tasks.md`) e resolve a divergência RBAC `own` (implementar ownership
+   ou corrigir `rbac.md`).
+3. LGPD-03 (uniques tenant-scoped de cpf/email — hoje globais) + P2 da auditoria (P2.5
+   `StartAttemptAction` 500 sem tenant confirmado; P2.4 abort(422) vs envelope) + ratchet de
+   qualidade (pagar baseline PHPStan 411 via docblocks ide-helper; subir insights a 85/85/80/95).
 
 ## Decisões abertas
 
 - **Escopo de lançamento:** piloto gratuito controlado ou MVP comercial pago?
-- **P1.6:** trait `BelongsToTenant` com global scope vs `where` explícito + smoke test (ADR pendente);
-  a mesma discussão de fronteira decide o trigger complementar de certificado.
+- **P1.6:** trait `BelongsToTenant` com global scope vs `where` explícito + smoke test (ADR
+  pendente) — 20 ocorrências de `where('tenant_id')` manual em app/ dependem dessa decisão.
+- **RBAC `own` (instructor)**: implementar checagem de ownership em lessons/courses/modules ou
+  rebaixar a matriz em `rbac.md` para `sim` tenant-wide (ADR curto).
 - Caminho pago: gateway inicial, política de reembolso, modelo de reconciliação.
-- Dívidas transversais nos `tasks.md`/roadmap: teto RBAC, LGPD-03, CI, LGPD operacional,
-  PHPStan/advisories, fronteiras cross-module.
+- Dívidas transversais nos `tasks.md`/roadmap: teto RBAC, LGPD-03, LGPD operacional, fronteiras
+  cross-module.
 
 ## Último commit
 
-- `f5a2fa7` (merge CI fix: insights thresholds → main) — `main` e `harness/specs-foundation`
-  sincronizadas com seus respectivos origin; branch está 1 merge atrás da `main` (esperado
-  pós-merge).
+- `7906e42` (merge `fix/certificate-concurrency` → main, pushado). Daqui em diante commits
+  diretos na `main` (decisão do dono, solo dev).

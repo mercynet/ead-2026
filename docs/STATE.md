@@ -6,38 +6,39 @@
 
 ## Sessão
 
-- 2026-07-11 — **P0.1 e P0.2 fechados** (os dois itens críticos de
+- 2026-07-11 — **P0 completo + P1 executável completo** (auditoria
   [`docs/auditoria-correcoes-2026-07-11-pending.md`](auditoria-correcoes-2026-07-11-pending.md),
-  ambos anotados ✅ no doc):
-  - **P0.1** (nota forjável): `questions_snapshot` congelado no servidor em `StartAttemptAction`
-    (migration nova no módulo Assessment); `PATCH /attempts/{id}` aceita só `question_id` +
-    `selected_options`; scoring 100% server-side; `maxPoints=0` morto; Resources sem gabarito;
-    fix bônus em `QuizAttemptPolicy::create` (checava `attempts.view`). `AttemptApiTest` reescrito.
-  - **P0.2** (cross-tenant via `file_path` de material): `StoreCourseMaterialRequest` com
-    `starts_with:tenants/{tenant_id}/` + anti-traversal; `GenerateCourseMaterialDownloadUrlAction`
-    revalida path persistido + allowlist de disk antes de assinar (422, sem registrar download).
-    Datasets negativos em `CourseMaterialApiTest`/`CourseMaterialDownloadApiTest`.
-  - Suites: Feature 291/291, Architecture 15/15, Unit 8/8, Pint ok. Specs + tasks.md atualizados.
-  - Working tree **commitado e pushado** em 6 commits (financial foundation, P0.1, P0.2,
-    learning ratings/views/enrollments, harness/docs, bump medialibrary 11.23.2 p/ limpar
-    CVE-2026-48557/48555 exigido pelo hook de pre-push).
+  cada item anotado ✅/🟡 no doc). Tudo commitado e **pushado** em `harness/specs-foundation`:
+  - **P0.1** ✅ snapshot de quiz server-side (nota não é mais forjável; bug `maxPoints=0` morto).
+  - **P0.2** ✅ hardening de `file_path` de material (cross-tenant bloqueado).
+  - **P1.1** ✅ `access_days=0` = vitalício + presets validados.
+  - **P1.2** ✅ `QuizAttemptPolicy::create` (junto do P0.1).
+  - **P1.3** 🟡 parcial: coluna `course_id` em certificates + verify com título real;
+    **emissão automática pendente** (task no `tasks.md` do Assessment).
+  - **P1.4** ✅ `LessonPolicy` no padrão canônico (developer 403 resolvido; matriz RBAC consultada).
+  - **P1.5** ✅ denominador de progresso só published+active; `completed_at` estampado em 100%.
+  - **P1.6** ⏸ decisão de arquitetura (trait `BelongsToTenant` c/ global scope) — pede ADR/decisão.
+  - Extra: bump `spatie/laravel-medialibrary` 11.23.2 (CVE-2026-48557/48555, exigido pelo pre-push).
+  - Suites no fim: Feature 298/298, Architecture 15/15, Unit 8/8.
 
 ## Próximos passos (1-3)
 
-1. Decisão de escopo de lançamento (piloto gratuito vs MVP pago) — bloqueia a ordem do resto.
-2. Se piloto: atacar P1 de Assessment (emissão de certificado + relação `Certificate::course()`
-   com coluna certa) + LGPD-03 (uniques tenant-scoped) + `LessonPolicy`/`QuizAttemptPolicy` restantes.
-3. Abrir PR de `harness/specs-foundation` → `main` quando o escopo estiver decidido.
+1. **Emissão automática de certificado** (`Certificate::create` via `CourseCompletedEvent` ao
+   atingir 100% + config `certificate_*` do curso) — pré-requisitos P1.3/P1.5 já fechados.
+2. **Decisão de escopo** (piloto gratuito vs MVP pago) + **decisão P1.6** (global scope de tenant
+   — discutir e registrar ADR via `create-adr`).
+3. Depois: P2 da auditoria (recompra pós-cancelamento, vazamento de drafts na landing, slug único)
+   e LGPD-03 (uniques tenant-scoped).
 
 ## Decisões abertas
 
 - **Escopo de lançamento:** piloto gratuito controlado ou MVP comercial pago?
-- Para o caminho pago: gateway inicial, política de reembolso, modelo de reconciliação.
-- Dívidas transversais nos `tasks.md`/roadmap: teto RBAC, uniques tenant-scoped (LGPD-03), CI,
-  LGPD operacional (LGPD-01/02/05/07/08), PHPStan/advisories, fronteiras cross-module,
-  isolamento de tenant por convenção manual.
+- **P1.6:** adotar trait `BelongsToTenant` com global scope (+ `creating` hook) mantendo `where`
+  explícito como defesa em profundidade, ou só ampliar `TenantIsolationSmokeTest`? (ADR pendente.)
+- Caminho pago: gateway inicial, política de reembolso, modelo de reconciliação.
+- Dívidas transversais nos `tasks.md`/roadmap: teto RBAC, LGPD-03, CI, LGPD operacional,
+  PHPStan/advisories, fronteiras cross-module.
 
 ## Último commit
 
-- `ca8f9fb` (P0.1 + P0.2 ainda não commitados — working tree).
-- Branch `harness/specs-foundation`.
+- `e750ac4` (P1.4) — branch `harness/specs-foundation`, sincronizada com origin.

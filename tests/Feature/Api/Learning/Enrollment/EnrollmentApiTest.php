@@ -1,9 +1,13 @@
 <?php
 
 use App\Modules\Core\Enums\UserType;
+use App\Modules\Core\Models\TenantCustomization;
 use App\Modules\Core\Models\User;
+use App\Modules\Learning\Enums\EnrollmentBillingType;
+use App\Modules\Learning\Events\EnrollmentCreatedEvent;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\Enrollment;
+use Illuminate\Support\Facades\Event;
 
 it('creates enrollment and returns resource payload', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
@@ -261,6 +265,367 @@ it('requires authentication to create enrollment', function (): void {
         'course_id' => $course->id,
     ], tenantHeaders($tenant))
         ->assertUnauthorized();
+});
+
+it('forbids instructor creating enrollment when manual free enrollment is disabled', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Test Course',
+        'slug' => 'test-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $otherUser = User::factory()->forTenant($tenant)->student()->create();
+
+    $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $otherUser->id,
+    ], $headers)
+        ->assertForbidden();
+});
+
+it('creates free enrollment for instructor when manual free enrollment is enabled', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    Event::fake([EnrollmentCreatedEvent::class]);
+
+    TenantCustomization::query()->create([
+        'tenant_id' => $tenant->id,
+        'published_settings' => [
+            'learning' => [
+                'enrollments' => [
+                    'manual_free_by_instructor' => true,
+                ],
+            ],
+        ],
+    ]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Free Course',
+        'slug' => 'free-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    $response = $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+    ], $headers);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.status', 'active')
+        ->assertJsonPath('data.created_by_instructor_id', $instructor->id)
+        ->assertJsonPath('data.user_id', $student->id);
+
+    $enrollment = Enrollment::query()->latest('id')->firstOrFail();
+
+    expect($enrollment->created_by_instructor_id)->toBe($instructor->id)
+        ->and($enrollment->status)->toBe('active')
+        ->and($enrollment->user_id)->toBe($student->id)
+        ->and($enrollment->course_id)->toBe($course->id);
+
+    Event::assertDispatched(EnrollmentCreatedEvent::class, function (EnrollmentCreatedEvent $event) use ($tenant, $student, $course, $instructor): bool {
+        return $event->tenantId === $tenant->id
+            && $event->userId === $student->id
+            && $event->courseId === $course->id
+            && $event->status === 'active'
+            && $event->source === 'manual'
+            && $event->billingType === null
+            && $event->createdByInstructorId === $instructor->id;
+    });
+});
+
+it('creates pending free enrollment for instructor when approval is required', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    TenantCustomization::query()->create([
+        'tenant_id' => $tenant->id,
+        'published_settings' => [
+            'learning' => [
+                'enrollments' => [
+                    'manual_free_by_instructor' => true,
+                    'manual_free_requires_approval' => true,
+                ],
+            ],
+        ],
+    ]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Free Course',
+        'slug' => 'free-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    $response = $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+    ], $headers);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.status', 'pending')
+        ->assertJsonPath('data.created_by_instructor_id', $instructor->id)
+        ->assertJsonPath('data.user_id', $student->id);
+
+    $enrollment = Enrollment::query()->latest('id')->firstOrFail();
+
+    expect($enrollment->created_by_instructor_id)->toBe($instructor->id)
+        ->and($enrollment->status)->toBe('pending')
+        ->and($enrollment->user_id)->toBe($student->id)
+        ->and($enrollment->course_id)->toBe($course->id);
+});
+
+it('creates pending paid enrollment for instructor when billing is external', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+    Event::fake([EnrollmentCreatedEvent::class]);
+
+    TenantCustomization::query()->create([
+        'tenant_id' => $tenant->id,
+        'published_settings' => [
+            'learning' => [
+                'enrollments' => [
+                    'manual_free_by_instructor' => true,
+                ],
+            ],
+        ],
+    ]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Paid Course',
+        'slug' => 'paid-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 1000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    $response = $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+        'billing_type' => EnrollmentBillingType::External->value,
+    ], $headers);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.status', 'pending')
+        ->assertJsonPath('data.billing_type', EnrollmentBillingType::External->value)
+        ->assertJsonPath('data.created_by_instructor_id', $instructor->id)
+        ->assertJsonPath('data.user_id', $student->id);
+
+    $enrollment = Enrollment::query()->latest('id')->firstOrFail();
+
+    expect($enrollment->created_by_instructor_id)->toBe($instructor->id)
+        ->and($enrollment->billing_type?->value)->toBe(EnrollmentBillingType::External->value)
+        ->and($enrollment->status)->toBe('pending')
+        ->and($enrollment->user_id)->toBe($student->id)
+        ->and($enrollment->course_id)->toBe($course->id);
+
+    Event::assertDispatched(EnrollmentCreatedEvent::class, function (EnrollmentCreatedEvent $event) use ($tenant, $student, $course, $instructor): bool {
+        return $event->tenantId === $tenant->id
+            && $event->userId === $student->id
+            && $event->courseId === $course->id
+            && $event->status === 'pending'
+            && $event->source === 'manual'
+            && $event->billingType === EnrollmentBillingType::External->value
+            && $event->createdByInstructorId === $instructor->id;
+    });
+});
+
+it('creates pending paid enrollment for instructor with external billing even without the free-manual flag', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Paid Course Without Flag',
+        'slug' => 'paid-course-without-flag',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 1000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    $response = $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+        'billing_type' => EnrollmentBillingType::External->value,
+    ], $headers);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.status', 'pending')
+        ->assertJsonPath('data.billing_type', EnrollmentBillingType::External->value)
+        ->assertJsonPath('data.created_by_instructor_id', $instructor->id)
+        ->assertJsonPath('data.user_id', $student->id);
+
+    expect(Enrollment::query()->latest('id')->firstOrFail()->billing_type?->value)
+        ->toBe(EnrollmentBillingType::External->value);
+});
+
+it('rejects external billing for free courses', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$instructor, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    TenantCustomization::query()->create([
+        'tenant_id' => $tenant->id,
+        'published_settings' => [
+            'learning' => [
+                'enrollments' => [
+                    'manual_free_by_instructor' => true,
+                ],
+            ],
+        ],
+    ]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Free Course',
+        'slug' => 'free-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+        'billing_type' => EnrollmentBillingType::External->value,
+    ], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error')
+        ->assertJsonPath('errors.0.message', 'External billing is only allowed for paid courses.');
+});
+
+it('rejects external billing for non-instructor manual enrollments', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$admin, $headers] = actingAsUserType(UserType::Admin, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Paid Course',
+        'slug' => 'paid-course-admin',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 1000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+        'billing_type' => EnrollmentBillingType::External->value,
+    ], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error')
+        ->assertJsonPath('errors.0.message', 'External billing is only available for instructor manual enrollments.');
+});
+
+it('keeps admin and developer manual enrollments active', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Test Course',
+        'slug' => 'test-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 1000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    [, $adminHeaders] = actingAsUserType(UserType::Admin, $tenant);
+
+    $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+    ], $adminHeaders)
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'active');
+
+    $developerStudent = User::factory()->forTenant($tenant)->student()->create();
+    seedRbac();
+    $developer = User::factory()->developer()->create();
+    $developer->assignRole(UserType::Developer->value);
+    $developerToken = $developer->createToken('test')->plainTextToken;
+
+    $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $developerStudent->id,
+    ], tenantHeaders($tenant, $developerToken))
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'active');
+});
+
+it('rejects paid course enrollment for instructor with manual free enrollment enabled', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    TenantCustomization::query()->create([
+        'tenant_id' => $tenant->id,
+        'published_settings' => [
+            'learning' => [
+                'enrollments' => [
+                    'manual_free_by_instructor' => true,
+                ],
+            ],
+        ],
+    ]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Paid Course',
+        'slug' => 'paid-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 1000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $student = User::factory()->forTenant($tenant)->student()->create();
+
+    $this->postJson('/api/v1/learning/enrollments', [
+        'course_id' => $course->id,
+        'user_id' => $student->id,
+    ], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error')
+        ->assertJsonPath('errors.0.message', 'Instructors can only create manual enrollments for free courses.');
 });
 
 it('forbids student creating enrollment for another user', function (): void {

@@ -198,7 +198,7 @@ return [
 
     'learning.enrollments.create' => [
         'label' => 'Criar matrícula',
-        'user_types' => ['developer', 'admin'],
+        'user_types' => ['developer', 'admin', 'instructor'],
     ],
 
     'learning.enrollments.view' => [

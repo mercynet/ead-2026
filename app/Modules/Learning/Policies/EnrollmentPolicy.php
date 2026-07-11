@@ -28,8 +28,15 @@ class EnrollmentPolicy
             return true;
         }
 
-        return $user->belongsToTenant($tenant)
-            && $user->getAllPermissions()->contains('name', 'learning.enrollments.create');
+        if (! $user->belongsToTenant($tenant)) {
+            return false;
+        }
+
+        if (! $user->getAllPermissions()->contains('name', 'learning.enrollments.create')) {
+            return false;
+        }
+
+        return true;
     }
 
     public function view(User $user, ?Tenant $tenant = null, ?Enrollment $enrollment = null): bool

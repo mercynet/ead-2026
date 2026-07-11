@@ -11,9 +11,13 @@ it('creates catalog and learning tables', function (): void {
     expect(Schema::hasTable('course_modules'))->toBeTrue();
     expect(Schema::hasTable('lessons'))->toBeTrue();
     expect(Schema::hasTable('lesson_media'))->toBeTrue();
+    expect(Schema::hasTable('lesson_media_progress'))->toBeTrue();
+    expect(Schema::hasTable('lesson_views'))->toBeTrue();
     expect(Schema::hasTable('course_materials'))->toBeTrue();
     expect(Schema::hasTable('material_downloads'))->toBeTrue();
     expect(Schema::hasTable('material_stats'))->toBeTrue();
+    expect(Schema::hasTable('ratings'))->toBeTrue();
+    expect(Schema::hasTable('rating_stats'))->toBeTrue();
     expect(Schema::hasTable('enrollments'))->toBeTrue();
     expect(Schema::hasTable('category_course'))->toBeTrue();
 });
@@ -28,9 +32,33 @@ it('stores lesson media with tenant and access payload fields', function (): voi
         'url',
         'content',
         'duration_seconds',
+        'progress_strategy',
         'sort_order',
         'is_active',
         'metadata',
+    ]))->toBeTrue();
+});
+
+it('stores lesson media progress with tenant and completion fields', function (): void {
+    expect(Schema::hasColumns('lesson_media_progress', [
+        'tenant_id',
+        'user_id',
+        'lesson_media_id',
+        'watched_seconds',
+        'completion_percentage',
+        'watch_sessions',
+        'is_completed',
+        'completed_at',
+        'last_watched_at',
+    ]))->toBeTrue();
+});
+
+it('stores lesson views with tenant and replay audit fields', function (): void {
+    expect(Schema::hasColumns('lesson_views', [
+        'tenant_id',
+        'user_id',
+        'lesson_id',
+        'viewed_at',
     ]))->toBeTrue();
 });
 
@@ -63,6 +91,33 @@ it('stores material stats rollups per material', function (): void {
         'downloads_week',
         'downloads_month',
         'last_downloaded_at',
+    ]))->toBeTrue();
+});
+
+it('stores ratings and rating stats with polymorphic course-ready fields', function (): void {
+    expect(Schema::hasColumns('ratings', [
+        'tenant_id',
+        'user_id',
+        'rateable_type',
+        'rateable_id',
+        'stars',
+        'reaction',
+    ]))->toBeTrue();
+
+    expect(Schema::hasColumns('rating_stats', [
+        'tenant_id',
+        'rateable_type',
+        'rateable_id',
+        'average_stars',
+        'total_ratings',
+        'five_stars',
+        'four_stars',
+        'three_stars',
+        'two_stars',
+        'one_star',
+        'likes_count',
+        'dislikes_count',
+        'last_rated_at',
     ]))->toBeTrue();
 });
 

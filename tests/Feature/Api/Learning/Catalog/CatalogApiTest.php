@@ -8,6 +8,7 @@ use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
 use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
+use App\Modules\Learning\Models\RatingStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -92,6 +93,7 @@ it('lists only published tenant courses and supports filters', function (): void
         ->assertJsonFragment(['slug' => 'laravel-zero-to-hero'])
         ->assertJsonFragment(['slug' => 'ui-premium'])
         ->assertJsonFragment(['slug' => 'desenvolvimento-de-software'])
+        ->assertJsonPath('data.0.rating_stats', null)
         ->assertJsonMissing(['slug' => 'draft-course']);
 
     $this->getJson('/api/v1/learning/catalog/courses?category=tech&is_free=1&is_featured=1', [
@@ -101,6 +103,117 @@ it('lists only published tenant courses and supports filters', function (): void
         ->assertJsonCount(1, 'data')
         ->assertJsonFragment(['slug' => 'laravel-zero-to-hero'])
         ->assertJsonMissing(['slug' => 'ui-premium']);
+});
+
+it('orders top rated courses by tenant and exposes rating stats', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $courseHighA = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'High A',
+        'slug' => 'high-a',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $courseHighB = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'High B',
+        'slug' => 'high-b',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $courseLow = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Low',
+        'slug' => 'low',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    RatingStats::query()->create([
+        'tenant_id' => $tenant->id,
+        'rateable_type' => Course::class,
+        'rateable_id' => $courseHighA->id,
+        'average_stars' => 4.80,
+        'total_ratings' => 10,
+        'five_stars' => 8,
+        'four_stars' => 2,
+        'three_stars' => 0,
+        'two_stars' => 0,
+        'one_star' => 0,
+        'likes_count' => 9,
+        'dislikes_count' => 1,
+        'last_rated_at' => now(),
+    ]);
+
+    RatingStats::query()->create([
+        'tenant_id' => $tenant->id,
+        'rateable_type' => Course::class,
+        'rateable_id' => $courseHighB->id,
+        'average_stars' => 4.80,
+        'total_ratings' => 10,
+        'five_stars' => 6,
+        'four_stars' => 2,
+        'three_stars' => 0,
+        'two_stars' => 0,
+        'one_star' => 0,
+        'likes_count' => 8,
+        'dislikes_count' => 0,
+        'last_rated_at' => now(),
+    ]);
+
+    RatingStats::query()->create([
+        'tenant_id' => $tenant->id,
+        'rateable_type' => Course::class,
+        'rateable_id' => $courseLow->id,
+        'average_stars' => 4.20,
+        'total_ratings' => 3,
+        'five_stars' => 2,
+        'four_stars' => 1,
+        'three_stars' => 0,
+        'two_stars' => 0,
+        'one_star' => 0,
+        'likes_count' => 3,
+        'dislikes_count' => 0,
+        'last_rated_at' => now(),
+    ]);
+
+    $response = $this->getJson('/api/v1/learning/catalog/courses?sort=top_rated', [
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful();
+
+    $response
+        ->assertJsonPath('data.0.slug', 'high-a')
+        ->assertJsonPath('data.1.slug', 'high-b')
+        ->assertJsonPath('data.2.slug', 'low')
+        ->assertJsonPath('data.0.rating_stats.average_stars', 4.8)
+        ->assertJsonPath('data.0.rating_stats.total_ratings', 10);
+
+    $this->getJson('/api/v1/learning/catalog/courses?sort=top_rated&min_ratings=5', [
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonFragment(['slug' => 'high-a'])
+        ->assertJsonFragment(['slug' => 'high-b'])
+        ->assertJsonMissing(['slug' => 'low']);
 });
 
 it('hides purchased courses for authenticated user', function (): void {

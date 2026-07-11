@@ -11,6 +11,8 @@ class ResolveLessonMediaUrlAction
 {
     private const URL_TTL_MINUTES = 5;
 
+    private const SAFE_STORAGE_DISKS = ['local', 's3'];
+
     public function __construct(
         private readonly Factory $filesystem,
     ) {}
@@ -52,25 +54,57 @@ class ResolveLessonMediaUrlAction
      */
     private function temporaryStorageUrl(LessonMedia $lessonMedia): array
     {
+        $tenantId = (int) $lessonMedia->tenant_id;
         $storagePath = data_get($lessonMedia->metadata, 'storage_path');
-        if (! is_string($storagePath) || $storagePath === '') {
-            return [
-                'url' => $lessonMedia->url,
-                'expires_at' => null,
-                'kind' => $lessonMedia->url === null ? null : 'direct',
-            ];
+
+        if (! is_string($storagePath) || ! $this->isSafeStoragePath($storagePath, $tenantId)) {
+            return $this->invalidStoragePayload();
         }
 
         $diskName = data_get($lessonMedia->metadata, 'storage_disk', config('filesystems.default'));
+        if (! is_string($diskName) || ! $this->isSafeStorageDisk($diskName)) {
+            return $this->invalidStoragePayload();
+        }
+
         $expiresAt = CarbonImmutable::now()->addMinutes(self::URL_TTL_MINUTES);
+        $disk = $this->filesystem->disk($diskName);
+
+        if (! method_exists($disk, 'temporaryUrl')) {
+            return $this->invalidStoragePayload();
+        }
 
         return [
-            'url' => $this->filesystem
-                ->disk(is_string($diskName) && $diskName !== '' ? $diskName : config('filesystems.default'))
-                ->temporaryUrl($storagePath, $expiresAt),
+            'url' => call_user_func([$disk, 'temporaryUrl'], $storagePath, $expiresAt),
             'expires_at' => $expiresAt,
             'kind' => 'temporary',
         ];
+    }
+
+    /**
+     * @return array{url: ?string, expires_at: ?CarbonInterface, kind: ?string}
+     */
+    private function invalidStoragePayload(): array
+    {
+        return [
+            'url' => null,
+            'expires_at' => null,
+            'kind' => null,
+        ];
+    }
+
+    private function isSafeStorageDisk(string $diskName): bool
+    {
+        return in_array($diskName, self::SAFE_STORAGE_DISKS, true);
+    }
+
+    private function isSafeStoragePath(string $storagePath, int $tenantId): bool
+    {
+        $prefix = 'tenants/'.$tenantId.'/';
+
+        return str_starts_with($storagePath, $prefix)
+            && preg_match('/^tenants\/\d+\/[A-Za-z0-9._-][A-Za-z0-9\/._-]*$/', $storagePath) === 1
+            && ! str_contains($storagePath, '..')
+            && ! str_contains($storagePath, '\\');
     }
 
     private function buildVimeoPlayerUrl(LessonMedia $lessonMedia): ?string

@@ -7,6 +7,7 @@ use App\Modules\Learning\Actions\Lesson\GetLessonAction;
 use App\Modules\Learning\Actions\Lesson\ReorderLessonAction;
 use App\Modules\Learning\Actions\Lesson\ResolveLessonMediaUrlAction;
 use App\Modules\Learning\Actions\Lesson\StoreLessonAction;
+use App\Modules\Learning\Actions\Lesson\TrackLessonViewAction;
 use App\Modules\Learning\Actions\Lesson\UpdateLessonAction;
 use App\Modules\Learning\Actions\Lesson\UpdateProgressAction;
 use App\Modules\Learning\Http\Requests\Lesson\ReorderLessonRequest;
@@ -38,6 +39,7 @@ class LessonController extends Controller
         private readonly DeleteLessonAction $deleteLessonAction,
         private readonly UpdateLessonAction $updateLessonAction,
         private readonly UpdateProgressAction $updateProgressAction,
+        private readonly TrackLessonViewAction $trackLessonViewAction,
     ) {}
 
     public function store(StoreLessonRequest $request, ApiContext $context): JsonResponse
@@ -80,6 +82,10 @@ class LessonController extends Controller
                 ->mapWithKeys(fn ($media): array => [$media->id => $this->resolveLessonMediaUrlAction->handle($media)])
                 ->all()
             : [];
+
+        if ($canAccess) {
+            $this->trackLessonViewAction->handle($context, $lesson);
+        }
 
         return LessonDetailResource::make(
             $lesson,

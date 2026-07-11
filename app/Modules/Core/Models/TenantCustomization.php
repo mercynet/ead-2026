@@ -20,6 +20,27 @@ class TenantCustomization extends Model
         return $this->belongsTo(Tenant::class);
     }
 
+    public function manualFreeEnrollmentEnabled(): bool
+    {
+        return (bool) $this->publishedSetting(
+            'learning.enrollments.manual_free_by_instructor',
+            $this->publishedSetting('learning_enrollments_manual_free_by_instructor', false)
+        );
+    }
+
+    public function manualFreeEnrollmentRequiresApproval(): bool
+    {
+        return (bool) $this->publishedSetting(
+            'learning.enrollments.manual_free_requires_approval',
+            $this->publishedSetting('learning_enrollments_manual_free_requires_approval', false)
+        );
+    }
+
+    private function publishedSetting(string $path, mixed $default = null): mixed
+    {
+        return data_get($this->published_settings ?? [], $path, $default);
+    }
+
     protected function casts(): array
     {
         return [

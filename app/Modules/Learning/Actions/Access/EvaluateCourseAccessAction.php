@@ -25,6 +25,14 @@ class EvaluateCourseAccessAction
 
     public function canAccessLesson(Lesson $lesson, ApiContext $context): bool
     {
+        if (! $lesson->isActive()) {
+            return false;
+        }
+
+        if (! $lesson->courseModule->course->isActive()) {
+            return false;
+        }
+
         if ($lesson->is_free) {
             return true;
         }

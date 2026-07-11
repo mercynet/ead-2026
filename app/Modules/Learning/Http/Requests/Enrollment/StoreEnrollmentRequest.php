@@ -2,7 +2,9 @@
 
 namespace App\Modules\Learning\Http\Requests\Enrollment;
 
+use App\Modules\Learning\Enums\EnrollmentBillingType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEnrollmentRequest extends FormRequest
 {
@@ -16,6 +18,7 @@ class StoreEnrollmentRequest extends FormRequest
         return [
             'course_id' => ['required', 'integer', 'exists:courses,id'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'billing_type' => ['nullable', 'string', Rule::enum(EnrollmentBillingType::class)],
         ];
     }
 
@@ -27,6 +30,7 @@ class StoreEnrollmentRequest extends FormRequest
             'course_id.exists' => 'Course was not found.',
             'user_id.integer' => 'User must be a valid identifier.',
             'user_id.exists' => 'User was not found.',
+            'billing_type.enum' => 'Billing type must be external when provided.',
         ];
     }
 
@@ -43,6 +47,10 @@ class StoreEnrollmentRequest extends FormRequest
             'user_id' => [
                 'description' => 'ID do usuário a matricular (opcional; padrão = autenticado)',
                 'example' => 2,
+            ],
+            'billing_type' => [
+                'description' => 'Marcador de cobrança/registro para matrícula manual paga.',
+                'example' => 'external',
             ],
         ];
     }

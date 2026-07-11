@@ -15,6 +15,7 @@ class ShowCourseAction
             ->where('status', 'published')
             ->with([
                 'categories:id,name,slug',
+                'ratingStats',
                 'modules' => fn ($query) => $query->orderBy('sort_order'),
                 'modules.lessons' => fn ($query) => $query->orderBy('sort_order'),
             ]);

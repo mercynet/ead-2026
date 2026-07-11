@@ -4,6 +4,7 @@ namespace App\Modules\Learning\Models;
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Learning\Enums\EnrollmentBillingType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,8 @@ class Enrollment extends Model
         'tenant_id',
         'user_id',
         'course_id',
+        'created_by_instructor_id',
+        'billing_type',
         'status',
         'access_expires_at',
         'enrolled_at',
@@ -44,6 +47,11 @@ class Enrollment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function createdByInstructor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_instructor_id');
     }
 
     public function lessonProgress(): HasMany
@@ -99,6 +107,8 @@ class Enrollment extends Model
             'tenant_id' => 'integer',
             'user_id' => 'integer',
             'course_id' => 'integer',
+            'created_by_instructor_id' => 'integer',
+            'billing_type' => EnrollmentBillingType::class,
             'progress_percentage' => 'integer',
             'enrolled_at' => 'datetime',
             'completed_at' => 'datetime',

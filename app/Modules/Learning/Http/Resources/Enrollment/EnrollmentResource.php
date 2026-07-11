@@ -13,6 +13,8 @@ class EnrollmentResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'course_id' => $this->course_id,
+            'created_by_instructor_id' => $this->created_by_instructor_id,
+            'billing_type' => $this->billing_type?->value,
             'status' => $this->status,
             'is_active' => $this->isActive(),
             'progress_percentage' => $this->progress_percentage,

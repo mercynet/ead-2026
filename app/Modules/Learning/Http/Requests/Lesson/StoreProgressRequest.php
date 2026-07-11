@@ -2,7 +2,9 @@
 
 namespace App\Modules\Learning\Http\Requests\Lesson;
 
+use App\Modules\Core\Models\Tenant;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreProgressRequest extends FormRequest
 {
@@ -13,12 +15,23 @@ class StoreProgressRequest extends FormRequest
 
     public function rules(): array
     {
+        $tenant = app(Tenant::class);
+
         return [
             'time_spent_seconds' => ['required', 'integer', 'min:0'],
             'current_time_seconds' => ['nullable', 'integer', 'min:0'],
             'total_time_seconds' => ['nullable', 'integer', 'min:0'],
             'progress_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
             'is_completed' => ['required', 'boolean'],
+            'lesson_media_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('lesson_media', 'id')->where(fn ($query) => $query
+                    ->where('tenant_id', $tenant->id)
+                    ->where('lesson_id', $this->route('id'))
+                    ->where('is_active', true)
+                ),
+            ],
         ];
     }
 
@@ -37,6 +50,8 @@ class StoreProgressRequest extends FormRequest
             'progress_percentage.max' => 'A porcentagem de progresso deve ser menor ou igual a 100.',
             'is_completed.required' => 'O status de conclusão é obrigatório.',
             'is_completed.boolean' => 'O status de conclusão deve ser verdadeiro ou falso.',
+            'lesson_media_id.integer' => 'A mídia da aula deve ser um identificador válido.',
+            'lesson_media_id.exists' => 'A mídia informada deve pertencer ao tenant e à aula atual.',
         ];
     }
 
@@ -65,6 +80,10 @@ class StoreProgressRequest extends FormRequest
             'is_completed' => [
                 'description' => 'Se a aula foi concluída',
                 'example' => false,
+            ],
+            'lesson_media_id' => [
+                'description' => 'ID da mídia alvo da atualização de progresso. Opcional quando houver apenas uma mídia ativa.',
+                'example' => 12,
             ],
         ];
     }

@@ -71,5 +71,10 @@ learning.progress.view   // instrutor/admin: ver progresso dos alunos
 
 - Matrícula automática a partir de `OrderPaidEvent` (Financial) via `EnrollService` é alvo
   planejado — código de matrícula não deve ficar espalhado nas rotas financeiras.
-- Matrícula manual por instrutor (switch do tenant_admin); cobrança `external` pode cair como
-  `pending` para aprovação do tenant_admin.
+- Matrícula manual por instrutor suporta o slice **gratuito** via
+  `tenant_customizations.published_settings.learning.enrollments.manual_free_by_instructor`; quando
+  `manual_free_requires_approval` estiver ativo, a matrícula grátis nasce `pending`, senão `active`,
+  e sempre grava `created_by_instructor_id`.
+- Para curso pago, o instrutor pode enviar `billing_type=external`; a matrícula nasce `pending`, o
+  marcador fica persistido em `enrollments.billing_type` e curso grátis com `external` é rejeitado
+  com `422`.

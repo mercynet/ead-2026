@@ -17,6 +17,7 @@ class EnrollmentFactory extends Factory
             'tenant_id' => Tenant::factory(),
             'user_id' => User::factory(),
             'course_id' => Course::factory(),
+            'billing_type' => null,
             'status' => fake()->randomElement(['active', 'expired', 'pending', 'cancelled']),
             'enrolled_at' => now(),
             'completed_at' => null,

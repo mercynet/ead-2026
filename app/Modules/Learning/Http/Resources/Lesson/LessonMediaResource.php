@@ -30,9 +30,69 @@ class LessonMediaResource extends JsonResource
             'url_expires_at' => $this->resolvedUrlExpiresAt?->toIso8601String(),
             'content' => $this->content,
             'duration_seconds' => $this->duration_seconds,
+            'progress_strategy' => $this->progress_strategy?->value ?? $this->progress_strategy,
+            'provider_config' => $this->providerConfig(),
+            'progress_config' => $this->progressConfig(),
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
             'metadata' => $this->metadata,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function providerConfig(): ?array
+    {
+        $provider = $this->provider;
+
+        if ($provider === 'youtube' || $provider === 'vimeo') {
+            return $this->filterNullValues([
+                'video_id' => $this->provider_ref,
+                'player_url' => data_get($this->metadata, 'player_url'),
+            ]);
+        }
+
+        if ($provider === 'embed') {
+            return $this->filterNullValues([
+                'player_url' => data_get($this->metadata, 'player_url'),
+            ]);
+        }
+
+        if ($provider === 'internal' || $provider === 's3') {
+            return $this->filterNullValues([
+                'storage_path' => data_get($this->metadata, 'storage_path'),
+                'storage_disk' => data_get($this->metadata, 'storage_disk'),
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function progressConfig(): ?array
+    {
+        $requiredSeconds = data_get($this->metadata, 'required_seconds');
+
+        if ($requiredSeconds === null) {
+            return null;
+        }
+
+        return [
+            'required_seconds' => (int) $requiredSeconds,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>|null
+     */
+    private function filterNullValues(array $values): ?array
+    {
+        $filtered = array_filter($values, fn (mixed $value): bool => $value !== null);
+
+        return $filtered === [] ? null : $filtered;
     }
 }

@@ -97,6 +97,14 @@ category_course (pivô dedicado, tenant-aware)
 
 - `GET /catalog/courses` lista cursos publicados com filtros (`category`, `is_free`, `is_featured`).
   **Regra forte:** não exibir cursos que o aluno logado já comprou.
+- O comportamento padrão da listagem permanece inalterado; o ranking só entra quando o consumidor
+  pede explicitamente `sort=top_rated`.
+- `sort=top_rated` aplica ordenação estável por `rating_stats` do tenant: `average_stars desc`,
+  `total_ratings desc`, `courses.id asc`.
+- `min_ratings` é opcional (inteiro `>= 1`) e filtra o ranking por total mínimo de avaliações.
+- O payload do catálogo expõe `rating_stats` do curso para o consumidor poder renderizar a nota.
+- Por ora, ranking público só existe no catálogo de cursos; aulas continuam sem superfície pública
+  de ranking.
 - `GET /catalog/courses/{slug}` retorna a matriz curricular completa + DTO público (preço,
   descrição) para montar a landing page.
 
@@ -109,7 +117,7 @@ category_course (pivô dedicado, tenant-aware)
 
 | Método | Path (atual) | Descrição | Permission |
 |--------|------|-----------|------------|
-| GET | `/api/v1/learning/catalog/courses` | Lista cursos publicados (filtros) | público/auth |
+| GET | `/api/v1/learning/catalog/courses` | Lista cursos publicados (filtros + `sort=top_rated`) | público/auth |
 | GET | `/api/v1/learning/catalog/courses/{slug}` | Curso completo p/ landing page | público/auth |
 | GET | `/api/v1/learning/catalog/categories` | Listar categorias (sistema + tenant) | `learning.categories.list` |
 | POST | `/api/v1/learning/catalog/categories` | Criar categoria (tenant→Admin / system→Mzrt) | `learning.categories.create` / `...system.manage` |

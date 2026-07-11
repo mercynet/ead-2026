@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Modules\Core\Models\Tenant;
+use App\Modules\Learning\Enums\LessonMediaProgressStrategy;
 use App\Modules\Learning\Models\Lesson;
 use App\Modules\Learning\Models\LessonMedia;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,6 +26,7 @@ class LessonMediaFactory extends Factory
             'url' => fake()->url(),
             'content' => null,
             'duration_seconds' => fake()->numberBetween(60, 3600),
+            'progress_strategy' => LessonMediaProgressStrategy::EightyPercent,
             'sort_order' => fake()->numberBetween(1, 10),
             'is_active' => true,
             'metadata' => [],

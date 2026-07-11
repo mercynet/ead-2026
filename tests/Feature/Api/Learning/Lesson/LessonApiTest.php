@@ -6,6 +6,9 @@ use App\Modules\Learning\Models\CourseModule;
 use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
 use App\Modules\Learning\Models\LessonMedia;
+use App\Modules\Learning\Models\LessonMediaProgress;
+use App\Modules\Learning\Models\LessonProgress;
+use App\Modules\Learning\Models\LessonView;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
@@ -50,6 +53,12 @@ it('shows lesson with can_access true for free lesson', function (): void {
         ->assertJsonPath('data.title', 'Free Lesson')
         ->assertJsonPath('data.can_access', true)
         ->assertJsonPath('data.is_free', true);
+
+    $this->assertDatabaseHas('lesson_views', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'lesson_id' => $lesson->id,
+    ]);
 });
 
 it('creates a lesson in the current tenant', function (): void {
@@ -620,6 +629,7 @@ it('returns active lesson media for accessible paid lesson', function (): void {
         ->assertJsonPath('data.media.0.url', 'https://video.example/active')
         ->assertJsonPath('data.media.0.url_kind', 'player')
         ->assertJsonPath('data.media.0.url_expires_at', null)
+        ->assertJsonPath('data.media.0.progress_strategy', '80_percent')
         ->assertJsonPath('data.media.0.duration_seconds', 300)
         ->assertJsonCount(1, 'data.media');
 });
@@ -799,6 +809,7 @@ it('builds a canonical player url for vimeo lesson media from provider_ref', fun
         ->assertSuccessful()
         ->assertJsonPath('data.media.0.provider', 'vimeo')
         ->assertJsonPath('data.media.0.url', 'https://player.vimeo.com/video/123456789')
+        ->assertJsonPath('data.media.0.provider_config.video_id', '123456789')
         ->assertJsonPath('data.media.0.url_kind', 'player')
         ->assertJsonPath('data.media.0.url_expires_at', null);
 });
@@ -854,6 +865,54 @@ it('shows paid lesson vitrine but denies content access for expired enrollment',
         ->assertJsonPath('data.can_access', false)
         ->assertJsonPath('data.media', null)
         ->assertJsonPath('data.progress', null);
+
+    $this->assertDatabaseMissing('lesson_views', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'lesson_id' => $lesson->id,
+    ]);
+});
+
+it('records one lesson view per successful access', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Replay Course',
+        'slug' => 'replay-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Replay Lesson',
+        'slug' => 'replay-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)->assertSuccessful();
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)->assertSuccessful();
+
+    expect(LessonView::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $student->id)
+        ->where('lesson_id', $lesson->id)
+        ->count())->toBe(2);
 });
 
 it('forbids progress updates for paid lesson with expired enrollment', function (): void {
@@ -968,6 +1027,183 @@ it('updates lesson progress', function (): void {
         'lesson_id' => $lesson->id,
         'time_spent_seconds' => 120,
         'is_completed' => false,
+    ]);
+});
+
+it('completes lesson progress from the lesson media strategy and stores media progress', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Strategy Course',
+        'slug' => 'strategy-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Lesson Strategy',
+        'slug' => 'lesson-strategy',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    $enrollment = Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $lessonMedia = LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'youtube',
+        'provider_ref' => 'strategy-video',
+        'duration_seconds' => 300,
+        'progress_strategy' => '80_percent',
+        'sort_order' => 1,
+        'is_active' => true,
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'time_spent_seconds' => 240,
+        'current_time_seconds' => 240,
+        'total_time_seconds' => 300,
+        'progress_percentage' => 80,
+        'is_completed' => false,
+    ], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.progress_percentage', 100)
+        ->assertJsonPath('data.is_completed', true);
+
+    $this->assertDatabaseHas('lesson_progress', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'enrollment_id' => $enrollment->id,
+        'lesson_id' => $lesson->id,
+        'progress_percentage' => 100,
+        'is_completed' => 1,
+    ]);
+
+    $this->assertDatabaseHas('lesson_media_progress', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'lesson_media_id' => $lessonMedia->id,
+        'watched_seconds' => 240,
+        'completion_percentage' => 100.00,
+        'is_completed' => 1,
+    ]);
+
+    expect($enrollment->refresh()->progress_percentage)->toBe(100);
+});
+
+it('uses metadata required_seconds for time based lesson media progress', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Time Based Course',
+        'slug' => 'time-based-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Time Based Lesson',
+        'slug' => 'time-based-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $lessonMedia = LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 's3',
+        'provider_ref' => 'time-based-video',
+        'duration_seconds' => 600,
+        'progress_strategy' => 'time_based',
+        'sort_order' => 1,
+        'is_active' => true,
+        'metadata' => [
+            'storage_path' => 'tenants/'.$tenant->id.'/lessons/time-based.mp4',
+            'required_seconds' => 180,
+        ],
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'time_spent_seconds' => 179,
+        'current_time_seconds' => 179,
+        'total_time_seconds' => 600,
+        'progress_percentage' => 29,
+        'is_completed' => false,
+    ], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.progress_percentage', 30)
+        ->assertJsonPath('data.is_completed', false);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'time_spent_seconds' => 180,
+        'current_time_seconds' => 180,
+        'total_time_seconds' => 600,
+        'progress_percentage' => 30,
+        'is_completed' => false,
+    ], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.progress_percentage', 100)
+        ->assertJsonPath('data.is_completed', true);
+
+    $this->assertDatabaseHas('lesson_media_progress', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'lesson_media_id' => $lessonMedia->id,
+        'watched_seconds' => 180,
+        'completion_percentage' => 100.00,
+        'is_completed' => 1,
     ]);
 });
 
@@ -1092,6 +1328,316 @@ it('updates progress on the current enrollment when historical rows exist', func
     expect($currentEnrollment->refresh()->progress_percentage)->toBe(100);
     expect($currentEnrollment->refresh()->status)->toBe('active');
     expect($historicalEnrollment->refresh()->progress_percentage)->toBe(20);
+});
+
+it('keeps lesson completion immutable after it has been reached', function (): void {
+    Date::setTestNow('2026-07-08 12:00:00');
+
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Immutable Completion Course',
+        'slug' => 'immutable-completion-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Completion Lesson',
+        'slug' => 'completion-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    $enrollment = Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $lessonMedia = LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 's3',
+        'provider_ref' => 'immutable-media',
+        'duration_seconds' => 300,
+        'progress_strategy' => '80_percent',
+        'sort_order' => 1,
+        'is_active' => true,
+        'metadata' => [
+            'storage_disk' => 's3',
+            'storage_path' => 'tenants/'.$tenant->id.'/lessons/immutable-media.mp4',
+        ],
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'lesson_media_id' => $lessonMedia->id,
+        'time_spent_seconds' => 240,
+        'current_time_seconds' => 240,
+        'total_time_seconds' => 300,
+        'progress_percentage' => 80,
+        'is_completed' => false,
+    ], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.is_completed', true);
+
+    $completedProgress = LessonProgress::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $student->id)
+        ->where('lesson_id', $lesson->id)
+        ->firstOrFail();
+    $completedProgressCompletedAt = $completedProgress->completed_at?->toIso8601String();
+
+    $completedMediaProgress = LessonMediaProgress::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $student->id)
+        ->where('lesson_media_id', $lessonMedia->id)
+        ->firstOrFail();
+    $completedMediaProgressCompletedAt = $completedMediaProgress->completed_at?->toIso8601String();
+
+    Date::setTestNow('2026-07-08 13:00:00');
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'lesson_media_id' => $lessonMedia->id,
+        'time_spent_seconds' => 10,
+        'current_time_seconds' => 10,
+        'total_time_seconds' => 300,
+        'progress_percentage' => 5,
+        'is_completed' => false,
+    ], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.is_completed', true);
+
+    expect(LessonProgress::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $student->id)
+        ->where('lesson_id', $lesson->id)
+        ->firstOrFail()->is_completed)->toBeTrue()
+        ->and(LessonProgress::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('user_id', $student->id)
+            ->where('lesson_id', $lesson->id)
+            ->firstOrFail()->completed_at?->toIso8601String())->toBe($completedProgressCompletedAt);
+
+    expect(LessonMediaProgress::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('user_id', $student->id)
+        ->where('lesson_media_id', $lessonMedia->id)
+        ->firstOrFail()->is_completed)->toBeTrue()
+        ->and(LessonMediaProgress::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('user_id', $student->id)
+            ->where('lesson_media_id', $lessonMedia->id)
+            ->firstOrFail()->completed_at?->toIso8601String())->toBe($completedMediaProgressCompletedAt);
+
+    Date::setTestNow();
+});
+
+it('uses the explicit lesson media when multiple active medias exist', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Multi Media Course',
+        'slug' => 'multi-media-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Multi Media Lesson',
+        'slug' => 'multi-media-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $primaryMedia = LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'embed',
+        'provider_ref' => 'primary-media',
+        'url' => 'https://video.example/primary',
+        'duration_seconds' => 300,
+        'progress_strategy' => '80_percent',
+        'sort_order' => 1,
+        'is_active' => true,
+    ]);
+
+    $targetMedia = LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 's3',
+        'provider_ref' => 'target-media',
+        'duration_seconds' => 600,
+        'progress_strategy' => 'time_based',
+        'sort_order' => 2,
+        'is_active' => true,
+        'metadata' => [
+            'storage_disk' => 's3',
+            'storage_path' => 'tenants/'.$tenant->id.'/lessons/target-media.mp4',
+            'required_seconds' => 60,
+        ],
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'lesson_media_id' => $targetMedia->id,
+        'time_spent_seconds' => 60,
+        'current_time_seconds' => 60,
+        'total_time_seconds' => 600,
+        'progress_percentage' => 10,
+        'is_completed' => false,
+    ], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.is_completed', true);
+
+    $this->assertDatabaseHas('lesson_media_progress', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'lesson_media_id' => $targetMedia->id,
+        'is_completed' => 1,
+    ]);
+
+    $this->assertDatabaseMissing('lesson_media_progress', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'lesson_media_id' => $primaryMedia->id,
+    ]);
+});
+
+it('uses the only active lesson media when progress is reported without an explicit target', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Single Active Media Course',
+        'slug' => 'single-active-media-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 10000,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Single Active Lesson',
+        'slug' => 'single-active-lesson',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => false,
+    ]);
+
+    Enrollment::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'course_id' => $course->id,
+        'status' => 'active',
+        'enrolled_at' => now(),
+        'access_expires_at' => now()->addDays(30),
+        'progress_percentage' => 0,
+    ]);
+
+    $activeMedia = LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 's3',
+        'provider_ref' => 'active-media',
+        'duration_seconds' => 600,
+        'progress_strategy' => 'time_based',
+        'sort_order' => 1,
+        'is_active' => true,
+        'metadata' => [
+            'storage_disk' => 's3',
+            'storage_path' => 'tenants/'.$tenant->id.'/lessons/active-media.mp4',
+            'required_seconds' => 60,
+        ],
+    ]);
+
+    LessonMedia::query()->create([
+        'tenant_id' => $tenant->id,
+        'lesson_id' => $lesson->id,
+        'media_type' => 'video',
+        'provider' => 'embed',
+        'provider_ref' => 'inactive-media',
+        'url' => 'https://video.example/inactive',
+        'duration_seconds' => 300,
+        'progress_strategy' => '80_percent',
+        'sort_order' => 2,
+        'is_active' => false,
+    ]);
+
+    $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+        'time_spent_seconds' => 60,
+        'current_time_seconds' => 60,
+        'total_time_seconds' => 600,
+        'progress_percentage' => 10,
+        'is_completed' => false,
+    ], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.is_completed', true);
+
+    $this->assertDatabaseHas('lesson_media_progress', [
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'lesson_media_id' => $activeMedia->id,
+        'is_completed' => 1,
+    ]);
 });
 
 it('allows an instructor to delete a lesson in the current tenant', function (): void {

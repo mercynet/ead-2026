@@ -3,24 +3,27 @@
 namespace App\Modules\Learning\Actions\Enrollment;
 
 use App\Modules\Core\Models\User;
+use App\Modules\Learning\Enums\EnrollmentBillingType;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\Enrollment;
 use App\Shared\Exceptions\AccessDeniedException;
 use App\Shared\Http\ApiContext;
-use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 
 class StoreEnrollmentAction
 {
+    public function __construct(
+        private readonly EnrollStudentInCourseAction $enrollStudentInCourseAction,
+    ) {}
+
     public function handle(ApiContext $context, array $attributes): Enrollment
     {
         $tenant = $context->requiredTenant();
         $authenticatedUser = $context->requiredUser();
-
-        $course = Course::query()
-            ->whereKey($attributes['course_id'])
-            ->where('tenant_id', $tenant->id)
-            ->firstOrFail();
+        $manualFreeEnrollmentEnabled = $authenticatedUser->isInstructor()
+            && $tenant->customization?->manualFreeEnrollmentEnabled() === true;
+        $manualFreeEnrollmentRequiresApproval = $authenticatedUser->isInstructor()
+            && $tenant->customization?->manualFreeEnrollmentRequiresApproval() === true;
 
         $userId = (int) ($attributes['user_id'] ?? $authenticatedUser->id);
         $targetUser = User::query()
@@ -28,43 +31,60 @@ class StoreEnrollmentAction
             ->where(fn ($query) => $query->whereNull('tenant_id')->orWhere('tenant_id', $tenant->id))
             ->firstOrFail();
 
-        if ($targetUser->id !== $authenticatedUser->id && ! $authenticatedUser->isDeveloper() && ! $authenticatedUser->isAdmin()) {
+        $billingType = $attributes['billing_type'] ?? null;
+
+        $course = Course::query()
+            ->whereKey($attributes['course_id'])
+            ->where('tenant_id', $tenant->id)
+            ->firstOrFail();
+
+        $isInstructorExternalPaidEnrollment = $authenticatedUser->isInstructor()
+            && $course->price_cents > 0
+            && $billingType === EnrollmentBillingType::External->value;
+
+        if ($targetUser->id !== $authenticatedUser->id
+            && ! $authenticatedUser->isDeveloper()
+            && ! $authenticatedUser->isAdmin()
+            && ! $manualFreeEnrollmentEnabled
+            && ! $isInstructorExternalPaidEnrollment
+        ) {
             throw AccessDeniedException::make('enrollment', $targetUser->id);
         }
 
-        $currentEnrollmentConflictMessage = [
-            'course_id' => 'User already has a current enrollment for this course.',
-        ];
-
-        $existingEnrollment = Enrollment::query()
-            ->forTenantUserCourse($tenant->id, $targetUser->id, $course->id)
-            ->currentStatuses()
-            ->first();
-
-        if ($existingEnrollment !== null) {
-            throw ValidationException::withMessages($currentEnrollmentConflictMessage);
+        if ($billingType === EnrollmentBillingType::External->value && ! $authenticatedUser->isInstructor()) {
+            throw ValidationException::withMessages([
+                'billing_type' => 'External billing is only available for instructor manual enrollments.',
+            ]);
         }
 
-        $enrollment = new Enrollment;
-        $enrollment->fill([
-            'tenant_id' => $tenant->id,
-            'user_id' => $targetUser->id,
-            'course_id' => $course->id,
-            'status' => 'active',
-            'enrolled_at' => now(),
-            'progress_percentage' => 0,
-            'access_expires_at' => $course->access_days === null ? null : now()->addDays($course->access_days),
-        ]);
-        try {
-            $enrollment->save();
-        } catch (QueryException $exception) {
-            if ($exception->getCode() === '23000') {
-                throw ValidationException::withMessages($currentEnrollmentConflictMessage);
-            }
-
-            throw $exception;
+        if ($billingType === EnrollmentBillingType::External->value && $course->price_cents === 0) {
+            throw ValidationException::withMessages([
+                'billing_type' => 'External billing is only allowed for paid courses.',
+            ]);
         }
 
-        return $enrollment->load(['course:id,title,slug']);
+        if ($authenticatedUser->isInstructor()
+            && $course->price_cents > 0
+            && $billingType !== EnrollmentBillingType::External->value
+        ) {
+            throw ValidationException::withMessages([
+                'course_id' => 'Instructors can only create manual enrollments for free courses.',
+            ]);
+        }
+
+        return $this->enrollStudentInCourseAction->handle(
+            new EnrollStudentInCourseData(
+                tenantId: $tenant->id,
+                courseId: (int) $attributes['course_id'],
+                userId: $targetUser->id,
+                billingType: $billingType !== null ? EnrollmentBillingType::tryFrom((string) $billingType) : null,
+                source: 'manual',
+                status: (($authenticatedUser->isInstructor() && $course->price_cents > 0 && $billingType === EnrollmentBillingType::External->value) || $manualFreeEnrollmentRequiresApproval)
+                    ? 'pending'
+                    : 'active',
+                createdByInstructorId: $authenticatedUser->isInstructor() ? $authenticatedUser->id : null,
+                duplicatePolicy: 'error',
+            )
+        );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Learning\Actions\Lesson;
 
+use App\Modules\Learning\Enums\LessonMediaProgressStrategy;
 use App\Modules\Learning\Models\Lesson;
 use App\Modules\Learning\Models\LessonMedia;
 use App\Shared\Http\ApiContext;
@@ -12,6 +13,7 @@ class StoreLessonMediaAction
     {
         $attributes['tenant_id'] = $context->requiredTenant()->id;
         $attributes['lesson_id'] = $lesson->id;
+        $attributes['progress_strategy'] ??= LessonMediaProgressStrategy::EightyPercent;
         $attributes['sort_order'] ??= (int) LessonMedia::query()
             ->where('tenant_id', $context->requiredTenant()->id)
             ->where('lesson_id', $lesson->id)

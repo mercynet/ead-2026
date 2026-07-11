@@ -4,11 +4,14 @@ namespace App\Modules\Learning\Providers;
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Financial\Events\OrderPaidEvent;
+use App\Modules\Learning\Listeners\EnrollStudentFromOrderPaidListener;
 use App\Modules\Learning\Policies\CategoryPolicy;
 use App\Modules\Learning\Policies\CourseModulePolicy;
 use App\Modules\Learning\Policies\CoursePolicy;
 use App\Modules\Learning\Policies\EnrollmentPolicy;
 use App\Modules\Learning\Policies\LessonPolicy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -19,6 +22,7 @@ class LearningServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->registerGates();
+        $this->registerListeners();
         $this->registerRoutes();
     }
 
@@ -116,5 +120,10 @@ class LearningServiceProvider extends ServiceProvider
     {
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/api.php');
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/admin.php');
+    }
+
+    private function registerListeners(): void
+    {
+        Event::listen(OrderPaidEvent::class, EnrollStudentFromOrderPaidListener::class);
     }
 }

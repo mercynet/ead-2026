@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Lesson extends Model
@@ -51,6 +53,21 @@ class Lesson extends Model
     public function media(): HasMany
     {
         return $this->hasMany(LessonMedia::class);
+    }
+
+    public function views(): HasMany
+    {
+        return $this->hasMany(LessonView::class);
+    }
+
+    public function ratings(): MorphMany
+    {
+        return $this->morphMany(Rating::class, 'rateable');
+    }
+
+    public function ratingStats(): MorphOne
+    {
+        return $this->morphOne(RatingStats::class, 'rateable');
     }
 
     public function isActive(): bool

@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
@@ -88,6 +90,16 @@ class Course extends Model
     public function materialDownloads(): HasManyThrough
     {
         return $this->hasManyThrough(MaterialDownload::class, CourseMaterial::class);
+    }
+
+    public function ratings(): MorphMany
+    {
+        return $this->morphMany(Rating::class, 'rateable');
+    }
+
+    public function ratingStats(): MorphOne
+    {
+        return $this->morphOne(RatingStats::class, 'rateable');
     }
 
     public function isFree(): bool

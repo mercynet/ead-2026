@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Assessment\Actions\Certificate\IssueCertificateAction;
 use App\Modules\Assessment\Models\Certificate;
 use App\Modules\Assessment\Models\Questionnaire;
 use App\Modules\Assessment\Models\QuizAttempt;
@@ -9,6 +10,7 @@ use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
 use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -178,4 +180,38 @@ it('does not duplicate certificate when one was already issued for the enrollmen
     completeCourseAsStudent($tenant, $student, $lesson)->assertSuccessful();
 
     expect(Certificate::query()->where('enrollment_id', $enrollment->id)->count())->toBe(1);
+});
+
+it('enforces a single certificate per enrollment at the database level', function (): void {
+    $data = setupCertificateCourse();
+    extract($data);
+
+    Certificate::factory()
+        ->for($tenant)
+        ->for($student)
+        ->for($enrollment)
+        ->create(['course_id' => $course->id, 'status' => 'issued']);
+
+    expect(fn () => Certificate::factory()
+        ->for($tenant)
+        ->for($student)
+        ->for($enrollment)
+        ->create(['course_id' => $course->id, 'status' => 'issued'])
+    )->toThrow(UniqueConstraintViolationException::class);
+});
+
+it('keeps the progress request successful when certificate issuance fails', function (): void {
+    $data = setupCertificateCourse();
+    extract($data);
+
+    $this->mock(IssueCertificateAction::class)
+        ->shouldReceive('handle')
+        ->once()
+        ->andThrow(new RuntimeException('issuance exploded'));
+
+    completeCourseAsStudent($tenant, $student, $lesson)->assertSuccessful();
+
+    expect($enrollment->refresh()->completed_at)->not->toBeNull()
+        ->and($enrollment->progress_percentage)->toBe(100)
+        ->and(Certificate::query()->where('enrollment_id', $enrollment->id)->exists())->toBeFalse();
 });

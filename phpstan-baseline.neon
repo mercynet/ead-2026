@@ -171,7 +171,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$tenant_id\.$#'
 			identifier: property.notFound
-			count: 5
+			count: 6
+			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
+
+		-
+			message: '#^Caught class App\\Modules\\Assessment\\Actions\\Certificate\\UniqueConstraintViolationException not found\.$#'
+			identifier: class.notFound
+			count: 1
 			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
 
 		-
@@ -527,6 +533,12 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Listeners/IssueCertificateOnCourseCompletedListener.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\Tenant\:\:\$is_active\.$#'

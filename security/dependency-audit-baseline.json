@@ -1,0 +1,618 @@
+[
+    {
+        "fingerprint": "5c875f19fc00652d1fdf20e81a4900ce7b86b933",
+        "rule": "autoload_files",
+        "package": "guzzlehttp/guzzle",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "025b1f6bb7f6dee4b30b624af038ca2bd2ea1ebc",
+        "rule": "autoload_files",
+        "package": "knuckleswtf/scribe",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "add04f0819ca301c9ad391ac25e8cfd45cea1e16",
+        "rule": "autoload_files",
+        "package": "laradumps/laradumps",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "9be1e69b80eb64caf0823f2897cd3dcdc84fc9fd",
+        "rule": "autoload_files",
+        "package": "laradumps/laradumps-core",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "695afdbcf255a614ff0a39fcd220ce08801939ee",
+        "rule": "autoload_files",
+        "package": "laravel/framework",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "3404c7a572c3e94fa4d38cf2d6695b9dee4ecd21",
+        "rule": "autoload_files",
+        "package": "laravel/prompts",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "203ead73bc438be81c45d45e6b93407db82a1df7",
+        "rule": "autoload_files",
+        "package": "mockery/mockery",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b703446657fe4868b6944c55c299793f9e485eb1",
+        "rule": "autoload_files",
+        "package": "myclabs/deep-copy",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "eba08b9a4b6bb2b0c3726e4420344672f27eff41",
+        "rule": "autoload_files",
+        "package": "nunomaduro/collision",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "1c451206410333dce8f306a42abc9448cf5007bf",
+        "rule": "autoload_files",
+        "package": "nunomaduro/termwind",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "66449be56e9696397a14680b9bdc5f0fb477712e",
+        "rule": "autoload_files",
+        "package": "pestphp/pest",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "2c47e832cfb02366f4b38517bdf8d66a3e48c20d",
+        "rule": "autoload_files",
+        "package": "pestphp/pest-plugin-arch",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "6f494110e5a8bba06cd7680dc7c8eed51fb86b54",
+        "rule": "autoload_files",
+        "package": "pestphp/pest-plugin-laravel",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "41466b3631f70adeca00f4c6744c09c9e4f26fbf",
+        "rule": "autoload_files",
+        "package": "phpstan/phpstan",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "74c4778a60aabe1cc60cb687f6715757d284c4ac",
+        "rule": "autoload_files",
+        "package": "phpunit/phpunit",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "f8d2777b4562b96ed8759c68a0fbd9173f500fe7",
+        "rule": "autoload_files",
+        "package": "psy/psysh",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "77c6ad19e8efe919795c33dc6639e318ad7820b5",
+        "rule": "autoload_files",
+        "package": "ralouphie/getallheaders",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "74b2b19d1217c7a869e87835d6bc8efb6b3778d1",
+        "rule": "autoload_files",
+        "package": "ramsey/uuid",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "e91d9902bf0d024427fd7cf757953425f38703ca",
+        "rule": "autoload_files",
+        "package": "react/promise",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "395112a14df7b4ce560ba3765ab3226ab5dc07b8",
+        "rule": "autoload_files",
+        "package": "spatie/laravel-activitylog",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "1c0fe7fc3c7748a52208384363c00781c008f473",
+        "rule": "autoload_files",
+        "package": "spatie/laravel-permission",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "6348e326b14b318a56e544bc6660bbcb4ee7cd95",
+        "rule": "autoload_files",
+        "package": "symfony/clock",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "8c01ab963dc827310337cf7a1e620e4010461e12",
+        "rule": "autoload_files",
+        "package": "symfony/deprecation-contracts",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "a70894e0570c029f75f4471dd83c4cf5c48e2cd8",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-ctype",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "cbcbe38f9104ebe69aa1f2f5c04f062ade91ced8",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-intl-grapheme",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "ff85c3ecf81ef04bdfe4911a7031d8c27cfc5688",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-intl-idn",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b1838d710cb4625da0430b4b1bad9f51d081c3d1",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-intl-normalizer",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "20264d2abc46084acf54d3ad0fe9ecd0e7fb4783",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-mbstring",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "1f055ac40ed69121abc672f2849422da8f5009db",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-php80",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "ee3c62cb50b5fb8639a3c8548fa913b81201fa2f",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-php81",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b84ae3509d246c5024c5d5cfbd51d2d6b596e575",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-php83",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "88126d1f50c888b53a5e4fb9eaee470aacdd758a",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-php84",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "092284097982b5300a40f82032c8e8dc4e664776",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-php85",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "06b73b0012f352fb4e0f6750a4d3f09d996c3370",
+        "rule": "autoload_files",
+        "package": "symfony/polyfill-uuid",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "de9409f97d27836d7ed40527e3f7edcdf8659bcb",
+        "rule": "autoload_files",
+        "package": "symfony/string",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "c1df45fb4b8c9885f5119b50b59b21e9ff9794e4",
+        "rule": "autoload_files",
+        "package": "symfony/translation",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "a59fb71e9d85439640cb20921dd54b6cbeb7c5b7",
+        "rule": "autoload_files",
+        "package": "symfony/var-dumper",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "731d31f18841cf3b38e9ac85f67082efcf2550b2",
+        "rule": "composer_plugin_package",
+        "package": "dealerdirect/phpcodesniffer-composer-installer",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "f197d8f3d883caf51373e427823b6b4daeda8929",
+        "rule": "composer_plugin_package",
+        "package": "pestphp/pest-plugin",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b1ff71ae18ec8226f9aa44b7204c779fdbe29b39",
+        "rule": "laravel_auto_discovery",
+        "package": "knuckleswtf/scribe",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "317ba3e9da2cc7badaa7cf6d3d1d281f3eeebe9a",
+        "rule": "laravel_auto_discovery",
+        "package": "laradumps/laradumps",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "2a88d3f299390cc4e2545d59b58be45c0ff09917",
+        "rule": "laravel_auto_discovery",
+        "package": "laravel/boost",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "60528e7bf75920c7fd1c0e4773049b56015bb158",
+        "rule": "laravel_auto_discovery",
+        "package": "laravel/mcp",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "161c1d970a07044cc07c4a560bb67ee4f3227790",
+        "rule": "laravel_auto_discovery",
+        "package": "laravel/pail",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "325fccb19e5410e4527beba24d9b4afa10b78cd3",
+        "rule": "laravel_auto_discovery",
+        "package": "laravel/roster",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "30555647be40f0c60dd27cabe6a54efa07da5c72",
+        "rule": "laravel_auto_discovery",
+        "package": "laravel/sail",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "6582cfb2d0e3b7229b29fdebc36bbe0f3eb5fd81",
+        "rule": "laravel_auto_discovery",
+        "package": "laravel/sanctum",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "02e0f14eeb4383eaed199ffb7a485423ed247d71",
+        "rule": "laravel_auto_discovery",
+        "package": "laravel/tinker",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "e7d06b75c4b01aa1201ab06c2f0b7077be50a0d6",
+        "rule": "laravel_auto_discovery",
+        "package": "nesbot/carbon",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "51bdf7b00bdf3b047c69ccb36705cfb53710e96b",
+        "rule": "laravel_auto_discovery",
+        "package": "nunomaduro/collision",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "4b87138dbfaea6a9420998ffed54c4bf60218d19",
+        "rule": "laravel_auto_discovery",
+        "package": "nunomaduro/phpinsights",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "9eb55ae839c21ca42f1cb3660b79dea076a7f4f5",
+        "rule": "laravel_auto_discovery",
+        "package": "nunomaduro/termwind",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "9ee78eaee210feb3e800edca3c2ad7fb5696c4e2",
+        "rule": "laravel_auto_discovery",
+        "package": "pestphp/pest-plugin-laravel",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b0371b931eb3c1a769583189bf5ea67dba6e48b9",
+        "rule": "laravel_auto_discovery",
+        "package": "spatie/laravel-activitylog",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "8db0d9db647abdb891a86e74642c5b1c005b5e79",
+        "rule": "laravel_auto_discovery",
+        "package": "spatie/laravel-medialibrary",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "701d862cae9de25271c4cc4de754ccdd5e66f2e9",
+        "rule": "laravel_auto_discovery",
+        "package": "spatie/laravel-multitenancy",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b9da7cbaae00a5778a7a89c2d8f5d1dd9eecf39f",
+        "rule": "laravel_auto_discovery",
+        "package": "spatie/laravel-permission",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "63d61d7cc6eb7f85df7101421b8cd610ebacc938",
+        "rule": "laravel_auto_discovery",
+        "package": "spatie/laravel-query-builder",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "ab4982a5ba19e80f3419a21a0a3eb69fb00331da",
+        "rule": "laravel_auto_discovery",
+        "package": "staudenmeir/eloquent-has-many-deep",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "28bb0541450a194c8fde5842033cef4871e9ac3c",
+        "rule": "laravel_auto_discovery",
+        "package": "yasin_tgh/laravel-postman",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "2f2f5dca3706c91bdfe7f9d137f6fc5d2bf62675",
+        "rule": "unexpected_vendor_bin",
+        "package": "brianium/paratest",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "0f7e568a3844d17818f4ad5487942090820688f7",
+        "rule": "unexpected_vendor_bin",
+        "package": "cmgmyr/phploc",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "f4dcc3f692c4133728b12629a3e85d7ce87eed19",
+        "rule": "unexpected_vendor_bin",
+        "package": "friendsofphp/php-cs-fixer",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "9b84bf77452776df370dff4e349056faac10f70d",
+        "rule": "unexpected_vendor_bin",
+        "package": "laradumps/laradumps-core",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "6e7a8711d8ce0126d6ee85417435a22f7987b21a",
+        "rule": "unexpected_vendor_bin",
+        "package": "nesbot/carbon",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "ab0e8edf2687dd4e0e7a70bfe45f04c3b1c122b1",
+        "rule": "unexpected_vendor_bin",
+        "package": "nikic/php-parser",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "3cdb37d4dc2442daa25a2d17108f825ab41287b6",
+        "rule": "unexpected_vendor_bin",
+        "package": "nunomaduro/phpinsights",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "08b586a7e09fe31bb1ec54ffcb31ed9ad5293727",
+        "rule": "unexpected_vendor_bin",
+        "package": "php-parallel-lint/php-parallel-lint",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "ffdd57fb08e9d74ee147a54d4a2d86c40643ac33",
+        "rule": "unexpected_vendor_bin",
+        "package": "phpstan/phpstan",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b40c4e8871ebad92e7798173b749910e5160dd67",
+        "rule": "unexpected_vendor_bin",
+        "package": "phpunit/phpunit",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b1c79cb06acb0726e2310922a9e5a7965414dcda",
+        "rule": "unexpected_vendor_bin",
+        "package": "psy/psysh",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "81ad9cb423a5874558340b745f19df08e66478fd",
+        "rule": "unexpected_vendor_bin",
+        "package": "squizlabs/php_codesniffer",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "b618af9a7a360fb382aca39793eb5577e1bffcc2",
+        "rule": "unexpected_vendor_bin",
+        "package": "symfony/error-handler",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "e5dc070b000f703cd9e79d2617bbb7028066ba24",
+        "rule": "unexpected_vendor_bin",
+        "package": "symfony/var-dumper",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "9745df9bd770f29256e89fdbb25ad80da30622f6",
+        "rule": "unexpected_vendor_bin",
+        "package": "symfony/yaml",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "8fcb014e03b49b30a4c0dcad6cd071b67d0ae8fa",
+        "rule": "wildcard_constraint",
+        "package": "larastan/larastan",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    },
+    {
+        "fingerprint": "575280369890a1c116951e176d0e54612fd47e8d",
+        "rule": "wildcard_constraint",
+        "package": "nunomaduro/phpinsights",
+        "reason": "Generated baseline",
+        "owner": "unknown",
+        "expires_at": "2026-09-11"
+    }
+]

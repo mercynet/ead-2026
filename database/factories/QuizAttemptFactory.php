@@ -2,16 +2,18 @@
 
 namespace Database\Factories;
 
-use App\Models\Questionnaire;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Assessment\Models\Questionnaire;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\QuizAttempt>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Modules\Assessment\Models\QuizAttempt>
  */
 class QuizAttemptFactory extends Factory
 {
+    protected $model = \App\Modules\Assessment\Models\QuizAttempt::class;
+
     public function definition(): array
     {
         return [
@@ -22,6 +24,21 @@ class QuizAttemptFactory extends Factory
             'questionnaire_snapshot' => [
                 'title' => fake()->sentence(),
                 'passing_score' => 70,
+            ],
+            'questions_snapshot' => [
+                [
+                    'id' => 1,
+                    'question' => fake()->sentence().'?',
+                    'type' => 'single_choice',
+                    'options' => [
+                        ['text' => 'Option A'],
+                        ['text' => 'Option B'],
+                    ],
+                    'correct_options' => [0],
+                    'explanation' => null,
+                    'points' => 1,
+                    'sort_order' => 1,
+                ],
             ],
             'course_snapshot' => null,
             'module_snapshot' => null,

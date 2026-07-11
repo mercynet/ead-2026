@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+./vendor/bin/sail artisan security:audit-deps --scan-vendor --include-dev --fail-on=high
+./vendor/bin/sail composer audit

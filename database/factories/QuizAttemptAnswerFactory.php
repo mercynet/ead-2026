@@ -2,21 +2,24 @@
 
 namespace Database\Factories;
 
-use App\Models\QuizAttempt;
-use App\Models\Tenant;
+use App\Modules\Assessment\Models\QuizAttempt;
+use App\Modules\Core\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\QuizAttemptAnswer>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Modules\Assessment\Models\QuizAttemptAnswer>
  */
 class QuizAttemptAnswerFactory extends Factory
 {
+    protected $model = \App\Modules\Assessment\Models\QuizAttemptAnswer::class;
+
     public function definition(): array
     {
         return [
             'tenant_id' => Tenant::factory(),
             'quiz_attempt_id' => QuizAttempt::factory(),
             'question_snapshot' => [
+                'id' => 1,
                 'question' => fake()->sentence().'?',
                 'type' => 'single_choice',
                 'options' => [
@@ -26,6 +29,7 @@ class QuizAttemptAnswerFactory extends Factory
                     ['text' => fake()->sentence()],
                 ],
                 'correct_options' => [0],
+                'points' => 1,
             ],
             'selected_options' => [fake()->numberBetween(0, 3)],
             'is_correct' => fake()->boolean(),

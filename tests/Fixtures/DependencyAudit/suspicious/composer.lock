@@ -1,0 +1,72 @@
+{
+    "packages": [
+        {
+            "name": "evil/pkg",
+            "version": "9.9.9",
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ]
+            },
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Evil\\PayloadServiceProvider"
+                    ]
+                }
+            },
+            "bin": [
+                "evil"
+            ],
+            "abandoned": true,
+            "source": {
+                "type": "git",
+                "url": "https://evil.example/evil/pkg.git",
+                "reference": "deadbeef"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "http://evil.example/dist/evil.zip",
+                "reference": "deadbeef",
+                "shasum": "expected-evil-sha"
+            }
+        },
+        {
+            "name": "attacker/plugin",
+            "version": "1.2.3",
+            "type": "composer-plugin",
+            "extra": {
+                "class": "Attacker\\Plugin"
+            },
+            "source": {
+                "type": "git",
+                "url": "https://github.com/attacker/plugin.git",
+                "reference": "cafebabe"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/attacker/plugin/zipball/cafebabe",
+                "reference": "cafebabe",
+                "shasum": "trusted-plugin-sha"
+            }
+        }
+    ],
+    "packages-dev": [
+        {
+            "name": "trusted/tool",
+            "version": "dev-main",
+            "type": "library",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/trusted/tool.git",
+                "reference": "abc123"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/trusted/tool/zipball/abc123",
+                "reference": "abc123"
+            }
+        }
+    ]
+}

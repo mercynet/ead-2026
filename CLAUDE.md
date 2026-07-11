@@ -1,3 +1,28 @@
+# CLAUDE.md
+
+> **O contrato canônico deste repositório é o [`AGENTS.md`](AGENTS.md). Leia-o primeiro.**
+> Este arquivo é só um ponteiro fino — não duplique regras aqui.
+
+## Fontes de verdade (nesta ordem)
+
+1. **[`AGENTS.md`](AGENTS.md)** — contrato do projeto: stack, comandos, arquitetura, invariantes, padrões, testes.
+2. **`docs/specs/`** — regras de negócio por domínio. Comece em [`docs/specs/README.md`](docs/specs/README.md).
+   Cross-cutting em `00-architecture/`; cada domínio tem `spec.md` (contrato, sem status) + `tasks.md` (status) + `subspecs/`.
+3. **Código + `bootstrap/app.php` + `routes/api.php`** — quando a prosa conflitar com o código, o código vence (e a spec deve ser corrigida).
+
+`docs/ROADMAP.md` = fases cross-domain. `docs/STATE.md` = sessão atual / próximos passos.
+
+## Regras de operação
+
+- Use o **Laravel Boost MCP** (`search-docs`, `tinker`, `database-schema`, etc.) para docs e inspeção do app.
+- Carregue **skills sob demanda** — só quando a tarefa entrar no domínio da skill.
+- **Não** trate `CONTEXT.md` nem specs antigas como canônicos se conflitarem com `docs/specs/` + código.
+- Os guardrails do projeto são **executáveis** (suite de invariantes em testes): rode-os para validar, não confie só em prosa.
+
+> O bloco abaixo é gerido pelo Laravel Boost (`boost:update`) — não editar manualmente.
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
@@ -9,7 +34,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.4.1
+- php - 8.4.18
 - laravel/framework (LARAVEL) - v12
 - laravel/prompts (PROMPTS) - v0
 - laravel/sanctum (SANCTUM) - v4
@@ -247,3 +272,13 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - IMPORTANT: Activate `tailwindcss-development` every time you're working with a Tailwind CSS or styling-related task.
 
 </laravel-boost-guidelines>
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

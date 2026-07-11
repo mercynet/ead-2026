@@ -5,10 +5,12 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Tenant>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Modules\Core\Models\Tenant>
  */
 class TenantFactory extends Factory
 {
+    protected $model = \App\Modules\Core\Models\Tenant::class;
+
     /**
      * Define the model's default state.
      *

@@ -1,10 +1,10 @@
 <?php
 
-use App\Enums\UserType;
-use App\Models\Certificate;
-use App\Models\Enrollment;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Assessment\Models\Certificate;
+use App\Modules\Core\Enums\UserType;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
+use App\Modules\Learning\Models\Enrollment;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -96,4 +96,12 @@ it('returns invalid for revoked certificate', function (): void {
 
     $response->assertSuccessful();
     $response->assertJsonPath('valid', false);
+});
+
+it('returns the real course title on public verification', function (): void {
+    $response = $this->getJson('/api/v1/assessment/certificates/verify/CERT-2026-ABCD1234');
+
+    $response->assertSuccessful()
+        ->assertJsonPath('valid', true)
+        ->assertJsonPath('certificate.course_title', $this->enrollment->course->title);
 });

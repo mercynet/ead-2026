@@ -1,28 +1,37 @@
 <?php
 
-use App\Exceptions\AccessDeniedException;
-use App\Exceptions\InvalidCredentialsException;
-use App\Exceptions\ResourceNotFoundException;
-use App\Exceptions\TenantContextRequiredException;
+use App\Shared\Exceptions\AccessDeniedException;
+use App\Shared\Exceptions\AreaAccessDeniedException;
+use App\Shared\Exceptions\InvalidCredentialsException;
+use App\Shared\Exceptions\ResourceNotFoundException;
+use App\Shared\Exceptions\TenantContextRequiredException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
+    /*
+     * Rotas da API vivem em app/Modules/<M>/Routes/api.php, carregadas pelo
+     * service provider de cada módulo (prefixo `api` + middleware group `api`).
+     */
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'api.context' => \App\Http\Middleware\InjectApiContext::class,
-            'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
-            'resolve.tenant.optional' => \App\Http\Middleware\ResolveTenantOptional::class,
-            'tenant.access' => \App\Http\Middleware\EnsureTenantAccess::class,
-            'tenant.required.unless.developer' => \App\Http\Middleware\EnsureTenantRequiredForNonDeveloper::class,
+            'api.context' => \App\Modules\Core\Http\Middleware\InjectApiContext::class,
+            'resolve.tenant' => \App\Modules\Core\Http\Middleware\ResolveTenant::class,
+            'resolve.tenant.optional' => \App\Modules\Core\Http\Middleware\ResolveTenantOptional::class,
+            'tenant.access' => \App\Modules\Core\Http\Middleware\EnsureTenantAccess::class,
+            'tenant.required.unless.developer' => \App\Modules\Core\Http\Middleware\EnsureTenantRequiredForNonDeveloper::class,
+            'area.guard' => \App\Modules\Core\Http\Middleware\EnsureAreaAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -72,5 +81,88 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ],
             ], 403);
+        });
+
+        $exceptions->render(function (AreaAccessDeniedException $exception, Request $request) {
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'area_forbidden',
+                        'message' => $exception->getMessage(),
+                    ],
+                ],
+            ], 403);
+        });
+
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'unauthenticated',
+                        'message' => 'Não autenticado.',
+                    ],
+                ],
+            ], 401);
+        });
+
+        /*
+         * O Handler converte AuthorizationException → AccessDeniedHttpException e
+         * ModelNotFoundException → NotFoundHttpException ANTES dos render callbacks
+         * (prepareException) — por isso os handlers abaixo miram as classes Symfony.
+         */
+        $exceptions->render(function (AccessDeniedHttpException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'access_denied',
+                        'message' => 'Acesso negado.',
+                    ],
+                ],
+            ], 403);
+        });
+
+        $exceptions->render(function (NotFoundHttpException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'not_found',
+                        'message' => 'Recurso não encontrado.',
+                    ],
+                ],
+            ], 404);
+        });
+
+        $exceptions->render(function (ValidationException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            $message = collect($exception->errors())->flatten()->first() ?? $exception->getMessage();
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'validation_error',
+                        'message' => $message,
+                    ],
+                ],
+            ], 422);
         });
     })->create();

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Enums\UserType;
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Core\Enums\UserType;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;

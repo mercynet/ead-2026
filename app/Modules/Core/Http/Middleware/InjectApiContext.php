@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Modules\Core\Http\Middleware;
+
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Core\Models\User;
+use App\Shared\Http\ApiContext;
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class InjectApiContext
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $this->resolveUser($request);
+        $tenant = $this->resolveTenant($request);
+
+        $context = new ApiContext($user, $tenant);
+
+        app()->instance(ApiContext::class, $context);
+        $request->attributes->set('apiContext', $context);
+
+        return $next($request);
+    }
+
+    private function resolveUser(Request $request): ?User
+    {
+        /** @var User|null $user */
+        return $request->user('sanctum') ?? $request->user();
+    }
+
+    private function resolveTenant(Request $request): ?Tenant
+    {
+        /** @var Tenant|null $tenant */
+        return $request->attributes->get('tenant');
+    }
+}

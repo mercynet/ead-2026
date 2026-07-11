@@ -2,15 +2,17 @@
 
 namespace Database\Factories;
 
-use App\Models\Course;
-use App\Models\Tenant;
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Learning\Models\Course;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\CourseModule>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Modules\Learning\Models\CourseModule>
  */
 class CourseModuleFactory extends Factory
 {
+    protected $model = \App\Modules\Learning\Models\CourseModule::class;
+
     /**
      * Define the model's default state.
      *

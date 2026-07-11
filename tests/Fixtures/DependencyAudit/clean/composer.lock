@@ -1,0 +1,26 @@
+{
+    "packages": [
+        {
+            "name": "acme/safe-lib",
+            "version": "1.0.0",
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Acme\\SafeLib\\": "src/"
+                }
+            },
+            "source": {
+                "type": "git",
+                "url": "https://github.com/acme/safe-lib.git",
+                "reference": "1234567890abcdef"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/acme/safe-lib/zipball/1234567890abcdef",
+                "reference": "1234567890abcdef",
+                "shasum": "safe-lib-sha"
+            }
+        }
+    ],
+    "packages-dev": []
+}

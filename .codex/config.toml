@@ -1,4 +1,10 @@
 [mcp_servers.laravel-boost]
-command = "php"
-args = ["artisan", "boost:mcp"]
-cwd = "/home/paulo/www/ead2026"
+command = "docker"
+args = ["exec", "-i", "ead2026-laravel.test-1", "php", "/var/www/html/artisan", "boost:mcp"]
+
+[mcp_servers.laravel-boost.tools.search-docs]
+approval_mode = "approve"
+
+[mcp_servers.github]
+command = "bash"
+args = ["-c", "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) -e GITHUB_READ_ONLY=1 ghcr.io/github/github-mcp-server"]

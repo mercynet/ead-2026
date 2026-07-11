@@ -23,6 +23,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   mais nos Resources; fix `QuizAttemptPolicy::create` (checava `attempts.view`).
 - [x] Config de certificado nas colunas de `courses`.
 - [x] Certificates: `GET /certificates`, `GET /certificates/{id}`.
+- [x] **P1.3 parcial (auditoria 2026-07-11):** coluna `course_id` em `certificates` (backfill via
+  enrollment); relação `Certificate::course()` funcional; verify público devolve `course_title` real.
 - [x] Verificação pública de certificado (`GET /certificates/verify/{code}`).
 
 ## In Progress
@@ -34,6 +36,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] `DELETE /questions/{id}`.
 - [ ] `GET /questionnaires/{id}/questions` (listar questões do questionário).
 - [ ] `POST /questionnaires/{id}/questions` (anexar questões).
+- [ ] Emissão automática de certificado (`Certificate::create` ao completar curso —
+  `CourseCompletedEvent`; pré-requisitos P1.5/P1.3 da auditoria já fechados).
 - [ ] Geração de PDF do certificado.
 - [ ] Eventos: `QuizAttemptStarted`, `QuizAttemptFinished` (+ passed/failed), `CourseCompletedEvent`, `CertificateIssuedEvent`, `CertificateRevokedEvent`.
 - [ ] Revoke de certificado (`assessment.certificates.revoke`).

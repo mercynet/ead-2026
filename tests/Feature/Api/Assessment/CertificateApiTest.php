@@ -97,3 +97,11 @@ it('returns invalid for revoked certificate', function (): void {
     $response->assertSuccessful();
     $response->assertJsonPath('valid', false);
 });
+
+it('returns the real course title on public verification', function (): void {
+    $response = $this->getJson('/api/v1/assessment/certificates/verify/CERT-2026-ABCD1234');
+
+    $response->assertSuccessful()
+        ->assertJsonPath('valid', true)
+        ->assertJsonPath('certificate.course_title', $this->enrollment->course->title);
+});

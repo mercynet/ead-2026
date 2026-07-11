@@ -20,6 +20,7 @@ class Certificate extends Model
         'tenant_id',
         'user_id',
         'enrollment_id',
+        'course_id',
         'certificate_number',
         'issued_at',
         'status',
@@ -51,6 +52,7 @@ class Certificate extends Model
             'tenant_id' => 'integer',
             'user_id' => 'integer',
             'enrollment_id' => 'integer',
+            'course_id' => 'integer',
             'issued_at' => 'datetime',
         ];
     }

@@ -86,7 +86,13 @@ Ordem de ataque: P0 → P1 → P2. Não misturar itens num mesmo commit/task.
 - **Nota de guard**: `PermissionDriftTest` não detecta "permissão errada checada" (só valida
   usado ⊆ declarado). Avaliar teste por-endpoint da matriz RBAC.
 
-### P1.3 Certificados: emissão inexistente + relação quebrada
+### P1.3 Certificados: emissão inexistente + relação quebrada — 🟡 PARCIAL (2026-07-11)
+
+> **Feito (correção mínima):** coluna `course_id` em `certificates` (nullable, FK, backfill via
+> enrollment); model/factory atualizados; verificação pública retorna `course_title` real
+> (teste em `CertificateApiTest`). **Pendente:** fluxo automático de emissão
+> (`Certificate::create` + `CourseCompletedEvent`) — depende de P1.5 (já fechado) e é task de
+> domínio no `tasks.md` do Assessment.
 
 - **Evidência**: nenhum `Certificate::create` no código; Assessment não registra listener para
   `LessonCompletedEvent`; `CourseCompletedEvent` não existe.

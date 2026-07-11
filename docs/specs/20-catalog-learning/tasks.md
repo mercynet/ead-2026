@@ -48,6 +48,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   presets 0/30/90/180/365 validados nos FormRequests de curso.
 - [x] **P1.5 (auditoria 2026-07-11):** progresso conta só lessons `published + is_active`;
   `enrollment.completed_at` estampado ao atingir 100%.
+- [x] **P1.4 (auditoria 2026-07-11):** `LessonPolicy` alinhada ao padrão canônico (developer
+  bypass + matriz do config); progresso de aula restrito a developer/student.
 - [x] **P0.2 (auditoria 2026-07-11):** hardening de `file_path` de material — prefixo
   `tenants/{tenant_id}/` + anti-traversal no FormRequest; revalidação + allowlist de disk na
   geração da URL assinada (defesa em profundidade); URL gerada antes de registrar download.

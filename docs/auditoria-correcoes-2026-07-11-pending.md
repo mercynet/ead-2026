@@ -104,7 +104,12 @@ Ordem de ataque: P0 → P1 → P2. Não misturar itens num mesmo commit/task.
   domínio (depende de P1.5 e de `CourseCompletedEvent`).
 - **Validação**: verificação pública retorna `course_title` real.
 
-### P1.4 `LessonPolicy` fora do padrão de autorização
+### P1.4 `LessonPolicy` fora do padrão de autorização — ✅ CORRIGIDO (2026-07-11)
+
+> `LessonPolicy` reescrita no padrão canônico (developer bypass → `belongsToTenant` → permission
+> do config): developer deixa de tomar 403; matriz `learning.lessons.*`/`learning.progress.update`
+> passa a ser consultada (instructor/admin não registram mais progresso de aula). Casos
+> `UserType::Developer` e instructor-progress-403 adicionados em `LessonApiTest`.
 
 - **Evidência**: `app/Modules/Learning/Policies/LessonPolicy.php:10-38` usa
   `$user->tenant_id === $tenant->id` cru — developer (tenant_id null) recebe 403 em todos os

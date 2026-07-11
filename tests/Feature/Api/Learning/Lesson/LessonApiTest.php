@@ -2064,3 +2064,88 @@ it('ignores draft and inactive lessons in course progress and stamps completed_a
     expect($enrollment->progress_percentage)->toBe(100)
         ->and($enrollment->completed_at)->not->toBeNull();
 });
+
+it('allows a developer to view lessons in any tenant', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $devHeaders] = actingAsUserType(UserType::Developer);
+    $headers = array_merge($devHeaders, ['X-Tenant-ID' => (string) $tenant->id]);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Dev Access Course',
+        'slug' => 'dev-access-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Dev Lesson',
+        'slug' => 'dev-lesson',
+        'status' => 'published',
+        'is_active' => true,
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    $this->getJson("/api/v1/learning/lessons/{$lesson->id}", $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $lesson->id);
+});
+
+it('denies an instructor registering lesson progress', function (): void {
+    $tenant = makeTenant(['domain' => 'tenant-a.local']);
+    [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
+
+    $course = Course::query()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Instructor Progress Course',
+        'slug' => 'instructor-progress-course',
+        'description' => 'Course description',
+        'status' => 'published',
+        'price_cents' => 0,
+        'access_days' => 30,
+        'is_featured' => false,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Module 1',
+        'sort_order' => 1,
+    ]);
+
+    $lesson = Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Instructor Lesson',
+        'slug' => 'instructor-lesson',
+        'status' => 'published',
+        'is_active' => true,
+        'sort_order' => 1,
+        'is_free' => true,
+    ]);
+
+    assertApiErrorEnvelope(
+        $this->postJson("/api/v1/learning/lessons/{$lesson->id}/progress", [
+            'time_spent_seconds' => 60,
+            'current_time_seconds' => 60,
+            'total_time_seconds' => 300,
+            'progress_percentage' => 20,
+            'is_completed' => false,
+        ], $headers),
+        403,
+        'access_denied'
+    );
+});

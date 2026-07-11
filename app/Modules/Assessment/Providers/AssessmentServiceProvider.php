@@ -2,7 +2,10 @@
 
 namespace App\Modules\Assessment\Providers;
 
+use App\Modules\Assessment\Listeners\IssueCertificateOnCourseCompletedListener;
 use App\Modules\Assessment\Policies\QuizAttemptPolicy;
+use App\Modules\Learning\Events\CourseCompletedEvent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -13,7 +16,13 @@ class AssessmentServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->registerGates();
+        $this->registerListeners();
         $this->registerRoutes();
+    }
+
+    private function registerListeners(): void
+    {
+        Event::listen(CourseCompletedEvent::class, IssueCertificateOnCourseCompletedListener::class);
     }
 
     private function registerGates(): void

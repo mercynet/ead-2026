@@ -2,7 +2,9 @@
 
 namespace App\Modules\Learning\Actions\Lesson;
 
+use App\Modules\Core\Models\User;
 use App\Modules\Learning\Enums\LessonMediaProgressStrategy;
+use App\Modules\Learning\Events\CourseCompletedEvent;
 use App\Modules\Learning\Events\LessonCompletedEvent;
 use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
@@ -74,7 +76,7 @@ class UpdateProgressAction
                 $this->updateLessonMediaProgress($context, $lessonMedia, $data, $progressSnapshot);
             }
 
-            $this->updateEnrollmentProgress($enrollment);
+            $this->updateEnrollmentProgress($enrollment, $context->requiredUser());
 
             if ($progressSnapshot['is_completed'] && ! $wasCompleted) {
                 Event::dispatch(new LessonCompletedEvent(
@@ -263,7 +265,7 @@ class UpdateProgressAction
         $lessonMediaProgress->save();
     }
 
-    private function updateEnrollmentProgress(Enrollment $enrollment): void
+    private function updateEnrollmentProgress(Enrollment $enrollment, User $user): void
     {
         $course = $enrollment->course;
 
@@ -285,11 +287,17 @@ class UpdateProgressAction
 
         $percentage = min((int) round(($completedLessons / $publishedLessonIds->count()) * 100), 100);
 
+        $wasCompleted = $enrollment->completed_at !== null;
+
         $enrollment->update([
             'progress_percentage' => $percentage,
             'completed_at' => $percentage >= 100
                 ? ($enrollment->completed_at ?? now())
                 : $enrollment->completed_at,
         ]);
+
+        if ($percentage >= 100 && ! $wasCompleted) {
+            Event::dispatch(new CourseCompletedEvent($enrollment, $user, $course));
+        }
     }
 }

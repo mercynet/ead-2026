@@ -26,6 +26,11 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] **P1.3 parcial (auditoria 2026-07-11):** coluna `course_id` em `certificates` (backfill via
   enrollment); relação `Certificate::course()` funcional; verify público devolve `course_title` real.
 - [x] Verificação pública de certificado (`GET /certificates/verify/{code}`).
+- [x] Emissão automática de certificado: `CourseCompletedEvent` (Learning, disparado na transição
+  do enrollment para 100% em `UpdateProgressAction`) + `IssueCertificateOnCourseCompletedListener`
+  → `IssueCertificateAction` honrando `certificate_enabled` / `certificate_min_progress` /
+  `certificate_requires_quiz` / `certificate_min_score`, idempotente por enrollment
+  (testes em `CertificateIssuanceTest` + `CourseCompletedEventTest`).
 
 ## In Progress
 
@@ -36,10 +41,10 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] `DELETE /questions/{id}`.
 - [ ] `GET /questionnaires/{id}/questions` (listar questões do questionário).
 - [ ] `POST /questionnaires/{id}/questions` (anexar questões).
-- [ ] Emissão automática de certificado (`Certificate::create` ao completar curso —
-  `CourseCompletedEvent`; pré-requisitos P1.5/P1.3 da auditoria já fechados).
 - [ ] Geração de PDF do certificado.
-- [ ] Eventos: `QuizAttemptStarted`, `QuizAttemptFinished` (+ passed/failed), `CourseCompletedEvent`, `CertificateIssuedEvent`, `CertificateRevokedEvent`.
+- [ ] Eventos: `QuizAttemptStarted`, `QuizAttemptFinished` (+ passed/failed), `CertificateIssuedEvent`, `CertificateRevokedEvent` (`CourseCompletedEvent` já existe no Learning).
+- [ ] Trigger complementar de emissão: quiz aprovado **depois** do curso completo
+  (`certificate_requires_quiz` + aluno fecha quiz por último — hoje só o `CourseCompletedEvent` engatilha).
 - [ ] Revoke de certificado (`assessment.certificates.revoke`).
 - [ ] Alinhar permissions de Assessment às roles (admin/instructor/student) conforme a matriz em [`../00-architecture/rbac.md`](../00-architecture/rbac.md).
 - [ ] Teste E2E do fluxo do aluno (start → answer → finish → resultado).

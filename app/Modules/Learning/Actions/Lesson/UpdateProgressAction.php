@@ -20,7 +20,9 @@ class UpdateProgressAction
 {
     public function handle(ApiContext $context, Lesson $lesson, array $data): LessonProgress
     {
-        return DB::transaction(function () use ($context, $lesson, $data): LessonProgress {
+        $pendingEvents = [];
+
+        $progress = DB::transaction(function () use ($context, $lesson, $data, &$pendingEvents): LessonProgress {
             $course = $lesson->courseModule->course;
             $lessonMedia = $this->resolveLessonMedia($context, $lesson, $data);
 
@@ -32,6 +34,7 @@ class UpdateProgressAction
                 )
                 ->currentStatuses()
                 ->orderByDesc('id')
+                ->lockForUpdate()
                 ->firstOrFail();
 
             $progress = LessonProgress::query()
@@ -76,18 +79,24 @@ class UpdateProgressAction
                 $this->updateLessonMediaProgress($context, $lessonMedia, $data, $progressSnapshot);
             }
 
-            $this->updateEnrollmentProgress($enrollment, $context->requiredUser());
+            $this->updateEnrollmentProgress($enrollment, $context->requiredUser(), $pendingEvents);
 
             if ($progressSnapshot['is_completed'] && ! $wasCompleted) {
-                Event::dispatch(new LessonCompletedEvent(
+                $pendingEvents[] = new LessonCompletedEvent(
                     $lesson,
                     $context->requiredUser(),
                     $course
-                ));
+                );
             }
 
             return $progress->refresh();
         });
+
+        foreach ($pendingEvents as $pendingEvent) {
+            Event::dispatch($pendingEvent);
+        }
+
+        return $progress;
     }
 
     /**
@@ -265,7 +274,10 @@ class UpdateProgressAction
         $lessonMediaProgress->save();
     }
 
-    private function updateEnrollmentProgress(Enrollment $enrollment, User $user): void
+    /**
+     * @param  list<object>  $pendingEvents
+     */
+    private function updateEnrollmentProgress(Enrollment $enrollment, User $user, array &$pendingEvents): void
     {
         $course = $enrollment->course;
 
@@ -283,6 +295,7 @@ class UpdateProgressAction
             ->where('enrollment_id', $enrollment->id)
             ->whereIn('lesson_id', $publishedLessonIds)
             ->where('is_completed', true)
+            ->lockForUpdate()
             ->count();
 
         $percentage = min((int) round(($completedLessons / $publishedLessonIds->count()) * 100), 100);
@@ -297,7 +310,7 @@ class UpdateProgressAction
         ]);
 
         if ($percentage >= 100 && ! $wasCompleted) {
-            Event::dispatch(new CourseCompletedEvent($enrollment, $user, $course));
+            $pendingEvents[] = new CourseCompletedEvent($enrollment, $user, $course);
         }
     }
 }

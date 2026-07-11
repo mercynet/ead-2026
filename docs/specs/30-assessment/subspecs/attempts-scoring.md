@@ -15,6 +15,7 @@ quiz_attempts
 - tenant_id, user_id, questionnaire_id   // FK
 - status                 // in_progress | completed
 - questionnaire_snapshot // JSON
+- questions_snapshot     // JSON — questões congeladas no start (com gabarito; nunca exposto na API)
 - course_snapshot        // JSON (se course quiz)
 - module_snapshot        // JSON (se lesson quiz)
 - started_at, finished_at
@@ -33,28 +34,35 @@ quiz_attempt_answers
 
 ### Snapshots (integridade)
 
-Ao iniciar a tentativa, o sistema congela:
+Ao iniciar a tentativa, o sistema congela **no servidor**:
 
 - Questionário: `title`, `description`, `passing_score`.
 - Curso (se course quiz): `id`, `title`.
 - Módulo (se lesson quiz): `id`, `title`.
-- Cada questão respondida: texto, opções, resposta correta.
+- **Todas as questões ativas** do questionário (`questions_snapshot`): id, texto, tipo, opções,
+  gabarito (`correct_options`), `points`, `sort_order`. Questionário sem questão ativa → 422.
 
 Assim a tentativa permanece íntegra mesmo se o questionário for alterado depois.
+
+**Integridade do scoring:** o cliente envia apenas `question_id` + `selected_options`;
+`is_correct`/`points_earned` são calculados exclusivamente a partir do `questions_snapshot`
+congelado. Qualquer `question_snapshot` enviado pelo cliente é ignorado. Cada questão só pode
+ser respondida uma vez por tentativa (422 na repetição); questão fora do snapshot → 422.
+O gabarito (`correct_options`/`explanation`) **nunca** sai nos Resources da API.
 
 ### Score
 
 ```
-score = (pontos_obtidos / pontos_totais) * 100
+score = (pontos_obtidos / pontos_totais_do_questions_snapshot) * 100
 passed = score >= questionnaire.passing_score
 ```
 
 ### Fluxo do aluno
 
 ```
-1. POST /attempts/questionnaires/{id}   -> inicia (snapshot)
-2. GET  /attempts/{id}                  -> ver tentativa atual
-3. PATCH /attempts/{id}                 -> responde questão { question_snapshot, selected_options }
+1. POST /attempts/questionnaires/{id}   -> inicia (congela snapshots no servidor)
+2. GET  /attempts/{id}                  -> ver tentativa atual (questões sem gabarito)
+3. PATCH /attempts/{id}                 -> responde questão { question_id, selected_options }
 4. POST /attempts/{id}/finish           -> finaliza (calcula score, passed)
 5. GET  /attempts/{id}                  -> resultado
 ```

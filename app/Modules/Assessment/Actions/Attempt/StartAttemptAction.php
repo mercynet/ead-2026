@@ -20,12 +20,18 @@ class StartAttemptAction
     public function handle(int $questionnaireId, ApiContext $context): QuizAttempt
     {
         $questionnaire = Questionnaire::query()
-            ->with(['instructor'])
+            ->with(['instructor', 'questions.question'])
             ->where('tenant_id', $context->tenant->id)
             ->findOrFail($questionnaireId);
 
         if (! $questionnaire->is_active) {
             abort(422, 'This questionnaire is not active.');
+        }
+
+        $questionsSnapshot = $this->freezeQuestions($questionnaire);
+
+        if ($questionsSnapshot === []) {
+            abort(422, 'This questionnaire has no active questions.');
         }
 
         $hasInProgressAttempt = $context->user->attempts()
@@ -86,10 +92,37 @@ class StartAttemptAction
             'questionnaire_id' => $questionnaire->id,
             'status' => 'in_progress',
             'questionnaire_snapshot' => $questionnaireSnapshot,
+            'questions_snapshot' => $questionsSnapshot,
             'course_snapshot' => $courseSnapshot,
             'module_snapshot' => $moduleSnapshot,
             'started_at' => now(),
             'time_spent_seconds' => 0,
         ]);
+    }
+
+    /**
+     * Freeze every active question (including the answer key) server-side so
+     * scoring never depends on client-provided data.
+     *
+     * @return list<array{id: int, question: string, type: string, options: array, correct_options: array, explanation: string|null, points: int, sort_order: int}>
+     */
+    private function freezeQuestions(Questionnaire $questionnaire): array
+    {
+        return $questionnaire->questions
+            ->sortBy('sort_order')
+            ->values()
+            ->filter(fn ($item): bool => $item->question !== null && $item->question->is_active)
+            ->map(fn ($item): array => [
+                'id' => $item->question->id,
+                'question' => $item->question->question,
+                'type' => $item->question->type,
+                'options' => $item->question->options,
+                'correct_options' => $item->question->correct_options,
+                'explanation' => $item->question->explanation,
+                'points' => $item->question->points,
+                'sort_order' => $item->sort_order,
+            ])
+            ->values()
+            ->all();
     }
 }

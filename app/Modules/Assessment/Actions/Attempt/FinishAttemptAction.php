@@ -26,8 +26,8 @@ class FinishAttemptAction
         }
 
         $totalPoints = $attempt->answers()->sum('points_earned');
-        $maxPoints = collect($attempt->questionnaire_snapshot['points'] ?? [])
-            ->sum() ?? $attempt->answers()->count();
+        $maxPoints = collect($attempt->questions_snapshot ?? [])
+            ->sum(fn (array $question): int => (int) ($question['points'] ?? 1));
 
         if ($maxPoints > 0) {
             $score = (int) round(($totalPoints / $maxPoints) * 100);

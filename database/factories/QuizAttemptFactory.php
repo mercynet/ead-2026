@@ -25,6 +25,21 @@ class QuizAttemptFactory extends Factory
                 'title' => fake()->sentence(),
                 'passing_score' => 70,
             ],
+            'questions_snapshot' => [
+                [
+                    'id' => 1,
+                    'question' => fake()->sentence().'?',
+                    'type' => 'single_choice',
+                    'options' => [
+                        ['text' => 'Option A'],
+                        ['text' => 'Option B'],
+                    ],
+                    'correct_options' => [0],
+                    'explanation' => null,
+                    'points' => 1,
+                    'sort_order' => 1,
+                ],
+            ],
             'course_snapshot' => null,
             'module_snapshot' => null,
             'started_at' => now(),

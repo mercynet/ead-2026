@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
  *
  * @apiResourceModel App\Modules\Assessment\Models\QuizAttemptAnswer
  *
+ * @bodyParam question_id integer required ID of the frozen question being answered. Example: 12
  * @bodyParam selected_options array required Array of selected option indices. Example: [0, 2]
  */
 class SubmitAnswerAction
@@ -30,8 +31,22 @@ class SubmitAnswerAction
 
         $data = $request->validated();
         $selectedOptions = $data['selected_options'];
+        $questionId = $data['question_id'];
 
-        $questionSnapshot = $data['question_snapshot'];
+        $questionSnapshot = collect($attempt->questions_snapshot ?? [])
+            ->firstWhere('id', $questionId);
+
+        if ($questionSnapshot === null) {
+            abort(422, 'This question does not belong to this attempt.');
+        }
+
+        $alreadyAnswered = $attempt->answers()
+            ->where('question_snapshot->id', $questionId)
+            ->exists();
+
+        if ($alreadyAnswered) {
+            abort(422, 'This question has already been answered in this attempt.');
+        }
 
         $correctOptions = $questionSnapshot['correct_options'] ?? [];
         $isCorrect = count(array_diff($selectedOptions, $correctOptions)) === 0

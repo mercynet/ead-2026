@@ -4,6 +4,7 @@ namespace App\Modules\Assessment\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Arr;
 
 class AttemptAnswerResource extends JsonResource
 {
@@ -12,7 +13,7 @@ class AttemptAnswerResource extends JsonResource
         return [
             'id' => $this->id,
             'quiz_attempt_id' => $this->quiz_attempt_id,
-            'question_snapshot' => $this->question_snapshot,
+            'question_snapshot' => Arr::except($this->question_snapshot ?? [], ['correct_options', 'explanation']),
             'selected_options' => $this->selected_options,
             'is_correct' => $this->is_correct,
             'points_earned' => $this->points_earned,

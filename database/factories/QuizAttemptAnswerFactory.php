@@ -19,6 +19,7 @@ class QuizAttemptAnswerFactory extends Factory
             'tenant_id' => Tenant::factory(),
             'quiz_attempt_id' => QuizAttempt::factory(),
             'question_snapshot' => [
+                'id' => 1,
                 'question' => fake()->sentence().'?',
                 'type' => 'single_choice',
                 'options' => [
@@ -28,6 +29,7 @@ class QuizAttemptAnswerFactory extends Factory
                     ['text' => fake()->sentence()],
                 ],
                 'correct_options' => [0],
+                'points' => 1,
             ],
             'selected_options' => [fake()->numberBetween(0, 3)],
             'is_correct' => fake()->boolean(),

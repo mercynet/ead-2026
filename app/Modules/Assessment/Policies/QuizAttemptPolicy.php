@@ -10,7 +10,7 @@ class QuizAttemptPolicy
     public function create(User $user, ?Tenant $tenant = null): bool
     {
         if ($user->isDeveloper()) {
-            return $user->getAllPermissions()->contains('name', 'assessment.attempts.view');
+            return $user->getAllPermissions()->contains('name', 'assessment.attempts.create');
         }
 
         if ($tenant === null) {
@@ -18,7 +18,7 @@ class QuizAttemptPolicy
         }
 
         return $user->belongsToTenant($tenant)
-            && $user->getAllPermissions()->contains('name', 'assessment.attempts.view');
+            && $user->getAllPermissions()->contains('name', 'assessment.attempts.create');
     }
 
     public function view(User $user, ?Tenant $tenant = null): bool

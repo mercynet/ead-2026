@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-07-07
+last-updated: 2026-07-11
 ---
 
 # Tasks — Catalog & Learning
@@ -29,6 +29,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `DELETE /courses/{id}`.
 - [x] `GET /courses/{id}/enrollment`.
 - [x] `POST /enrollments` (matrícula manual).
+- [x] Matrícula manual **gratuita** por instrutor quando o tenant habilita `learning.enrollments.manual_free_by_instructor` em `tenant_customizations.published_settings`, com auditoria via `created_by_instructor_id`.
+- [x] Delta de aprovação entregue: `learning.enrollments.manual_free_requires_approval` faz a matrícula manual gratuita por instrutor nascer `pending` em vez de `active`.
 - [x] `GET/PATCH/DELETE /enrollments` (CRUD).
 - [x] `GET /lessons/{id}`.
 - [x] `POST /lessons/{id}/progress`.
@@ -42,12 +44,19 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `MaterialDownload` base: model + migration + `POST /courses/{courseId}/materials/{materialId}/downloads` + `MaterialDownloadedEvent`.
 - [x] `MaterialStats` rollup/counters sobre `MaterialDownload`.
 - [x] `POST /courses/{courseId}/materials/{materialId}/downloads` devolve URL temporária de download (sem proxy binário).
+- [x] **P0.2 (auditoria 2026-07-11):** hardening de `file_path` de material — prefixo
+  `tenants/{tenant_id}/` + anti-traversal no FormRequest; revalidação + allowlist de disk na
+  geração da URL assinada (defesa em profundidade); URL gerada antes de registrar download.
+- [x] `POST /courses/{id}/ratings` (student-only para curso ativo/publicado, com rollup em `RatingStats`).
+- [x] `POST /lessons/{id}/ratings` (student-only para aula acessível/ativa, com rollup em `RatingStats`).
+- [x] Ranking por tenant para `RatingStats` exposto no catálogo de cursos via `GET /api/v1/learning/catalog/courses?sort=top_rated`.
 - [x] Pre-signed URLs para `LessonMedia` `internal`/`s3` no `GET /lessons/{id}`.
 - [x] Fechar contrato de providers externos de `LessonMedia` (ex.: Vimeo/embed) no mesmo envelope de leitura.
+- [x] Definir subtipos/contrato avançado de `LessonMedia` (YouTube/Vimeo/AWS via `s3`) junto de `LessonMediaProgress` e `ProgressStrategy`.
 
 ## In Progress
 
-- [ ] Definir subtipos/contrato avançado de `LessonMedia` (YouTube/Vimeo/AWS) junto de `LessonMediaProgress` e `ProgressStrategy`.
+- [ ] Registrar o espelho financeiro das matrículas manuais/gratuitas a partir de `EnrollmentCreatedEvent`.
 
 ## Pending
 
@@ -85,13 +94,14 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] Regras de acesso a curso/aula devem consumir a matrícula corrente (`pending|active`) sem ambiguidade com histórico.
 
 ### Media & Ratings
-- [ ] `LessonView` (estatísticas de replay) + `LessonViewedEvent`.
-- [ ] `Rating` / `RatingStats` (1-5 estrelas, like/dislike, rollup).
-- [ ] `LessonMedia` / `LessonMediaProgress` + `ProgressStrategy` configurável.
+- [x] `LessonView` (estatísticas de replay) + `LessonViewedEvent`.
+- [x] `Rating` / `RatingStats` para **Course** (1-5 estrelas, like/dislike, rollup, student-only, update own).
+- [x] `Rating` / `RatingStats` para **Lesson** (1-5 estrelas, like/dislike, rollup, student-only, update own).
+- [x] `LessonMedia` / `LessonMediaProgress` + `ProgressStrategy` configurável.
 
 ### Eventos
-- [ ] Consumir `OrderPaidEvent` (Financial) para matrícula automática via `EnrollService`.
-- [ ] Disparar `EnrollmentCreated`.
+- [x] Consumir `OrderPaidEvent` (Financial) para matrícula automática via `EnrollService`.
+- [x] Disparar `EnrollmentCreated`.
 
 ### Reuso eadIA (a importar — ver ADR-001)
 > **Curso-core revisado (2026-06-13):** ead2026 já é mais rico que o eadIA em `courses`/`lessons`
@@ -102,9 +112,9 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] **i18n traduzível** em `title`/`description`/`short_description` de Course/Module/Lesson/Category (JSON por locale, **com fallback**).
 - [ ] **`is_fifo`** (sequência linear) no curso.
 - [ ] **`meta_title`/`meta_description`** (JSON, SEO) — para a área Home/landing.
-- [ ] **Lesson media avançado** (`LessonMediaProgress`): subtypes YouTube/Vimeo/AWS, `progress_strategy` (80%/full/manual/time_based), `MediaEmbedService`. Usar `medialibrary` p/ uploads.
-- [ ] **Matrícula manual por instrutor**: config tenant (`instructor_can_create_free_enrollments`, `..._mark_external_payment`, `..._requires_approval`), `enrollment_type`/`payment_type`/`created_by_instructor_id`.
-- [ ] **Ratings** (`Rating` + `RatingStats`, polimórfico curso/aula, rollup) e **Materials** (`CourseMaterial`/`MaterialDownload`/`MaterialStats` via medialibrary).
+- [x] **Lesson media avançado** (`LessonMediaProgress`): subtypes YouTube/Vimeo/AWS (`provider=s3`), `progress_strategy` (80%/full/manual/time_based), contrato normalizado de `provider_config`/`progress_config`. Upload real/`MediaEmbedService` continuam fora deste slice.
+- [x] **Matrícula manual por instrutor (delta restante)**: `POST /enrollments` agora aceita `billing_type=external` para instrutor em curso pago, persiste o marcador, cria a matrícula como `pending` e preserva `created_by_instructor_id`; curso grátis com `external` retorna `422`.
+- [ ] **Ratings** (`Rating` + `RatingStats`) — delta restante: ranking por tenant; **Materials** (`CourseMaterial`/`MaterialDownload`/`MaterialStats` via medialibrary).
 
 ## Needs Review
 

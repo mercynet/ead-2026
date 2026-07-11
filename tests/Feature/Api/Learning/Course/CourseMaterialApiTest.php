@@ -83,3 +83,31 @@ it('returns 422 for an invalid course material payload', function (): void {
         'validation_error'
     );
 });
+
+it('rejects a material file path outside the current tenant folder', function (string $filePathTemplate): void {
+    $tenantA = makeTenant(['domain' => 'tenant-a.local']);
+    $tenantB = makeTenant(['domain' => 'tenant-b.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenantA);
+    $course = makeCourseForTenant($tenantA);
+
+    $filePath = str_replace(
+        ['{tenantA}', '{tenantB}'],
+        [(string) $tenantA->id, (string) $tenantB->id],
+        $filePathTemplate,
+    );
+
+    assertApiErrorEnvelope(
+        $this->postJson("/api/v1/learning/courses/{$course->id}/materials", [
+            'file_path' => $filePath,
+        ], $headers),
+        422,
+        'validation_error'
+    );
+
+    $this->assertDatabaseMissing('course_materials', ['file_path' => $filePath]);
+})->with([
+    'other tenant prefix' => 'tenants/{tenantB}/materials/leak.pdf',
+    'path traversal' => 'tenants/{tenantA}/../{tenantB}/materials/leak.pdf',
+    'backslash segment' => 'tenants/{tenantA}/materials\\..\\leak.pdf',
+    'arbitrary bucket key' => 'shared/materials/leak.pdf',
+]);

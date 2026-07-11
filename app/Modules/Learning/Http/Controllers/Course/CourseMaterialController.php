@@ -59,11 +59,11 @@ class CourseMaterialController extends Controller
             throw AccessDeniedException::make('course', $course->id);
         }
 
+        $downloadUrl = $this->generateCourseMaterialDownloadUrlAction->handle($courseMaterial);
         $download = $this->storeMaterialDownloadAction->handle($context, $course, $courseMaterial, [
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
-        $downloadUrl = $this->generateCourseMaterialDownloadUrlAction->handle($courseMaterial);
 
         return new MaterialDownloadResource(
             $download,

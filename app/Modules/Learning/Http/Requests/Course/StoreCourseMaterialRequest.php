@@ -2,6 +2,7 @@
 
 namespace App\Modules\Learning\Http\Requests\Course;
 
+use App\Modules\Core\Models\Tenant;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCourseMaterialRequest extends FormRequest
@@ -13,8 +14,17 @@ class StoreCourseMaterialRequest extends FormRequest
 
     public function rules(): array
     {
+        $tenant = app(Tenant::class);
+
         return [
-            'file_path' => ['required', 'string', 'max:2048'],
+            'file_path' => [
+                'required',
+                'string',
+                'max:2048',
+                'starts_with:tenants/'.$tenant->id.'/',
+                'not_regex:/\.\./',
+                'not_regex:/\\\\/',
+            ],
         ];
     }
 
@@ -24,6 +34,8 @@ class StoreCourseMaterialRequest extends FormRequest
             'file_path.required' => 'Material file path is required.',
             'file_path.string' => 'Material file path must be a string.',
             'file_path.max' => 'Material file path must not exceed 2048 characters.',
+            'file_path.starts_with' => 'Material file path must stay inside the current tenant folder.',
+            'file_path.not_regex' => 'Material file path contains invalid segments.',
         ];
     }
 

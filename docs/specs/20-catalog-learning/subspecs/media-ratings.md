@@ -2,7 +2,7 @@
 domain: catalog-learning
 parent: ../spec.md
 resource: media-ratings
-last-reviewed: 2026-07-07
+last-reviewed: 2026-07-09
 ---
 
 # Media, Materials & Ratings
@@ -56,6 +56,11 @@ rating_stats             // cache agregado por curso (média, total, distribuiç
   `url_kind` para remover ambiguidade: `player` (Vimeo/YouTube/embed) ou `direct` quando houver URL
   externa simples. `embed` pode informar `metadata.player_url`; `youtube`/`vimeo` podem resolver a
   player URL canônica a partir de `provider_ref`.
+- O contrato de leitura também expõe `provider_config` normalizado sem esconder `metadata`:
+  `youtube`/`vimeo` devolvem `video_id` (= `provider_ref`) e opcional `player_url`; `embed`
+  devolve `player_url`; `internal`/`s3` devolvem `storage_path` e opcional `storage_disk`.
+- `ProgressStrategy::time_based` **não** ganhou coluna dedicada neste slice: o limiar canônico
+  continua em `metadata.required_seconds`, e o envelope de leitura o expõe em `progress_config`.
 - Múltiplos provedores começam como strings validadas no domínio; enum dedicado entra quando houver
   adapter/provider real.
 - Integrações devolvem IDs; a camada Laravel envelopa em Player URL configurável (chaves globais
@@ -78,22 +83,34 @@ rating_stats             // cache agregado por curso (média, total, distribuiç
 ### Ratings
 
 - Alunos avaliam cursos e aulas (1-5 estrelas) + like/dislike.
+- O slice atual expõe `POST /api/v1/learning/courses/{courseId}/ratings` e `POST /api/v1/learning/lessons/{lessonId}/ratings` apenas para **student** autenticado do tenant atual.
+- Curso precisa estar `published` + `is_active=true`; se for pago, exige matrícula ativa para avaliar.
+- A avaliação é **own** por `tenant_id + user_id + rateable_type + rateable_id`: novo POST cria; POST subsequente atualiza o mesmo registro.
+- O contrato público do endpoint de curso expõe `course_id`, `stars`, `reaction` e bloco `stats`; o detalhe polimórfico fica interno.
 - Sistema faz rollup das notas em cache `RatingStats` (média, total, distribuição) e ranking por tenant.
 
 ## Endpoints
 
 - `GET /api/v1/learning/lessons/{id}` resolve a mídia ativa da aula e só a expõe quando
-  `canAccessLesson()` permitir.
+  `canAccessLesson()` permitir. Quando o acesso é permitido, o endpoint também grava um
+  `lesson_views` por requisição e dispara `LessonViewedEvent`.
 - `POST /api/v1/learning/lessons/{lessonId}/media` cria mídia da aula para instrutor/admin no
   tenant atual; `sort_order` default = fim da fila.
 - `PATCH /api/v1/learning/lessons/{lessonId}/media/{mediaId}` atualiza payload da mídia no tenant
   atual.
 - `DELETE /api/v1/learning/lessons/{lessonId}/media/{mediaId}` remove a mídia da aula no tenant atual.
 - `POST /api/v1/learning/courses/{courseId}/materials` cria o registro base de material extra do
-  curso no tenant atual.
+  curso no tenant atual. **Hardening de `file_path`** (mesmo padrão do `storage_path` de lesson
+  media): obrigatório prefixo `tenants/{tenant_id}/` do tenant atual, sem `..` nem `\` (422).
 - `POST /api/v1/learning/courses/{courseId}/materials/{materialId}/downloads` registra um download
   granular do material para o usuário autenticado no tenant atual e devolve a URL temporária de
-  download.
+  download. Defesa em profundidade na geração da URL: allowlist de disk (`local`/`s3`) e
+  revalidação do `file_path` persistido contra o tenant do material (charset + prefixo +
+  anti-traversal); path inválido → 422 **sem** registrar download.
+- `POST /api/v1/learning/courses/{courseId}/ratings` cria/atualiza a avaliação própria do aluno para
+  o curso atual e devolve o rating persistido junto das stats agregadas do curso.
+- `POST /api/v1/learning/lessons/{lessonId}/ratings` cria/atualiza a avaliação própria do aluno para
+  a aula atual e devolve o rating persistido junto das stats agregadas da aula.
 
 ## Permissions
 
@@ -102,6 +119,9 @@ autenticação do aluno (own).
 
 ## Notes
 
-- `LessonView` e `Rating`/`RatingStats` seguem **pendentes** (ver `../tasks.md`).
+- `Rating`/`RatingStats` de **Course** e **Lesson** estão entregues; falta o delta de ranking por
+  tenant (ver `../tasks.md`). O ranking público por enquanto só é exposto no catálogo de cursos
+  via `GET /api/v1/learning/catalog/courses?sort=top_rated`; lessons seguem sem superfície
+  pública de ranking.
 - Pre-signed URL de `LessonMedia` segue como próximo delta; materiais já devolvem URL temporária
   no endpoint de download.

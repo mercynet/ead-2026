@@ -148,6 +148,38 @@ it('returns 401 without authentication when registering a material download', fu
         ->assertUnauthorized();
 });
 
+it('fails safe when a persisted material file path points outside the tenant folder', function (string $filePathTemplate): void {
+    $tenantA = makeTenant(['domain' => 'tenant-a.local']);
+    $tenantB = makeTenant(['domain' => 'tenant-b.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenantA);
+    $course = Course::factory()->for($tenantA)->create([
+        'price_cents' => 0,
+        'status' => 'published',
+    ]);
+
+    $filePath = str_replace(
+        ['{tenantA}', '{tenantB}'],
+        [(string) $tenantA->id, (string) $tenantB->id],
+        $filePathTemplate,
+    );
+
+    $material = CourseMaterial::factory()->create([
+        'course_id' => $course->id,
+        'tenant_id' => $tenantA->id,
+        'file_path' => $filePath,
+    ]);
+
+    $response = $this->postJson("/api/v1/learning/courses/{$course->id}/materials/{$material->id}/downloads", [], $headers);
+
+    $response->assertStatus(422);
+
+    expect(MaterialDownload::query()->where('course_material_id', $material->id)->exists())->toBeFalse();
+})->with([
+    'other tenant prefix' => 'tenants/{tenantB}/materials/secret.pdf',
+    'path traversal' => 'tenants/{tenantA}/../{tenantB}/materials/secret.pdf',
+    'arbitrary bucket key' => 'shared/materials/secret.pdf',
+]);
+
 it('returns 404 for a missing or foreign material when registering a download', function (): void {
     $tenantA = makeTenant(['domain' => 'tenant-a.local']);
     $tenantB = makeTenant(['domain' => 'tenant-b.local']);

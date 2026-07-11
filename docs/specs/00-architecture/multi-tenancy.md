@@ -1,7 +1,7 @@
 ---
 layer: architecture
 applies-to: all-domains
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-11
 ---
 
 # Multi-Tenancy
@@ -37,15 +37,18 @@ Exceção: `developer`/landlord tem `tenant_id` nulo e enxerga todos os tenants.
 
 ## Escopo em Queries
 
-Filtragem por tenant deve usar scope/trait, não `where('tenant_id', ...)` espalhado:
+Filtragem por tenant é **explícita** em cada query — `where('tenant_id', ...)` no call site.
+Não usamos global scope (trait `BelongsToTenant`): o tenant vive no `ApiContext` da request,
+e developer/jobs/console operam sem tenant — bypass implícito seria falha silenciosa.
+Decisão registrada em [ADR-004](decisions/004-tenant-scoping-where-explicito.md).
 
 ```php
-// preferir
-User::query()->tenant($tenant)->get();
-
-// evitar repetição manual
-User::query()->where('tenant_id', $tenant->id);
+Course::query()->where('tenant_id', $context->tenant->id)->get();
 ```
+
+Enforcement executável: `tests/Architecture/TenantScopingTest.php` (scan estático — arquivo
+que consulta model tenant-scoped precisa referenciar `tenant_id`, allowlist para exceções)
++ `tests/Architecture/TenantIsolationSmokeTest.php` (probe HTTP end-to-end).
 
 ## Stack de Middleware
 

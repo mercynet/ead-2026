@@ -6,43 +6,37 @@
 
 ## Sessão
 
-- 2026-07-07 — Learning fechou o envelope de leitura de `LessonMedia`: `internal`/`s3` com
-  `url` temporária + `url_expires_at`, `embed` com `metadata.player_url`, e `vimeo`/`youtube`
-  com player URL canônica via `provider_ref`. Validação recente verde nos 3 testes focados de
-  `LessonApiTest` para esses cenários; `pint` verde. A suite `Architecture` segue oscilando no
-  schema `testing` por problema pré-existente de reset/migração.
+- 2026-07-11 — **P0.1 e P0.2 fechados** (os dois itens críticos de
+  [`docs/auditoria-correcoes-2026-07-11-pending.md`](auditoria-correcoes-2026-07-11-pending.md),
+  ambos anotados ✅ no doc):
+  - **P0.1** (nota forjável): `questions_snapshot` congelado no servidor em `StartAttemptAction`
+    (migration nova no módulo Assessment); `PATCH /attempts/{id}` aceita só `question_id` +
+    `selected_options`; scoring 100% server-side; `maxPoints=0` morto; Resources sem gabarito;
+    fix bônus em `QuizAttemptPolicy::create` (checava `attempts.view`). `AttemptApiTest` reescrito.
+  - **P0.2** (cross-tenant via `file_path` de material): `StoreCourseMaterialRequest` com
+    `starts_with:tenants/{tenant_id}/` + anti-traversal; `GenerateCourseMaterialDownloadUrlAction`
+    revalida path persistido + allowlist de disk antes de assinar (422, sem registrar download).
+    Datasets negativos em `CourseMaterialApiTest`/`CourseMaterialDownloadApiTest`.
+  - Suites: Feature 291/291, Architecture 15/15, Unit 8/8, Pint ok. Specs + tasks.md atualizados.
+  - **Sem commit** — tudo no working tree da branch `harness/specs-foundation` (P0.1 e P0.2
+    deveriam ir em commits separados, conforme o doc de auditoria).
 
 ## Próximos passos (1-3)
 
-1. Próximo slice de Learning: definir subtipos/contrato avançado de `LessonMedia`
-   (`YouTube`/`Vimeo`/`AWS`) junto de `LessonMediaProgress` e `ProgressStrategy`.
-2. Depois desse delta, decidir se Learning continua em mídia/material ou se vale pivotar para
-   matrícula manual por instrutor.
-3. Se o harness oscilar de novo, manter validação **sequencial** no banco `testing` e repetir
-   `optimize:clear` + `migrate:fresh --env=testing` antes de tratar a falha como regressão real.
-
-## Para depois (parqueado — não é o foco agora)
-
-- **Auditor de supply chain `security:audit-deps`** — **ENTREGUE e endurecido localmente**;
-  sequência recente consolidada até `291cc31` (hooks religados automaticamente + correções no
-  veredito/fingerprint). Próxima etapa é política de tratamento do passivo, não implementação-base.
-- **Upgrade Laravel 13 / PHP 8.5** — task dedicada; hoje bloqueado por deps em `^12`
-  (scribe/boost/sanctum/larastan/spatie). Ver `ROADMAP.md` §"Meta de stack".
+1. Commitar P0.1 e P0.2 em commits separados ("não misturar itens num mesmo commit/task").
+2. Decisão de escopo de lançamento (piloto gratuito vs MVP pago) — bloqueia a ordem do resto.
+3. Se piloto: atacar P1 de Assessment (emissão de certificado + relação `Certificate::course()`
+   com coluna certa) + LGPD-03 (uniques tenant-scoped) + `LessonPolicy`/`QuizAttemptPolicy` restantes.
 
 ## Decisões abertas
 
-- **Qual severidade/ruído aceitável para o futuro gate bloqueante de deps?** Hoje `qa:deps` é só
-  report-only porque o repo ainda reprova no estado atual.
-- **Sub-decisão (C)** de `areas-surfaces.md`: estratégia anti-repetição de Resource (base
-  compartilhada + subclasses por área vs independentes). Decide ao implementar a 2ª área.
-- Dívidas pré-existentes: allowlist `ModuleBoundaryTest` → Events/Contracts; phpstan level 5
-  (~156 erros); findings/advisories de dependências pendentes.
-- A suite `Architecture` ainda sofre com reset/migração do schema `testing`; não confundir isso com
-  regressão automática do slice de `LessonMedia`.
-- Após o contrato avançado de `LessonMedia`, manter Learning em mídia/material ou pivotar para
-  matrícula manual por instrutor.
+- **Escopo de lançamento:** piloto gratuito controlado ou MVP comercial pago?
+- Para o caminho pago: gateway inicial, política de reembolso, modelo de reconciliação.
+- Dívidas transversais nos `tasks.md`/roadmap: teto RBAC, uniques tenant-scoped (LGPD-03), CI,
+  LGPD operacional (LGPD-01/02/05/07/08), PHPStan/advisories, fronteiras cross-module,
+  isolamento de tenant por convenção manual.
 
 ## Último commit
 
-- `41d9a6c`.
+- `ca8f9fb` (P0.1 + P0.2 ainda não commitados — working tree).
 - Branch `harness/specs-foundation`.

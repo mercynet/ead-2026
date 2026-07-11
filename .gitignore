@@ -25,3 +25,5 @@ Thumbs.db
 .scribe
 public/docs
 .slim/deepwork/
+/graphify-out
+__pycache__/

@@ -1,0 +1,51 @@
+# Dependências
+vendor/
+node_modules/
+
+# Laravel runtime
+storage/framework/
+storage/logs/
+storage/app/private/
+bootstrap/cache/
+
+# Build frontend
+public/build/
+public/hot
+public/storage
+resources/js/node_modules/
+
+# Testes e ferramentas
+coverage/
+.phpunit.cache/
+.phpunit.result.cache
+.phpstan.cache/
+.php-cs-fixer.cache
+.pest/
+rector.php.cache
+
+# IDE
+.idea/
+.vscode/
+
+# Dumps e artefatos
+*.log
+*.sql
+*.sql.gz
+*.dump
+*.zip
+*.tar
+*.tar.gz
+
+# Graphify local
+graphify-out/cache/
+graphify-out/cost.json
+
+# Instruções de ferramentas/agentes, não fazem parte do sistema
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.codex/
+.claude/
+.opencode/
+.cursor/
+.agents/

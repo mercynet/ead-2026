@@ -109,6 +109,14 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] Consumir `OrderPaidEvent` (Financial) para matrícula automática via `EnrollService`.
 - [x] Disparar `EnrollmentCreated`.
 
+### RBAC
+- [x] **Ownership `own` de instructor (2026-07-11)**: matriz do `rbac.md` implementada em
+  courses (update/publish/delete), modules (view/CRUD/reorder), lessons (CRUD/reorder) e lesson
+  media — via `instructor_id` do curso. Gates renomeados para sufixo `-check` (gate com nome de
+  permission era curto-circuitado pelo `Gate::before` do Spatie e a policy nunca rodava).
+  Superfícies de consumo (catalog, lesson view/progress) seguem tenant-wide por design.
+  Testes: `tests/Feature/Api/Learning/Rbac/InstructorOwnershipTest.php` (18).
+
 ### Reuso eadIA (a importar — ver ADR-001)
 > **Curso-core revisado (2026-06-13):** ead2026 já é mais rico que o eadIA em `courses`/`lessons`
 > (short_description, target_audience, requirements, level, order, thumbnail/banner, duration,

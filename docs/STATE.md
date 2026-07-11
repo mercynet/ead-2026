@@ -6,34 +6,29 @@
 
 ## Sessão
 
-- 2026-07-11 — **Emissão automática de certificado** implementada e pushada (`939f368`,
-  `harness/specs-foundation`): `CourseCompletedEvent` (Learning, transição do enrollment para
-  100% em `UpdateProgressAction`) → `IssueCertificateOnCourseCompletedListener` →
-  `IssueCertificateAction` (Assessment), honrando `certificate_*` do curso, idempotente por
-  enrollment. Fecha o restante do P1.3 da auditoria. Testes: 9 novos
-  (`CertificateIssuanceTest`, `CourseCompletedEventTest`); Feature 307/307, Architecture 15/15.
-  Gap registrado no `tasks.md` do Assessment: quiz aprovado **depois** do curso completo ainda
-  não engatilha emissão (trigger complementar pendente).
+- 2026-07-11 — Criada `.agents/skills/validate-ai-work/SKILL.md` para revisão independente de
+  entregas, diffs, commits e PRs produzidos por outra IA. Fonte canônica disponível a Claude Code,
+  Codex e OpenCode pelos symlinks de `skills`. Frontmatter e links passaram no validator; harness
+  geral continua bloqueado por path absoluto preexistente em `.claude/settings.json`.
+- 2026-07-11 — **E2E da emissão de certificado validado contra o app rodando** (`11dc10e`):
+  spec `tests/e2e-http/learning/lessons-progress.php`, 11/11 casos verdes via
+  `php artisan e2e:run learning/lessons-progress --base=http://localhost` (dentro do container a
+  porta é 80; `APP_URL` 8099 é o mapeamento do host). Achado incorporado ao spec: primeiro report
+  de progresso responde **201** (`wasRecentlyCreated`), updates seguintes 200. Banco dev migrado
+  (faltavam `questions_snapshot` + `course_id` de certificates).
 
 ## Próximos passos (1-3)
 
-1. **Decisão de escopo** (piloto gratuito vs MVP pago) + **decisão P1.6** (global scope de tenant
-   — discutir e registrar ADR via `create-adr`).
-2. P2 da auditoria (recompra pós-cancelamento, vazamento de drafts na landing, slug único)
-   e LGPD-03 (uniques tenant-scoped).
-3. Assessment pendentes menores: trigger complementar de emissão (quiz por último),
-   `CertificateIssuedEvent`, revoke, PDF — ver `docs/specs/30-assessment/tasks.md`.
+1. Revisar e, se desejado, commitar a nova skill e este checkpoint.
+2. Corrigir separadamente o path absoluto preexistente em `.claude/settings.json` para deixar
+   `python3 scripts/ai/validate-harness.py` totalmente verde.
+3. Retomar prioridades de domínio apontadas nos respectivos `tasks.md`.
 
 ## Decisões abertas
 
-- **Escopo de lançamento:** piloto gratuito controlado ou MVP comercial pago?
-- **P1.6:** adotar trait `BelongsToTenant` com global scope (+ `creating` hook) mantendo `where`
-  explícito como defesa em profundidade, ou só ampliar `TenantIsolationSmokeTest`? (ADR pendente.)
-- Caminho pago: gateway inicial, política de reembolso, modelo de reconciliação.
-- Dívidas transversais nos `tasks.md`/roadmap: teto RBAC, LGPD-03, CI, LGPD operacional,
-  PHPStan/advisories, fronteiras cross-module.
+- Corrigir agora ou depois o path absoluto preexistente em `.claude/settings.json`?
 
 ## Último commit
 
-- `939f368` (emissão automática de certificado) — branch `harness/specs-foundation`,
-  sincronizada com origin.
+- `11dc10e` (spec E2E lessons-progress) — branch `harness/specs-foundation`, sincronizada
+  com origin.

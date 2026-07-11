@@ -8,16 +8,28 @@
  * Money must travel as integer cents (see api-conventions.md). No DB required.
  */
 it('declares every monetary column as an integer type, never float/double/decimal', function (): void {
-    $migrationsDirectory = base_path('database/migrations');
+    $migrationDirectories = [
+        base_path('database/migrations'),
+        base_path('app/Modules/Financial/Database/Migrations'),
+        base_path('app/Modules/Learning/Database/Migrations'),
+        base_path('app/Modules/Assessment/Database/Migrations'),
+        base_path('app/Modules/Core/Database/Migrations'),
+    ];
 
     /** @var array<string> $phpFiles */
     $phpFiles = [];
 
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($migrationsDirectory));
+    foreach ($migrationDirectories as $migrationsDirectory) {
+        if (! is_dir($migrationsDirectory)) {
+            continue;
+        }
 
-    foreach ($iterator as $file) {
-        if ($file instanceof SplFileInfo && $file->getExtension() === 'php') {
-            $phpFiles[] = $file->getRealPath();
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($migrationsDirectory));
+
+        foreach ($iterator as $file) {
+            if ($file instanceof SplFileInfo && $file->getExtension() === 'php') {
+                $phpFiles[] = $file->getRealPath();
+            }
         }
     }
 

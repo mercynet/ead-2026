@@ -1,6 +1,6 @@
 ---
 domain: financial
-last-updated: 2026-06-10
+last-updated: 2026-07-09
 ---
 
 # Tasks — Financial
@@ -10,20 +10,21 @@ Critério de aceite = teste.
 
 ## Done
 
-- _(nenhuma)_
+- [x] Fundação mínima interna do ledger tenant→aluno: módulo `Financial` registrado, models +
+  migrations + factories de `Order`/`OrderItem`/`Payment`, `OrderPaidEvent` com payload primitivo e
+  guard monetário ampliado para migrations modulares.
+- [x] `OrderPaidEvent` + listener no Learning (`EnrollService`).
 
 ## In Progress
 
-- _(nenhuma)_
+- [ ] Registro financeiro espelho para matrículas gratuitas (auditoria/LTV).
 
 ## Pending
 
-- [ ] Models + migrations: `Order`, `OrderItem`, `PriceHistory`, `Payment`, `TenantPaymentGateway`.
+- [ ] Completar a fundação financeira restante: `PriceHistory` + `TenantPaymentGateway`.
 - [ ] `POST /financial/checkout` (calcula preço no servidor, gera Order + sessão do gateway).
 - [ ] `GET /financial/orders` e `GET /financial/orders/{id}`.
 - [ ] `POST /financial/webhooks/gateway/{gateway_slug}` (rota cega) + `ProcessPaymentWebhookJob`.
-- [ ] `OrderPaidEvent` + listener no Learning (`EnrollService`).
-- [ ] Registro financeiro espelho para matrículas gratuitas (auditoria/LTV).
 - [ ] Tradução PT-BR de exceções de gateway.
 
 ### Reuso eadIA + billing (ver ADR-001)

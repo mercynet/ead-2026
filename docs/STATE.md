@@ -6,29 +6,23 @@
 
 ## Sessão
 
-- 2026-07-11 — **P0 completo + P1 executável completo** (auditoria
-  [`docs/auditoria-correcoes-2026-07-11-pending.md`](auditoria-correcoes-2026-07-11-pending.md),
-  cada item anotado ✅/🟡 no doc). Tudo commitado e **pushado** em `harness/specs-foundation`:
-  - **P0.1** ✅ snapshot de quiz server-side (nota não é mais forjável; bug `maxPoints=0` morto).
-  - **P0.2** ✅ hardening de `file_path` de material (cross-tenant bloqueado).
-  - **P1.1** ✅ `access_days=0` = vitalício + presets validados.
-  - **P1.2** ✅ `QuizAttemptPolicy::create` (junto do P0.1).
-  - **P1.3** 🟡 parcial: coluna `course_id` em certificates + verify com título real;
-    **emissão automática pendente** (task no `tasks.md` do Assessment).
-  - **P1.4** ✅ `LessonPolicy` no padrão canônico (developer 403 resolvido; matriz RBAC consultada).
-  - **P1.5** ✅ denominador de progresso só published+active; `completed_at` estampado em 100%.
-  - **P1.6** ⏸ decisão de arquitetura (trait `BelongsToTenant` c/ global scope) — pede ADR/decisão.
-  - Extra: bump `spatie/laravel-medialibrary` 11.23.2 (CVE-2026-48557/48555, exigido pelo pre-push).
-  - Suites no fim: Feature 298/298, Architecture 15/15, Unit 8/8.
+- 2026-07-11 — **Emissão automática de certificado** implementada e pushada (`939f368`,
+  `harness/specs-foundation`): `CourseCompletedEvent` (Learning, transição do enrollment para
+  100% em `UpdateProgressAction`) → `IssueCertificateOnCourseCompletedListener` →
+  `IssueCertificateAction` (Assessment), honrando `certificate_*` do curso, idempotente por
+  enrollment. Fecha o restante do P1.3 da auditoria. Testes: 9 novos
+  (`CertificateIssuanceTest`, `CourseCompletedEventTest`); Feature 307/307, Architecture 15/15.
+  Gap registrado no `tasks.md` do Assessment: quiz aprovado **depois** do curso completo ainda
+  não engatilha emissão (trigger complementar pendente).
 
 ## Próximos passos (1-3)
 
-1. **Emissão automática de certificado** (`Certificate::create` via `CourseCompletedEvent` ao
-   atingir 100% + config `certificate_*` do curso) — pré-requisitos P1.3/P1.5 já fechados.
-2. **Decisão de escopo** (piloto gratuito vs MVP pago) + **decisão P1.6** (global scope de tenant
+1. **Decisão de escopo** (piloto gratuito vs MVP pago) + **decisão P1.6** (global scope de tenant
    — discutir e registrar ADR via `create-adr`).
-3. Depois: P2 da auditoria (recompra pós-cancelamento, vazamento de drafts na landing, slug único)
+2. P2 da auditoria (recompra pós-cancelamento, vazamento de drafts na landing, slug único)
    e LGPD-03 (uniques tenant-scoped).
+3. Assessment pendentes menores: trigger complementar de emissão (quiz por último),
+   `CertificateIssuedEvent`, revoke, PDF — ver `docs/specs/30-assessment/tasks.md`.
 
 ## Decisões abertas
 
@@ -41,4 +35,5 @@
 
 ## Último commit
 
-- `e750ac4` (P1.4) — branch `harness/specs-foundation`, sincronizada com origin.
+- `939f368` (emissão automática de certificado) — branch `harness/specs-foundation`,
+  sincronizada com origin.

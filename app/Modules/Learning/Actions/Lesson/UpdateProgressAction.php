@@ -92,9 +92,11 @@ class UpdateProgressAction
             return $progress->refresh();
         });
 
-        foreach ($pendingEvents as $pendingEvent) {
-            Event::dispatch($pendingEvent);
-        }
+        DB::afterCommit(function () use ($pendingEvents): void {
+            foreach ($pendingEvents as $pendingEvent) {
+                Event::dispatch($pendingEvent);
+            }
+        });
 
         return $progress;
     }

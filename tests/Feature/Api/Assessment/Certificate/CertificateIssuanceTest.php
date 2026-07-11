@@ -6,12 +6,17 @@ use App\Modules\Assessment\Models\Questionnaire;
 use App\Modules\Assessment\Models\QuizAttempt;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Learning\Actions\Lesson\UpdateProgressAction;
+use App\Modules\Learning\Events\CourseCompletedEvent;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
 use App\Modules\Learning\Models\Enrollment;
 use App\Modules\Learning\Models\Lesson;
+use App\Shared\Http\ApiContext;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
 
@@ -198,6 +203,57 @@ it('enforces a single certificate per enrollment at the database level', functio
         ->for($enrollment)
         ->create(['course_id' => $course->id, 'status' => 'issued'])
     )->toThrow(UniqueConstraintViolationException::class);
+});
+
+it('recovers from a unique constraint violation during issuance without throwing', function (): void {
+    $data = setupCertificateCourse();
+    extract($data);
+
+    $enrollment->update(['progress_percentage' => 100]);
+
+    Certificate::factory()
+        ->for($tenant)
+        ->for($student)
+        ->for($enrollment)
+        ->revoked()
+        ->create(['course_id' => $course->id]);
+
+    $result = app(IssueCertificateAction::class)->handle(
+        new CourseCompletedEvent($enrollment->refresh(), $student, $course)
+    );
+
+    expect($result)->toBeNull()
+        ->and(Certificate::query()->where('enrollment_id', $enrollment->id)->count())->toBe(1)
+        ->and(Certificate::query()->where('enrollment_id', $enrollment->id)->where('status', 'issued')->exists())->toBeFalse();
+});
+
+it('does not dispatch completion events when an outer transaction rolls back', function (): void {
+    $data = setupCertificateCourse();
+    extract($data);
+
+    Event::fake([CourseCompletedEvent::class]);
+
+    $context = new ApiContext($student, $tenant);
+
+    try {
+        DB::transaction(function () use ($context, $lesson): void {
+            app(UpdateProgressAction::class)->handle($context, $lesson, [
+                'time_spent_seconds' => 300,
+                'current_time_seconds' => 300,
+                'total_time_seconds' => 300,
+                'progress_percentage' => 100,
+                'is_completed' => true,
+            ]);
+
+            throw new RuntimeException('outer failure after progress update');
+        });
+    } catch (RuntimeException) {
+    }
+
+    Event::assertNotDispatched(CourseCompletedEvent::class);
+
+    expect($enrollment->refresh()->completed_at)->toBeNull()
+        ->and(Certificate::query()->where('enrollment_id', $enrollment->id)->exists())->toBeFalse();
 });
 
 it('keeps the progress request successful when certificate issuance fails', function (): void {

@@ -175,12 +175,6 @@ parameters:
 			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
 
 		-
-			message: '#^Caught class App\\Modules\\Assessment\\Actions\\Certificate\\UniqueConstraintViolationException not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Certificate\:\:\$certificate_number\.$#'
 			identifier: property.notFound
 			count: 2

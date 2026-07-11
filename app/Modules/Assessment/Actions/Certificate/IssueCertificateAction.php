@@ -6,6 +6,7 @@ use App\Modules\Assessment\Models\Certificate;
 use App\Modules\Assessment\Models\Questionnaire;
 use App\Modules\Assessment\Models\QuizAttempt;
 use App\Modules\Learning\Events\CourseCompletedEvent;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class IssueCertificateAction
 {

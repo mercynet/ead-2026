@@ -1,0 +1,1951 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 2
+			path: app/Console/Commands/E2eRunCommand.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\QuizAttempt\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/FinishAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\QuizAttempt\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/FinishAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$passing_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$quizable_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$quizable_type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$show_results\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$time_limit_minutes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Questionnaire\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$question\.$#'
+			identifier: property.notFound
+			count: 8
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/StartAttemptAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\QuizAttempt\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/SubmitAnswerAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\QuizAttempt\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/SubmitAnswerAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Http\\Request\:\:validated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Attempt/SubmitAnswerAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_min_progress\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_min_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_requires_quiz\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$progress_percentage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Certificate\:\:\$certificate_number\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Certificate/VerifyCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Certificate\:\:\$issued_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Certificate/VerifyCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Models\\Certificate\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Certificate/VerifyCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Certificate/VerifyCertificateAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Actions/Certificate/VerifyCertificateAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Http\\Request\:\:validated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Question/StoreQuestionAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Http\\Request\:\:validated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Question/UpdateQuestionAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Http\\Request\:\:validated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Questionnaire/StoreQuestionnaireAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Http\\Request\:\:validated\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Assessment/Actions/Questionnaire/UpdateQuestionnaireAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptAnswerResource\:\:\$answered_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptAnswerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptAnswerResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptAnswerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptAnswerResource\:\:\$is_correct\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptAnswerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptAnswerResource\:\:\$points_earned\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptAnswerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptAnswerResource\:\:\$quiz_attempt_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptAnswerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptAnswerResource\:\:\$selected_options\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptAnswerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$course_snapshot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$finished_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$module_snapshot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$passed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$questionnaire_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$questionnaire_snapshot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$time_spent_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\AttemptResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/AttemptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\CertificateResource\:\:\$certificate_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/CertificateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\CertificateResource\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Assessment/Http/Resources/CertificateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\CertificateResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/CertificateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\CertificateResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/CertificateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\CertificateResource\:\:\$issued_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/CertificateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\CertificateResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/CertificateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\CertificateResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/CertificateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$categories\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$explanation\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$instructor\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$options\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$points\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$question\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$instructor\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$passing_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$quizable_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$quizable_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$show_results\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$time_limit_minutes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Assessment\\Http\\Resources\\QuestionnaireResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Assessment/Http/Resources/QuestionnaireResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\Tenant\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Auth/LoginAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Auth/LoginAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Auth/LoginAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Auth/LoginAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Auth/LoginAction.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Laravel\\Sanctum\\PersonalAccessToken\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Modules/Core/Actions/Auth/LogoutAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$avatar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$bio\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$cpf\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$headline\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$linkedin_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$twitter_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Actions/Users/ShowUserAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Core/Actions/Users/UpdatePasswordAction.php
+
+		-
+			message: '#^Property App\\Modules\\Core\\Http\\Controllers\\UserController\:\:\$showUserAction is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Modules/Core/Http/Controllers/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$user_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Middleware/EnsureAreaAccess.php
+
+		-
+			message: '#^Variable \$tenant in PHPDoc tag @var does not exist\.$#'
+			identifier: varTag.variableNotFound
+			count: 1
+			path: app/Modules/Core/Http/Middleware/InjectApiContext.php
+
+		-
+			message: '#^Variable \$user in PHPDoc tag @var does not exist\.$#'
+			identifier: varTag.variableNotFound
+			count: 1
+			path: app/Modules/Core/Http/Middleware/InjectApiContext.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:\$avatar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:\$bio\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:\$headline\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:\$roles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Modules\\Core\\Http\\Resources\\Auth\\AuthUserResource\:\:getAllPermissions\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/Auth/AuthUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$avatar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$bio\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$cpf\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$headline\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$linkedin_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Http\\Resources\\UserResource\:\:\$twitter_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Core/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Core/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$user_type\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Modules/Core/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Lesson\:\:\$is_free\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Access/EvaluateCourseAccessAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Access/EvaluateCourseAccessAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$is_system\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Catalog/StoreCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Catalog/StoreCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$is_system\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$normalized_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\CourseMaterial\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/GenerateCourseMaterialDownloadUrlAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\CourseMaterial\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/GenerateCourseMaterialDownloadUrlAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$can_access\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/GetCourseModulesAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$can_access_paid_content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/GetCourseModulesAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/GetCourseModulesAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$progress\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/GetCourseModulesAction.php
+
+		-
+			message: '#^Parameter \#1 \$lesson of method App\\Modules\\Learning\\Actions\\Access\\EvaluateCourseAccessAction\:\:canAccessLesson\(\) expects App\\Modules\\Learning\\Models\\Lesson, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/Learning/Actions/Course/GetCourseModulesAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/PublishCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/PublishCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\CourseMaterial\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Course/SyncMaterialStatsAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\|App\\Modules\\Learning\\Models\\Lesson\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Learning/Actions/Course/SyncRatingStatsAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UnpublishCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$access_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$banner\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_enabled\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_min_progress\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_min_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_requires_quiz\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$duration_hours\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$is_featured\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$price_cents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$requirements\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$short_description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$target_audience\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$thumbnail\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$what_you_will_build\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$what_you_will_learn\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$access_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$course_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$price_cents\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Modules/Learning/Actions/Enrollment/StoreEnrollmentAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:manualFreeEnrollmentEnabled\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Enrollment/StoreEnrollmentAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:manualFreeEnrollmentRequiresApproval\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Enrollment/StoreEnrollmentAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/GetLessonAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMedia\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Learning/Actions/Lesson/ResolveLessonMediaUrlAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMedia\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/ResolveLessonMediaUrlAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMedia\:\:\$provider_ref\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/ResolveLessonMediaUrlAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMedia\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/ResolveLessonMediaUrlAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMedia\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/ResolveLessonMediaUrlAction.php
+
+		-
+			message: '#^Call to function method_exists\(\) with Illuminate\\Contracts\\Filesystem\\Filesystem and ''temporaryUrl'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/ResolveLessonMediaUrlAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/TrackLessonViewAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMedia\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMediaProgress\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonMediaProgress\:\:\$is_completed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonProgress\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonProgress\:\:\$progress_percentage\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: mixed$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Method App\\Modules\\Learning\\Actions\\Lesson\\UpdateProgressAction\:\:resolveLessonMedia\(\) should return App\\Modules\\Learning\\Models\\LessonMedia\|null but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Method App\\Modules\\Learning\\Actions\\Lesson\\UpdateProgressAction\:\:resolveLessonMedia\(\) should return App\\Modules\\Learning\\Models\\LessonMedia\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Offset ''current_time_seconds'' on array\{time_spent_seconds\: int, current_time_seconds\: int, total_time_seconds\: int, progress_percentage\: int, is_completed\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Offset ''is_completed'' on array\{time_spent_seconds\: int, current_time_seconds\: int, total_time_seconds\: int, progress_percentage\: int, is_completed\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Offset ''lesson_media_id'' on array\{time_spent_seconds\: int, current_time_seconds\: int, total_time_seconds\: int, progress_percentage\: int, is_completed\: bool\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Offset ''progress_percentage'' on array\{time_spent_seconds\: int, current_time_seconds\: int, total_time_seconds\: int, progress_percentage\: int, is_completed\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Offset ''time_spent_seconds'' on array\{time_spent_seconds\: int, current_time_seconds\: int, total_time_seconds\: int, progress_percentage\: int, is_completed\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Offset ''total_time_seconds'' on array\{time_spent_seconds\: int, current_time_seconds\: int, total_time_seconds\: int, progress_percentage\: int, is_completed\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Parameter \#3 \$course of class App\\Modules\\Learning\\Events\\CourseCompletedEvent constructor expects App\\Modules\\Learning\\Models\\Course, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and null will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>progress_percentage" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Modules/Learning/Actions/Lesson/UpdateProgressAction.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Controllers/Enrollment/EnrollmentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonProgress\:\:\$current_time_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Controllers/Lesson/LessonController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonProgress\:\:\$time_spent_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Controllers/Lesson/LessonController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Controllers/Lesson/LessonController.php
+
+		-
+			message: '#^Parameter \#1 \$lessonMedia of method App\\Modules\\Learning\\Actions\\Lesson\\ResolveLessonMediaUrlAction\:\:handle\(\) expects App\\Modules\\Learning\\Models\\LessonMedia, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/Learning/Http/Controllers/Lesson/LessonController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseMaterialResource\:\:\$course_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseMaterialResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseMaterialResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseMaterialResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseMaterialResource\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseMaterialResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseMaterialResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseMaterialResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseMaterialResource\:\:\$instructor_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseMaterialResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseMaterialResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseMaterialResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseModulesResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseModulesResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseModulesResource\:\:\$lessons\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseModulesResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseModulesResource\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseModulesResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseModulesResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseModulesResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$rateable\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$rateable_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$reaction\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$stars\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\CourseRatingResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/CourseRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$can_access\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$can_access_paid_content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$duration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$is_free\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$progress\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\LessonWithProgressResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/LessonWithProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\MaterialDownloadResource\:\:\$course_material_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/MaterialDownloadResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\MaterialDownloadResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/MaterialDownloadResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\MaterialDownloadResource\:\:\$downloaded_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/MaterialDownloadResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\MaterialDownloadResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/MaterialDownloadResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\MaterialDownloadResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/MaterialDownloadResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$average_stars\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$dislikes_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$five_stars\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$four_stars\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$last_rated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$likes_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$one_star\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$three_stars\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$total_ratings\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Course\\RatingStatsResource\:\:\$two_stars\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Course/RatingStatsResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$access_expires_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$billing_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$course_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$created_by_instructor_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$enrolled_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$progress_percentage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Modules\\Learning\\Http\\Resources\\Enrollment\\EnrollmentResource\:\:isActive\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Enrollment/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonDetailResource\:\:\$courseModule\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonDetailResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonDetailResource\:\:\$is_free\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonDetailResource\:\:\$media\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonDetailResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonDetailResource\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonDetailResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$duration_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$lesson_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$media_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$progress_strategy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$provider_ref\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonMediaResource\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$current_time_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$last_watched_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$lesson_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$progress_percentage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$started_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$time_spent_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:\$total_time_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonProgressResource\:\:isCompleted\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonProgressResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$rateable\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$rateable_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$reaction\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$stars\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Lesson\\LessonRatingResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Lesson/LessonRatingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Module\\ModuleResource\:\:\$course_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Module/ModuleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Module\\ModuleResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Module/ModuleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Module\\ModuleResource\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Module/ModuleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Http\\Resources\\Module\\ModuleResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Http/Resources/Module/ModuleResource.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Modules/Learning/Listeners/EnrollStudentFromOrderPaidListener.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/Category.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/Course.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$price_cents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/Course.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/Course.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$access_expires_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Models/Enrollment.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Models/Enrollment.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Lesson\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/Lesson.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Lesson\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/Lesson.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonProgress\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/LessonProgress.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\LessonProgress\:\:\$is_completed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Models/LessonProgress.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$is_system\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Modules/Learning/Policies/CategoryPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Learning/Policies/CategoryPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\CourseModule\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Learning/Policies/CourseModulePolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$instructor_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Policies/CoursePolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Modules/Learning/Policies/CoursePolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Learning/Policies/EnrollmentPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Learning/Policies/EnrollmentPolicy.php

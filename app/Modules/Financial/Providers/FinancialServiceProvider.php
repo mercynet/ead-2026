@@ -2,11 +2,17 @@
 
 namespace App\Modules\Financial\Providers;
 
+use App\Modules\Financial\Gateways\PaymentGatewayManager;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class FinancialServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->singleton(PaymentGatewayManager::class);
+    }
+
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');

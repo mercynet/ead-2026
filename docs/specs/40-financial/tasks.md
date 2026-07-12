@@ -14,6 +14,13 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   migrations + factories de `Order`/`OrderItem`/`Payment`, `OrderPaidEvent` com payload primitivo e
   guard monetário ampliado para migrations modulares.
 - [x] `OrderPaidEvent` + listener no Learning (`EnrollService`).
+- [x] **Resolução de gateway por tenant (cross-module via contrato).** `TenantGatewayResolver`
+  (Financial) + DTO `ResolvedGateway {adapter, credentials}` + exceção `GatewayResolutionException`.
+  Consome `Ecosystem\Contracts\TenantGatewayProvider` (impl no Ecosystem lê `Plugin`/`PluginActivation`/
+  `TenantPluginConfig`) — respeita a fronteira de módulos (só `Contracts`). Resolve adaptador + credencial
+  **atomicamente**, valida config na resolução, honra entitlement (ativação + config enabled), isola por
+  tenant; multi-gateway ativo logado. 7 testes (`TenantGatewayResolutionTest`). Fecha os findings 1/2/3b
+  do review externo (ver Needs Review).
 - [x] **Fundação de gateway sem lock-in, agnóstica de ledger (ADR-001 + ADR-003):** contrato
   `PaymentGatewayInterface` (`identifier/label/charge/validateConfiguration`) + DTOs `ChargeIntent`
   (intenção neutra: `amount_cents/currency/reference/description/metadata`) e `ChargeResult` +
@@ -44,7 +51,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 ### Reuso eadIA + billing (ver ADR-001)
 - [x] **`PaymentGatewayInterface`** (contrato + DTOs + registro de adaptadores) — portado/revisado do eadIA. Fundação que não trava em gateway. (ver Done)
 - [ ] **Config de instância do gateway = config de plugin (Ecosystem).** A credencial/config do tenant por gateway vive no store genérico de config-de-plugin do Ecosystem (gateway é um plugin como os outros), não em model financeiro dedicado. Depende do módulo Ecosystem existir. Ver Needs Review.
-- [ ] **Resolução do gateway ativo por tenant** — sobre a config-de-plugin acima: escolhe adaptador + credenciais atomicamente, valida config, honra entitlement (plugin ativo). Substitui o `forTenant`/`TenantPaymentGateway` descartado.
+- [x] **Resolução do gateway ativo por tenant** — `TenantGatewayResolver` (Financial) consome o contrato `Ecosystem\Contracts\TenantGatewayProvider` (fronteira, invariante 11), casa `slug→adaptador`, valida config, devolve `ResolvedGateway {adapter, credentials}` atômico; honra entitlement (`PluginActivation` ativa + `TenantPluginConfig` enabled). Substitui o `forTenant`/`TenantPaymentGateway` descartado. Ver Done.
 - [ ] **`PlatformPaymentGateway` (global, credenciais do Mozart) + resolução do lado Plataforma** — situação dev/admin→plataforma. Mesmo contrato/adaptadores; store de credenciais global. Ledger `PlatformOrder*` segue em task própria (ADR-003).
 - [ ] **`StripeGateway` via `laravel/cashier`** (1º adaptador; add Cashier nesta task — **precisa aprovar a dependência**). Cobre cartão/PIX/boleto BR + global. Registra-se no `PaymentGatewayManager` e serve os **dois** ledgers via contrato agnóstico.
 - [ ] **Gateways adicionais como plugins financeiros** (Mercado Pago, PagSeguro, PIX-nativo, Asaas) — cada um implementa `PaymentGatewayInterface`; tenant ativa via `50-ecosystem-plugins`. NÃO no MVP, mas o contrato já prevê.
@@ -61,16 +68,16 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   **Conflito de spec a convergir:** `40-financial/spec.md` (Entities) ainda lista `TenantPaymentGateway`
   e `50-ecosystem-plugins/spec.md` lista `TenantIntegration`/`PluginSetting` — colapsar em
   `TenantPluginConfig`/`PlatformPaymentGateway` nos slices de config.
-- **Requisitos carregados de review externo (2026-07-12), a amarrar na config-de-plugin do Ecosystem
-  (não valem pra fundação atual porque o alvo foi descartado, mas não podem se perder):**
-  1. **Segredos fora da serialização:** cast encriptado protege só o banco; o blob de config precisa de
-     `$hidden` + teste garantindo ausência em `toArray`/JSON/log.
-  2. **Adaptador + credencial atômicos na resolução:** resolver adaptador e credenciais como unidade
-     (value object ou `chargeForTenant()`), pra não casar adaptador com config de outro tenant/gateway.
-  3. **Validar config na persistência e na resolução** (`validateConfiguration`) — config incompleta não
-     pode chegar à cobrança.
-  4. **Troca de gateway default atômica:** transação + lock por tenant (ou unique parcial), senão corrida
-     deixa múltiplos defaults ou nenhum.
+- **Requisitos carregados de review externo (2026-07-12) — status:**
+  1. ✅ **Segredos fora da serialização:** `TenantPluginConfig.config` = `encrypted:array` + `$hidden`
+     (teste de encriptação em repouso + ausência em `toArray`).
+  2. ✅ **Adaptador + credencial atômicos na resolução:** `ResolvedGateway {adapter, credentials}` +
+     `TenantGatewayResolver` — nunca casa adaptador com config de outro tenant/gateway.
+  3. 🔶 **Validar config:** feito **na resolução** (`validateConfiguration` no resolver); falta **na
+     persistência** — entra com o endpoint de config do gateway.
+  4. ⏳ **Troca de gateway default atômica:** ainda não há marcador de default por tenant; multi-gateway
+     ativo é **logado** e resolve o mais recente. Marcador + troca atômica (transação/lock) quando a UI
+     suportar múltiplos gateways por tenant.
 
 ## Open Questions
 

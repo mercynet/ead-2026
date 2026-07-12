@@ -6,6 +6,16 @@
 
 ## Sessão
 
+- 2026-07-12 (cont.) — **Slice 5: resolução de gateway por tenant (cross-module via contrato).**
+  Ecosystem expõe `Contracts\TenantGatewayProvider` (+ DTO `ActiveGateway`), impl
+  `EcosystemTenantGatewayProvider` (lê `Plugin`/`PluginActivation`/`TenantPluginConfig`). Financial:
+  `TenantGatewayResolver` consome o contrato (fronteira invariante 11), casa `slug→adaptador`, valida
+  config, devolve `ResolvedGateway {adapter, credentials}` **atômico**; honra entitlement; isola por
+  tenant; multi-gateway logado (default por tenant adiado). 7 testes (`TenantGatewayResolutionTest`),
+  pint ok, larastan `[OK]`, Architecture 16/16 (fronteira + tenant scoping). **Fecha findings 1/2/3b do
+  review externo**; restam 3a (validar na persistência — com endpoint de config) e 4 (default atômico).
+  Commitado. Falta do caminho pago: slice 6 (`PlatformPaymentGateway`), 1º adaptador real
+  (StripeGateway — **precisa aprovar dep do SDK/HTTP**), `POST /financial/checkout`.
 - 2026-07-12 (cont.) — **Ecosystem slices 2+3: `PluginActivation` + `TenantPluginConfig`.**
   `PluginActivation` (entitlement por tenant: único tenant+plugin, `status`/`activated_at`, scope
   `active`). `TenantPluginConfig` (config de instância genérica: `config` **`encrypted:array` +

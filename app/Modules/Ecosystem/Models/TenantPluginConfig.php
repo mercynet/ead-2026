@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $plugin_id
  * @property array<string, mixed> $config
  * @property bool $enabled
+ * @property-read Plugin $plugin
  */
 class TenantPluginConfig extends Model
 {

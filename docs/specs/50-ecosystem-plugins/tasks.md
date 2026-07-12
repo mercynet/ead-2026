@@ -28,6 +28,10 @@ core gated por flag + config por tenant; gateway é plugin). Cada task = 1 slice
   tenant+plugin (único), `config` **`encrypted:array` + `$hidden`** (segredos fora de serialização —
   fecha o finding Alta do review), `enabled`, `credentials()`/`get()`. 3 testes (encriptação em repouso
   + `$hidden`, unicidade, scope enabled). Falta: contrato de schema em código + validação na persistência.
+- [x] **Fronteira `Contracts\TenantGatewayProvider` (+ DTO `ActiveGateway`) + impl `EcosystemTenantGatewayProvider`.**
+  Resolve o gateway ativo/configurado do tenant (join `Plugin` gateway+published × `PluginActivation` ativa
+  × `TenantPluginConfig` enabled) sem vazar models; consumido pelo `TenantGatewayResolver` do Financial.
+  Bind no `EcosystemServiceProvider`.
 
 ## In Progress
 

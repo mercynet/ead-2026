@@ -1,16 +1,25 @@
 ---
 domain: ecosystem-plugins
-last-updated: 2026-06-10
+last-updated: 2026-07-12
 ---
 
 # Tasks — Ecosystem & Plugins
 
-Domínio **não iniciado**. Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model).
-Critério de aceite = teste.
+Domínio **em fundação** (catálogo `Plugin`). Modelo de plugin decidido em **ADR-005** (capability do
+core gated por flag + config por tenant; gateway é plugin). Cada task = 1 slice fino
+(≤ 1 endpoint ou 1 migration+model). Critério de aceite = teste.
 
 ## Done
 
-- _(nenhuma)_
+- [x] **Módulo Ecosystem + catálogo `Plugin` normalizado (ADR-005).** Model/migration/factory de
+  `Plugin` (âmbito Mzrt, global): `slug`/`capability_key` únicos, `kind` (feature|gateway), `status`,
+  `visibility` (public|internal), `tier`, `is_curated`, `directory_name` (nullable, reservado a código
+  futuro em `app/Plugins/`), descrições/logo/locale/URLs. Scopes `published`/`visibleToTenants`;
+  helpers `isGateway`/`gatewaySlug` (gateway casa com adaptador do `PaymentGatewayManager`). Provider
+  registrado em `bootstrap/providers.php`. **Scaffold pré-spec descartado** (4 migrations
+  `2026_02_21_1830xx`: `plugins` PK=`name` + design filesystem + billing no plugin — órfão, contra
+  ADR-003). 4 testes (`PluginCatalogTest`). Categorias (pivô `category_plugin`),
+  `PluginVersion`/`PluginPricing`/`PluginFeature` seguem em slices próprios.
 
 ## In Progress
 
@@ -19,7 +28,8 @@ Critério de aceite = teste.
 ## Pending
 
 ### Catálogo (marketplace)
-- [ ] Models + migrations: `Plugin` (+`is_curated`), `PluginVersion`, `PluginPricing`, `PluginFeature`, `PluginPermission`.
+- [x] `Plugin` (catálogo normalizado + `capability_key` + `is_curated`) — ver Done.
+- [ ] Models + migrations restantes do catálogo: `PluginVersion`, `PluginPricing`, `PluginFeature`, `PluginPermission`.
 - [ ] Categorias: **reusar tabela `categories`** (`is_system`) + pivô `category_plugin` (igual cursos, ADR-002). **Sem** `plugin_categories`/`PluginSubgroup`.
 - [ ] Models + migrations: `PluginRating` + `PluginRatingAggregate` (rating de plugin → alimenta Featured).
 - [ ] `GET /ecosystem/marketplace/plugins` (vitrine: categorias recursivas + filtros Instalados/Disponíveis/Free/Premium/Novos/Featured/Recomendados/Escolhidos-por-mim).
@@ -35,7 +45,8 @@ Critério de aceite = teste.
 - [ ] `DELETE /ecosystem/marketplace/subscriptions/{id}` (desativar; retém config/segredos por padrão).
 - [ ] `GET /ecosystem/admin/subscriptions` (dashboard developer: uso free + pago, LGPD).
 - [ ] `POST /ecosystem/admin/grants` (comp por tenant: override de preço / free por janela).
-- [ ] Config 2 camadas: `PluginSetting` (não-secreto) × `TenantIntegration` (`encrypted:json`, segredos).
+- [ ] **`PluginActivation`** (entitlement por tenant: plugin ativo/desativado, `activated_at`) — gate de disponibilidade de capability.
+- [ ] **`TenantPluginConfig` genérico** (um store por tenant+plugin; `config` blob `encrypted:array` + `$hidden`; `enabled`) — schema declarado **em código** pelo plugin, validado na persistência (ADR-005). **Supersede** o split `PluginSetting`×`TenantIntegration`.
 - [ ] Cron `SuspendOverduePluginSubscriptionsAction`.
 - [ ] Invalidação de cache de features por tenant ao ativar/desativar plugin.
 - [ ] Rate-limit dinâmico por tier de subscription.
@@ -55,7 +66,11 @@ Critério de aceite = teste.
 
 ## Needs Review
 
-- _(nenhuma)_
+- **Modelo de plugin fixado em [ADR-005]:** capability do core gated por flag; gateway é plugin;
+  config de instância = `TenantPluginConfig` genérico (blob encriptado, schema-em-código); gateway da
+  plataforma dedicado (`PlatformPaymentGateway`); sem `laravel/cashier`. A `spec.md` (Entities) ainda
+  lista `PluginSetting`/`TenantIntegration` e discovery filesystem — **convergir para `TenantPluginConfig`
+  + capability gating** nos slices de config (código vence prosa).
 
 ## Open Questions
 

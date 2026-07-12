@@ -6,6 +6,19 @@
 
 ## Sessão
 
+- 2026-07-12 (cont.) — **ADR-005 + fundação do módulo Ecosystem (slice 1).** Decidido (imagens do
+  sistema Filament antigo + specs): plugin = **capability do core gated por flag + config por tenant**
+  (não código dinâmico; `app/Plugins/` adiado), gateway **é plugin**, gateway da plataforma **dedicado**
+  (`PlatformPaymentGateway`), schema de config **em código** validado na borda, **sem `laravel/cashier`**
+  (multi-gateway). Escrito `ADR-005` (supersede o ponto Cashier do ADR-001). Slice 1: módulo
+  `Ecosystem` + catálogo `Plugin` normalizado (`slug`/`capability_key` únicos, `kind`, `status`,
+  `visibility`, `tier`, `is_curated`, `directory_name` nullable), provider registrado. **Scaffold
+  pré-spec descartado** (4 migrations `2026_02_21_1830xx` órfãs, design filesystem). 4 testes
+  (`PluginCatalogTest`), pint ok, larastan `[OK]`, Architecture 16/16. **Ainda não commitado.**
+  Sequência: 2) `PluginActivation` (entitlement) → 3) `TenantPluginConfig` (blob encriptado + `$hidden`)
+  → 4) contrato de schema + validação → 5) resolução de gateway (adapter+cred atômico) → 6)
+  `PlatformPaymentGateway`.
+
 - 2026-07-12 — **Fundação de gateway agnóstica de ledger, ESCOPO REDUZIDO após decisão de arquitetura
   (MVP pago, passo 1 destravado).** Commitável: contrato `PaymentGatewayInterface`
   (`identifier/label/charge/validateConfiguration`) + DTOs `ChargeIntent` (intenção neutra) e

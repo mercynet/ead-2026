@@ -53,14 +53,14 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Needs Review
 
-- **Config de instância de gateway = config de plugin genérica (decisão 2026-07-12).** Gateway é um
-  plugin como os outros: dois âmbitos (catálogo do dev/Mzrt × instância do tenant). A credencial/config
-  do tenant **não** vive em model financeiro dedicado — vai no store genérico de config-de-plugin do
-  **Ecosystem** (ainda não implementado). Por isso `TenantPaymentGateway` foi descartado desta fundação.
+- **Config de instância de gateway = config de plugin genérica — fixado em [ADR-005].** Gateway é um
+  plugin (`kind='gateway'`, `capability_key='gateway.<slug>'`); a credencial/config do tenant vive no
+  store genérico `TenantPluginConfig` do **Ecosystem** (catálogo `Plugin` já criado), **não** em model
+  financeiro dedicado — por isso `TenantPaymentGateway` foi descartado. Gateway da plataforma (Mzrt) =
+  `PlatformPaymentGateway` dedicado. Segredos = **blob inteiro encriptado** (`encrypted:array`).
   **Conflito de spec a convergir:** `40-financial/spec.md` (Entities) ainda lista `TenantPaymentGateway`
-  e `50-ecosystem-plugins/spec.md` lista `TenantIntegration`/`PluginSetting` — os três devem colapsar no
-  store genérico. Segredos = **blob inteiro encriptado** (`encrypted:array`). Merece ADR quando o
-  Ecosystem entrar no roadmap.
+  e `50-ecosystem-plugins/spec.md` lista `TenantIntegration`/`PluginSetting` — colapsar em
+  `TenantPluginConfig`/`PlatformPaymentGateway` nos slices de config.
 - **Requisitos carregados de review externo (2026-07-12), a amarrar na config-de-plugin do Ecosystem
   (não valem pra fundação atual porque o alvo foi descartado, mas não podem se perder):**
   1. **Segredos fora da serialização:** cast encriptado protege só o banco; o blob de config precisa de

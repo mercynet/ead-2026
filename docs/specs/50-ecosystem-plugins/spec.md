@@ -38,6 +38,13 @@ Recursos detalhados nas subspecs:
 
 ## Entities
 
+> **Modelo de plugin fixado em [ADR-005](../00-architecture/decisions/005-plugins-capability-gated-gateway-como-plugin.md):**
+> plugin = capability do core gated por flag + config por tenant (não código carregado em runtime;
+> `app/Plugins/` reservado a extensão externa futura). Config de instância = **`TenantPluginConfig`
+> genérico** (blob `encrypted:array`, schema declarado em código), que **supersede** o split
+> `PluginSetting`×`TenantIntegration` abaixo. Gateway é plugin (`kind='gateway'`); gateway da
+> plataforma é dedicado (`PlatformPaymentGateway`, no Financial). Tabela abaixo será convergida.
+
 | Model | Papel |
 |-------|-------|
 | `Plugin` | Raiz de marketplace (name, slug, descrições, logo, screenshots). |

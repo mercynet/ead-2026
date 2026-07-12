@@ -6,6 +6,14 @@
 
 ## Sessão
 
+- 2026-07-12 (cont.) — **Slice 6: `PlatformPaymentGateway` (gateway das vendas do Mzrt).** Model global
+  (config `encrypted:array` + `$hidden`, `is_active`/`is_default`, `makeDefault()` **transacional** —
+  fecha finding 4 no escopo plataforma) + factory + `PlatformGatewayResolver` (devolve `ResolvedGateway`
+  atômico, valida config, mesmo registro de adaptadores). 6 testes. **Fundação de gateway completa nos
+  dois âmbitos** (tenant→aluno via plugin/contrato; Mzrt→tenant dedicado). Full suite **381 passed**,
+  larastan `[OK]`, Architecture 16/16. Commitado. **Falta pro caminho pago:** 1º adaptador real
+  (StripeGateway — **precisa aprovar dep: Stripe SDK vs HTTP puro**), `POST /financial/checkout`,
+  webhook cego, ledger `PlatformOrder*`, endpoints de config/ativação de plugin.
 - 2026-07-12 (cont.) — **Slice 5: resolução de gateway por tenant (cross-module via contrato).**
   Ecosystem expõe `Contracts\TenantGatewayProvider` (+ DTO `ActiveGateway`), impl
   `EcosystemTenantGatewayProvider` (lê `Plugin`/`PluginActivation`/`TenantPluginConfig`). Financial:

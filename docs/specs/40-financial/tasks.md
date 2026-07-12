@@ -14,6 +14,11 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   migrations + factories de `Order`/`OrderItem`/`Payment`, `OrderPaidEvent` com payload primitivo e
   guard monetário ampliado para migrations modulares.
 - [x] `OrderPaidEvent` + listener no Learning (`EnrollService`).
+- [x] **Gateway das vendas da plataforma (Mzrt).** `PlatformPaymentGateway` (global, `configuration`
+  `encrypted:array` + `$hidden`, `is_active`/`is_default`, `makeDefault()` transacional) + factory +
+  `PlatformGatewayResolver` (devolve `ResolvedGateway` atômico, valida config, via registro de
+  adaptadores). 6 testes (`PlatformGatewayResolutionTest`: encriptação+`$hidden`, resolve+charge, sem
+  ativo, adaptador ausente, makeDefault atômico). Fecha o finding 4 do review no escopo plataforma.
 - [x] **Resolução de gateway por tenant (cross-module via contrato).** `TenantGatewayResolver`
   (Financial) + DTO `ResolvedGateway {adapter, credentials}` + exceção `GatewayResolutionException`.
   Consome `Ecosystem\Contracts\TenantGatewayProvider` (impl no Ecosystem lê `Plugin`/`PluginActivation`/
@@ -52,7 +57,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] **`PaymentGatewayInterface`** (contrato + DTOs + registro de adaptadores) — portado/revisado do eadIA. Fundação que não trava em gateway. (ver Done)
 - [ ] **Config de instância do gateway = config de plugin (Ecosystem).** A credencial/config do tenant por gateway vive no store genérico de config-de-plugin do Ecosystem (gateway é um plugin como os outros), não em model financeiro dedicado. Depende do módulo Ecosystem existir. Ver Needs Review.
 - [x] **Resolução do gateway ativo por tenant** — `TenantGatewayResolver` (Financial) consome o contrato `Ecosystem\Contracts\TenantGatewayProvider` (fronteira, invariante 11), casa `slug→adaptador`, valida config, devolve `ResolvedGateway {adapter, credentials}` atômico; honra entitlement (`PluginActivation` ativa + `TenantPluginConfig` enabled). Substitui o `forTenant`/`TenantPaymentGateway` descartado. Ver Done.
-- [ ] **`PlatformPaymentGateway` (global, credenciais do Mozart) + resolução do lado Plataforma** — situação dev/admin→plataforma. Mesmo contrato/adaptadores; store de credenciais global. Ledger `PlatformOrder*` segue em task própria (ADR-003).
+- [x] **`PlatformPaymentGateway` (global, credenciais do Mozart) + `PlatformGatewayResolver`** — situação dev/admin→plataforma. Model (config `encrypted:array` + `$hidden`, `is_active`/`is_default`, `makeDefault()` **transacional** — fecha finding 4 no escopo plataforma) + resolver que devolve `ResolvedGateway` atômico via mesmo registro de adaptadores. Ledger `PlatformOrder*` segue em task própria (ADR-003). Ver Done.
 - [ ] **`StripeGateway` via `laravel/cashier`** (1º adaptador; add Cashier nesta task — **precisa aprovar a dependência**). Cobre cartão/PIX/boleto BR + global. Registra-se no `PaymentGatewayManager` e serve os **dois** ledgers via contrato agnóstico.
 - [ ] **Gateways adicionais como plugins financeiros** (Mercado Pago, PagSeguro, PIX-nativo, Asaas) — cada um implementa `PaymentGatewayInterface`; tenant ativa via `50-ecosystem-plugins`. NÃO no MVP, mas o contrato já prevê.
 - [ ] **3ª camada — comissão de instrutor**: `commission_rate` + `CommissionLog` (repasse tenant/plataforma→instrutor). Não existia no eadIA — gap a modelar.
@@ -75,9 +80,9 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
      `TenantGatewayResolver` — nunca casa adaptador com config de outro tenant/gateway.
   3. 🔶 **Validar config:** feito **na resolução** (`validateConfiguration` no resolver); falta **na
      persistência** — entra com o endpoint de config do gateway.
-  4. ⏳ **Troca de gateway default atômica:** ainda não há marcador de default por tenant; multi-gateway
-     ativo é **logado** e resolve o mais recente. Marcador + troca atômica (transação/lock) quando a UI
-     suportar múltiplos gateways por tenant.
+  4. 🔶 **Troca de gateway default atômica:** feito no escopo **plataforma** (`PlatformPaymentGateway::makeDefault()`
+     transacional). No escopo **tenant** ainda não há marcador de default; multi-gateway ativo é **logado**
+     e resolve o mais recente — marcador + troca atômica quando a UI suportar múltiplos gateways por tenant.
 
 ## Open Questions
 

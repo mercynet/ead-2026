@@ -12,6 +12,11 @@ class GatewayResolutionException extends RuntimeException
         return new self("Nenhum gateway de pagamento ativo/configurado para o tenant #{$tenant->id}.");
     }
 
+    public static function noActivePlatformGateway(): self
+    {
+        return new self('Nenhum gateway de pagamento ativo configurado para a plataforma (Mzrt).');
+    }
+
     public static function adapterNotRegistered(string $slug): self
     {
         return new self("Gateway '{$slug}' ativo para o tenant, mas sem adaptador registrado.");

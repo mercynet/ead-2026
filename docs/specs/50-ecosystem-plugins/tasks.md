@@ -20,6 +20,14 @@ core gated por flag + config por tenant; gateway é plugin). Cada task = 1 slice
   `2026_02_21_1830xx`: `plugins` PK=`name` + design filesystem + billing no plugin — órfão, contra
   ADR-003). 4 testes (`PluginCatalogTest`). Categorias (pivô `category_plugin`),
   `PluginVersion`/`PluginPricing`/`PluginFeature` seguem em slices próprios.
+- [x] **`PluginActivation` (entitlement por tenant).** Model/migration/factory: `tenant_id`+`plugin_id`
+  (único), `status` (active|inactive|suspended), `activated_at`/`deactivated_at`/`activated_by`, scope
+  `active`, `isActive()`. Gate de disponibilidade da capability. 3 testes (unicidade, active scope,
+  isolamento por tenant).
+- [x] **`TenantPluginConfig` (config de instância genérica, ADR-005).** Model/migration/factory: um por
+  tenant+plugin (único), `config` **`encrypted:array` + `$hidden`** (segredos fora de serialização —
+  fecha o finding Alta do review), `enabled`, `credentials()`/`get()`. 3 testes (encriptação em repouso
+  + `$hidden`, unicidade, scope enabled). Falta: contrato de schema em código + validação na persistência.
 
 ## In Progress
 
@@ -45,8 +53,8 @@ core gated por flag + config por tenant; gateway é plugin). Cada task = 1 slice
 - [ ] `DELETE /ecosystem/marketplace/subscriptions/{id}` (desativar; retém config/segredos por padrão).
 - [ ] `GET /ecosystem/admin/subscriptions` (dashboard developer: uso free + pago, LGPD).
 - [ ] `POST /ecosystem/admin/grants` (comp por tenant: override de preço / free por janela).
-- [ ] **`PluginActivation`** (entitlement por tenant: plugin ativo/desativado, `activated_at`) — gate de disponibilidade de capability.
-- [ ] **`TenantPluginConfig` genérico** (um store por tenant+plugin; `config` blob `encrypted:array` + `$hidden`; `enabled`) — schema declarado **em código** pelo plugin, validado na persistência (ADR-005). **Supersede** o split `PluginSetting`×`TenantIntegration`.
+- [x] **`PluginActivation`** (entitlement por tenant: `status`/`activated_at`/`deactivated_at`/`activated_by`; único por tenant+plugin; scope `active`) — ver Done.
+- [x] **`TenantPluginConfig` genérico** (um store por tenant+plugin; `config` blob `encrypted:array` + `$hidden`; `enabled`; `credentials()`/`get()`) — ver Done. Falta o **contrato de schema em código + validação na persistência** (slice próprio).
 - [ ] Cron `SuspendOverduePluginSubscriptionsAction`.
 - [ ] Invalidação de cache de features por tenant ao ativar/desativar plugin.
 - [ ] Rate-limit dinâmico por tier de subscription.

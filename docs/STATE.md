@@ -6,6 +6,13 @@
 
 ## Sessão
 
+- 2026-07-12 (cont.) — **Ecosystem slices 2+3: `PluginActivation` + `TenantPluginConfig`.**
+  `PluginActivation` (entitlement por tenant: único tenant+plugin, `status`/`activated_at`, scope
+  `active`). `TenantPluginConfig` (config de instância genérica: `config` **`encrypted:array` +
+  `$hidden`** — fecha o finding Alta do review externo; `enabled`; `credentials()`/`get()`). 6 testes
+  novos (10 no total no módulo), pint ok, larastan `[OK]`, Architecture 16/16. Commitado. Próximo:
+  slice 4 (contrato de schema-de-config em código + validação na persistência) e slice 5 (resolução
+  de gateway: adapter+cred atômico honrando ativação).
 - 2026-07-12 (cont.) — **ADR-005 + fundação do módulo Ecosystem (slice 1).** Decidido (imagens do
   sistema Filament antigo + specs): plugin = **capability do core gated por flag + config por tenant**
   (não código dinâmico; `app/Plugins/` adiado), gateway **é plugin**, gateway da plataforma **dedicado**

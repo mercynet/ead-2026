@@ -28,29 +28,44 @@
 - 2026-07-11 — MVP comercial pago selado; fix cert (`aa88717`), ADR-004 tenant scoping (`faf11c5`),
   RBAC own de instructor (`7adab03`). Detalhe nos `tasks.md`/git.
 
+## PIVOT 2026-07-12 — MVP = B2B2B, Admin-first (não B2C checkout)
+
+Decisão do dono após revisão estratégica de ROI (análise em `.slim/deepwork/mvp-roi-prioritization.md`):
+**modelo é B2B2B** (parceiro → associação → membros). **Associação paga licença** (cobrança manual
+PIX/boleto/NF no início); **membro não paga curso avulso**. Logo **checkout tenant→aluno sai do MVP**
+(STATE #1 anterior = MockGateway + `POST /financial/checkout` **cancelado/adiado**).
+
+A fundação de gateway construída **não é desperdício**: `PlatformPaymentGateway` = plataforma cobra
+tenant = cobrança de licença B2B (mesmo manual no início, abstração pronta).
+
+Prioridade nova (análise, confirmada): **1) Admin tenant mínimo (ativação) → 2) Student endurecido →
+3) Mzrt operacional manual → 4) Instructor → 5) Home (já era última no ROADMAP)**. Não "finalizar área
+inteira"; fatia comercial ponta a ponta. Fase 0 = vender antes de ampliar (associação piloto + contrato).
+
 ## Próximos passos (1-3)
 
-1. **Fechar o fluxo de checkout (MVP pago).** Decisão pendente do 1º adaptador:
-   **A)** `MockGateway` (sem dep — bate com a tela "Simulação de Pagamento / Mock Gateway"; destrava
-   `POST /financial/checkout` → webhook simulado → `OrderPaidEvent` E2E); **B)** `StripeGateway` via
-   `stripe/stripe-php` (**precisa aprovar dep**); **C)** Stripe via HTTP puro (sem dep, assina webhook
-   na mão). Recomendado: **A** agora, Stripe ao ligar de verdade. Depois: `POST /financial/checkout`,
-   webhook cego `POST /financial/webhooks/gateway/{slug}` + `ProcessPaymentWebhookJob`.
-2. **Situação 1 (Mzrt→tenant) + config de plugin:** ledger `PlatformOrder*` (ADR-003) + compra/ativação
-   de plugin; endpoints de ativação e config de plugin (`TenantPluginConfig` via engrenagem), com
-   **validação na persistência** (finding 3a) e schema de config declarado em código.
-3. **Dívidas:** LGPD-03 (uniques tenant-scoped cpf/email) + P2 auditoria; robustez de emissão de
-   certificado (retry/`ShouldQueue`, reemissão pós-revoke).
+1. **Fatia white-label: config de branding do tenant.** Storage **já existe** (`TenantCustomization`:
+   `draft_settings`/`published_settings` + publish workflow). Falta: (a) endpoint **público** de leitura
+   por domínio (subset de branding de `published_settings`, **sem secrets**); (b) endpoint admin de
+   escrita `draft` + publish; (c) **catálogo fechado (allowlist)** de chaves de branding declarado em
+   código (nome/logo/cores/termos/privacidade/suporte). Requisito técnico do white-label, não manualizável.
+2. **Endurecer criação de usuário / membros (Admin).** `POST /api/v1/core/users` hoje é **sem auth**
+   (`RegisterUserRequest::authorize()=true`, sem role no payload) e **sem throttle** → spam + enumeração
+   de e-mail. Model-independente: adicionar throttle já. Model-dependente: sob B2B2B a associação controla
+   entrada → mover pra fluxo de convite/import por admin (`invite_only` está em Diferidos no ROADMAP).
+3. **Student endurecido (confiabilidade, não features):** convite + recuperação de senha, e-mail entregue,
+   mídia real, tenant inativo / host desconhecido com fallback seguro, E2E no domínio do cliente.
 
 ## Decisões abertas
 
-- **1º adaptador de gateway:** MockGateway (A) × StripeGateway SDK (B, dep) × HTTP puro (C).
-- Política de reembolso, modelo de reconciliação (MVP pago).
-- `validate-on-persist` de config (finding 3a) e marcador de **default gateway por tenant** (finding 4,
-  escopo tenant) — entram com o endpoint de config.
+- **Entry point da fatia Admin:** (A) branding público+admin [recomendado, greenfield de endpoint sobre
+  storage pronto] × (B) membros/convite/import × (C) provisioning do 1º admin (runbook Mzrt manual).
+- **Política de convite/registro:** manter `POST /users` aberto (open enrollment, MVP atual) × fechar
+  para invite-only sob B2B2B (associação controla membros). Liga com risco #1 da análise.
+- Reembolso/reconciliação: **fora do MVP** enquanto cobrança de licença for manual.
 - Convergência de spec: `TenantPaymentGateway`/`TenantIntegration`/`PluginSetting` → `TenantPluginConfig`
-  (Entities das specs Financial/Ecosystem ainda desatualizadas; código vence — ADR-005).
-- Reemissão de certificado pós-revoke; dívidas transversais (teto RBAC, LGPD operacional).
+  (Entities Financial/Ecosystem desatualizadas; código vence — ADR-005).
+- Certificado pós-revoke; dívidas transversais (teto RBAC, LGPD operacional, custos de mídia/margem).
 
 ## Último commit
 

@@ -18,5 +18,21 @@ class UpdatePasswordAction
 
         $user->password = $newPassword;
         $user->save();
+
+        $this->revokeOtherSessions($user);
+    }
+
+    /**
+     * Revoga todas as sessões Sanctum do usuário exceto a atual (a que fez a
+     * troca) — política canônica da troca autenticada de senha. O reset por
+     * token (não autenticado) revoga todas.
+     */
+    private function revokeOtherSessions(User $user): void
+    {
+        $currentTokenId = $user->currentAccessToken()->getKey();
+
+        $user->tokens()
+            ->where('id', '!=', $currentTokenId)
+            ->delete();
     }
 }

@@ -25,6 +25,8 @@ class E2eRunCommand extends Command
 {
     protected $signature = 'e2e:run {spec : Caminho do spec relativo a tests/e2e-http (ex.: learning/courses-store)}
         {--base= : Base URL do app rodando (default: config app.url). Dentro do container Sail use --base=http://localhost (a porta publicada no host, ex. 8099, não é acessível de dentro do container)}
+        {--timeout=10 : Timeout por request em segundos (evita travar num endpoint pendurado)}
+        {--continue-on-error : Não abortar no primeiro 5xx inesperado (por padrão a corrida para)}
         {--keep : Não limpar as fixtures efêmeras no fim (debug)}';
 
     protected $description = 'Executa um spec E2E contra o app rodando (HTTP real + asserts de DB)';
@@ -36,10 +38,12 @@ class E2eRunCommand extends Command
 
     private int $failed = 0;
 
+    private bool $aborted = false;
+
     public function handle(): int
     {
-        if (app()->environment('production')) {
-            $this->error('e2e:run não roda em produção.');
+        if (! app()->environment(['local', 'testing', 'e2e'])) {
+            $this->error('e2e:run só roda em local|testing|e2e (ambiente atual: '.app()->environment().').');
 
             return self::FAILURE;
         }
@@ -63,16 +67,21 @@ class E2eRunCommand extends Command
 
             foreach ($spec['cases'] as $case) {
                 $this->runCase($base, $method, $specPath, $case);
+
+                if ($this->aborted) {
+                    $this->error('Abortado no primeiro 5xx inesperado (use --continue-on-error para prosseguir).');
+                    break;
+                }
             }
         } catch (Throwable $e) {
-            $this->error('Erro no runner: '.$e->getMessage());
+            $this->error('Erro no runner: '.$this->sanitize($e->getMessage()));
             $this->failed++;
         } finally {
             if (isset($spec['cleanup']) && is_callable($spec['cleanup'])) {
                 try {
                     $spec['cleanup']($this->ctx);
                 } catch (Throwable $e) {
-                    $this->warn('cleanup do spec falhou: '.$e->getMessage());
+                    $this->error('cleanup do spec FALHOU (pode ter deixado resíduo): '.$this->sanitize($e->getMessage()));
                 }
             }
             if ($this->option('keep')) {
@@ -210,13 +219,17 @@ class E2eRunCommand extends Command
         }
         $headers = array_merge($headers, $this->resolveDynamicValues($case['headers'] ?? []));
 
-        $request = Http::withHeaders($headers)->acceptJson();
+        $timeout = max(1, (int) $this->option('timeout'));
+        $request = Http::withHeaders($headers)
+            ->timeout($timeout)
+            ->connectTimeout(min($timeout, 5))
+            ->acceptJson();
         $body = $this->resolveDynamicValues($case['body'] ?? []);
 
         try {
             $response = $request->{$method}($base.$path, $body);
         } catch (Throwable $e) {
-            $this->reportCase($name, [['request', false, 'reachable app', $e->getMessage()]]);
+            $this->reportCase($name, [['request', false, 'reachable app', $this->sanitize($e->getMessage())]]);
 
             return;
         }
@@ -227,10 +240,20 @@ class E2eRunCommand extends Command
         $checks = [];
 
         $expect = $this->resolveDynamicValues($case['expect'] ?? []);
-        if (isset($expect['status'])) {
-            $checks[] = ['status', $response->status() === $expect['status'], $expect['status'], $response->status()];
-            if ($response->serverError()) {
-                $checks[] = ['response body', false, 'non-500 JSON', mb_substr($response->body(), 0, 1000)];
+        $expectedStatus = $expect['status'] ?? null;
+
+        if ($expectedStatus !== null) {
+            $checks[] = ['status', $response->status() === $expectedStatus, $expectedStatus, $response->status()];
+        }
+
+        // 5xx só é aceitável se o caso o esperava explicitamente; caso contrário
+        // é falha do app — registra o corpo (sanitizado) e aciona o circuit breaker.
+        if ($response->serverError() && ! (is_int($expectedStatus) && $expectedStatus >= 500)) {
+            $checks[] = ['no unexpected 5xx', false, '<5xx', $response->status()];
+            $checks[] = ['response body', false, 'non-5xx JSON', $this->sanitize(mb_substr($response->body(), 0, 1000))];
+
+            if (! $this->option('continue-on-error')) {
+                $this->aborted = true;
             }
         }
         foreach (($expect['json'] ?? []) as $jsonPath => $expected) {
@@ -313,6 +336,21 @@ class E2eRunCommand extends Command
         }
 
         return json_encode($value) ?: gettype($value);
+    }
+
+    /**
+     * Redige tokens/segredos de qualquer texto que vá para o output (corpo 5xx,
+     * mensagens de exceção). O runner nunca deve imprimir Bearer ou senha.
+     */
+    private function sanitize(string $text): string
+    {
+        $text = preg_replace('/Bearer\s+[A-Za-z0-9|._~+\/=-]+/', 'Bearer [REDACTED]', $text) ?? $text;
+
+        return preg_replace(
+            '/("(?:token|plainTextToken|access_token|password|current_password)"\s*:\s*")[^"]*(")/i',
+            '$1[REDACTED]$2',
+            $text,
+        ) ?? $text;
     }
 
     private function teardownFixtures(): void

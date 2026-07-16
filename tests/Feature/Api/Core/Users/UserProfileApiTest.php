@@ -97,6 +97,43 @@ it('updates password with valid current password', function (): void {
     expect(Hash::check('new-password-123', $user->fresh()->password))->toBeTrue();
 });
 
+it('revokes other sessions but keeps the current one on password change', function (): void {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant A',
+        'domain' => 'tenant-a.local',
+        'database' => null,
+        'is_active' => true,
+    ]);
+
+    $user = User::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'password' => Hash::make('password123'),
+    ]);
+
+    $otherSession = $user->createToken('other-device');
+    $current = $user->createToken('current-device');
+
+    $this->patchJson('/api/v1/core/users/me/password', [
+        'current_password' => 'password123',
+        'password' => 'new-password-123',
+        'password_confirmation' => 'new-password-123',
+    ], [
+        'Authorization' => 'Bearer '.$current->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertSuccessful();
+
+    // Sessão atual sobrevive; as demais são revogadas.
+    expect(\Laravel\Sanctum\PersonalAccessToken::query()->find($current->accessToken->id))->not->toBeNull()
+        ->and(\Laravel\Sanctum\PersonalAccessToken::query()->find($otherSession->accessToken->id))->toBeNull();
+
+    $this->getJson('/api/v1/core/auth/me', [
+        'Authorization' => 'Bearer '.$current->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertSuccessful();
+});
+
 it('rejects password update with invalid current password', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',

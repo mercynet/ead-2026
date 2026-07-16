@@ -78,6 +78,32 @@ it('validates the forgot payload', function (): void {
     );
 });
 
+it('rotates the token: a new forgot request invalidates the previous pending one', function (): void {
+    Notification::fake();
+    $tenant = makeTenant();
+    $user = User::factory()->forTenant($tenant)->create(['email' => 'john@example.com']);
+
+    $this->postJson('/api/v1/core/auth/password/forgot', ['email' => 'john@example.com'], tenantHeaders($tenant))->assertOk();
+    $this->postJson('/api/v1/core/auth/password/forgot', ['email' => 'john@example.com'], tenantHeaders($tenant))->assertOk();
+
+    $resets = PasswordReset::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('email', 'john@example.com')
+        ->get();
+
+    // Invariante "um único token válido por vez": dois pedidos → dois registros,
+    // exatamente um pendente (o segundo invalidou o primeiro sob lock/transação).
+    expect($resets)->toHaveCount(2)
+        ->and($resets->filter->isPending())->toHaveCount(1);
+
+    Notification::assertSentToTimes($user, PasswordResetNotification::class, 2);
+});
+
+it('queues the reset notification instead of sending it synchronously (anti-timing)', function (): void {
+    expect(new PasswordResetNotification('any-token'))
+        ->toBeInstanceOf(Illuminate\Contracts\Queue\ShouldQueue::class);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Redefinir senha (POST /api/v1/core/auth/password/reset)

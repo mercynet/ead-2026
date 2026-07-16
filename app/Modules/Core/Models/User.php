@@ -77,6 +77,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'tenant_scope',
     ];
 
     public function tenant(): BelongsTo

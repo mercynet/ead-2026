@@ -28,6 +28,7 @@ class TenantProvisionCommand extends Command
         {--admin-name= : Nome do primeiro admin}
         {--admin-email= : Email do primeiro admin}
         {--admin-password= : Senha do admin (se omitida, gera uma forte e exibe uma vez)}
+        {--promote : Promove um usuário existente não-admin a admin (senão, recusa a promoção silenciosa)}
         {--description= : Descrição do tenant (opcional)}';
 
     protected $description = 'Provisiona (idempotente) um tenant e seu primeiro admin, semeando RBAC';
@@ -57,6 +58,24 @@ class TenantProvisionCommand extends Command
             return self::FAILURE;
         }
 
+        // A senha fornecida via --admin-password precisa da MESMA política dos
+        // FormRequests (min:8); a gerada automaticamente já é forte por construção.
+        $providedPassword = trim((string) $this->option('admin-password'));
+        if ($providedPassword !== '') {
+            $passwordValidator = Validator::make(
+                ['admin_password' => $providedPassword],
+                ['admin_password' => ['string', 'min:8']],
+            );
+
+            if ($passwordValidator->fails()) {
+                foreach ($passwordValidator->errors()->all() as $error) {
+                    $this->components->error($error);
+                }
+
+                return self::FAILURE;
+            }
+        }
+
         $this->seedRbac();
 
         $tenant = Tenant::query()->firstOrCreate(
@@ -73,7 +92,13 @@ class TenantProvisionCommand extends Command
             ? "Tenant criado: {$tenant->name} (#{$tenant->id}, {$tenant->domain})"
             : "Tenant já existia: {$tenant->name} (#{$tenant->id}, {$tenant->domain})");
 
-        [$admin, $generatedPassword] = $this->ensureAdmin($tenant, $data);
+        $ensured = $this->ensureAdmin($tenant, $data);
+
+        if ($ensured === null) {
+            return self::FAILURE;
+        }
+
+        [$admin, $generatedPassword] = $ensured;
 
         $admin->syncRoles([UserType::Admin->value]);
 
@@ -98,9 +123,9 @@ class TenantProvisionCommand extends Command
 
     /**
      * @param  array<string, string>  $data
-     * @return array{0: User, 1: string|null}
+     * @return array{0: User, 1: string|null}|null null = provisionamento recusado
      */
-    private function ensureAdmin(Tenant $tenant, array $data): array
+    private function ensureAdmin(Tenant $tenant, array $data): ?array
     {
         $admin = User::query()
             ->where('tenant_id', $tenant->id)
@@ -108,8 +133,17 @@ class TenantProvisionCommand extends Command
             ->first();
 
         if ($admin instanceof User) {
+            // Promover um student/instructor existente a admin é escalada de
+            // privilégio silenciosa (ex.: typo no email). Só com --promote explícito.
             if ($admin->user_type !== UserType::Admin) {
+                if (! $this->option('promote')) {
+                    $this->components->error("Usuário {$admin->email} (#{$admin->id}) já existe como '{$admin->user_type->value}' — recuso promoção silenciosa a admin. Reexecute com --promote se a intenção for promover.");
+
+                    return null;
+                }
+
                 $admin->update(['user_type' => UserType::Admin]);
+                $this->components->warn("Usuário {$admin->email} (#{$admin->id}) promovido a admin (--promote).");
             }
 
             $this->components->info("Admin já existia: {$admin->email} (#{$admin->id}) — senha preservada");

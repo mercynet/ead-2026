@@ -88,3 +88,51 @@ it('reuses an existing tenant resolved by domain', function (): void {
 it('fails when required options are missing', function (): void {
     $this->artisan('tenant:provision', ['--name' => 'Escola'])->assertExitCode(1);
 });
+
+it('rejects a weak admin password (min 8)', function (): void {
+    $this->artisan('tenant:provision', [
+        '--name' => 'Escola',
+        '--domain' => 'weak.local',
+        '--admin-name' => 'A',
+        '--admin-email' => 'a@weak.local',
+        '--admin-password' => 'short',
+    ])->assertExitCode(1);
+
+    expect(User::query()->where('email', 'a@weak.local')->exists())->toBeFalse()
+        ->and(Tenant::query()->where('domain', 'weak.local')->exists())->toBeFalse();
+});
+
+it('refuses to silently promote an existing non-admin user to admin', function (): void {
+    seedRbac();
+    $tenant = Tenant::factory()->create(['domain' => 'prom.local']);
+    $student = User::factory()->forTenant($tenant)->student()->create(['email' => 'aluno@prom.local']);
+
+    $this->artisan('tenant:provision', [
+        '--name' => 'Prom',
+        '--domain' => 'prom.local',
+        '--admin-name' => 'X',
+        '--admin-email' => 'aluno@prom.local',
+        '--admin-password' => 'senha-forte-123',
+    ])->assertExitCode(1);
+
+    expect($student->fresh()->user_type)->toBe(UserType::Student);
+});
+
+it('promotes an existing non-admin user only with --promote', function (): void {
+    seedRbac();
+    $tenant = Tenant::factory()->create(['domain' => 'prom.local']);
+    $student = User::factory()->forTenant($tenant)->student()->create(['email' => 'aluno@prom.local']);
+
+    $this->artisan('tenant:provision', [
+        '--name' => 'Prom',
+        '--domain' => 'prom.local',
+        '--admin-name' => 'X',
+        '--admin-email' => 'aluno@prom.local',
+        '--admin-password' => 'senha-forte-123',
+        '--promote' => true,
+    ])->assertExitCode(0);
+
+    $fresh = $student->fresh();
+    expect($fresh->user_type)->toBe(UserType::Admin)
+        ->and($fresh->hasRole('admin'))->toBeTrue();
+});

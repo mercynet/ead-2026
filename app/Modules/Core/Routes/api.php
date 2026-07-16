@@ -28,14 +28,14 @@ Route::prefix('v1/core')
         Route::prefix('invitations')
             ->controller(InvitationController::class)
             ->group(function (): void {
-                Route::post('/accept', 'accept')->middleware('throttle:10,1');
+                Route::post('/accept', 'accept')->middleware('throttle:invitation-accept');
 
                 Route::middleware([
                     'tenant.required.unless.developer',
                     'auth:sanctum',
                     'tenant.access',
                 ])->group(function (): void {
-                    Route::post('/', 'store')->middleware('throttle:60,1');
+                    Route::post('/', 'store')->middleware('throttle:invitation-create');
                 });
             });
 

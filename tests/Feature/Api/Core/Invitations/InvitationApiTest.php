@@ -303,3 +303,45 @@ it('validates the accept payload', function (): void {
         'validation_error',
     );
 });
+
+it('converts a unique-violation race on accept into a generic invalid error (no 500)', function (): void {
+    seedRbac();
+    $tenant = makeTenant();
+    $token = 'race-unique-token';
+    Invitation::factory()->forTenant($tenant)->role(UserType::Student)->withToken($token)->create([
+        'email' => 'corrida@example.com',
+    ]);
+
+    // Simula o vencedor concorrente: entre o exists() e o insert do Action, outra
+    // requisição grava o mesmo tenant+email. Injetamos via evento creating (uma
+    // única vez, com insert cru que não dispara eventos), forçando o unique a
+    // estourar no create — o caminho que o exists() sequencial nunca alcança.
+    // Listeners de model são por-teste (a app é recriada a cada teste).
+    $injected = false;
+    User::creating(function (User $user) use (&$injected, $tenant): void {
+        if ($injected) {
+            return;
+        }
+        $injected = true;
+        DB::table('users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_type' => UserType::Student->value,
+            'name' => 'Vencedor da Corrida',
+            'email' => 'corrida@example.com',
+            'password' => Hash::make('password'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    });
+
+    assertApiErrorEnvelope(
+        $this->postJson('/api/v1/core/invitations/accept', [
+            'token' => $token,
+            'name' => 'Perdedor',
+            'password' => 'senha-forte-123',
+            'password_confirmation' => 'senha-forte-123',
+        ]),
+        422,
+        'invitation_invalid',
+    );
+});

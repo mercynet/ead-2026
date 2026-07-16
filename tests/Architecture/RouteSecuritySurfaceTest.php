@@ -84,3 +84,21 @@ it('keeps the public allowlist free of stale entries', function (): void {
         'These allowlist entries no longer match any route (remove them): '.implode(', ', $stale)
     );
 });
+
+it('uses the named rate limiters on invitation routes (no shared anonymous bucket)', function (): void {
+    $middlewareFor = function (string $method, string $uri): array {
+        /** @var RoutingRoute $route */
+        foreach (Route::getRoutes() as $route) {
+            if ($route->uri() === $uri && in_array($method, $route->methods(), true)) {
+                return $route->gatherMiddleware();
+            }
+        }
+
+        return [];
+    };
+
+    expect($middlewareFor('POST', 'api/v1/core/invitations/accept'))
+        ->toContain('throttle:invitation-accept')
+        ->and($middlewareFor('POST', 'api/v1/core/invitations'))
+        ->toContain('throttle:invitation-create');
+});

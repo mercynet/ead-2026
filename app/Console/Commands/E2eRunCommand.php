@@ -111,7 +111,10 @@ class E2eRunCommand extends Command
                 try {
                     $spec['cleanup']($this->ctx);
                 } catch (Throwable $e) {
+                    // Resíduo não removido é falha do runner: sem isto o exit code
+                    // seria 0 mesmo deixando fixtures no banco (falso sucesso).
                     $this->error('cleanup do spec FALHOU (pode ter deixado resíduo): '.$this->sanitize($e->getMessage()));
+                    $this->failed++;
                 }
             }
             if ($this->option('keep')) {
@@ -432,7 +435,9 @@ class E2eRunCommand extends Command
                 ($this->ctx[$key] ?? null)?->forceDelete();
             }
         } catch (Throwable $e) {
-            $this->warn('teardown parcial: '.$e->getMessage());
+            // Teardown incompleto deixa fixtures órfãs; sinalizar via exit code.
+            $this->warn('teardown parcial: '.$this->sanitize($e->getMessage()));
+            $this->failed++;
         }
     }
 }

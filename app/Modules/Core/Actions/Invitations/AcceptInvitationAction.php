@@ -5,6 +5,7 @@ namespace App\Modules\Core\Actions\Invitations;
 use App\Modules\Core\Models\Invitation;
 use App\Modules\Core\Models\User;
 use App\Shared\Exceptions\InvitationInvalidException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 class AcceptInvitationAction
@@ -42,13 +43,21 @@ class AcceptInvitationAction
                 throw InvitationInvalidException::make();
             }
 
-            $user = User::query()->create([
-                'tenant_id' => $invitation->tenant_id,
-                'user_type' => $invitation->userType(),
-                'name' => (string) $attributes['name'],
-                'email' => $invitation->email,
-                'password' => (string) $attributes['password'],
-            ]);
+            // O exists() acima não fecha a corrida entre convites DISTINTOS para o
+            // mesmo tenant+email (locks em linhas de convite diferentes): ambos passam
+            // no check e um viola users_tenant_email_unique. Convertê-la em falha
+            // genérica evita o 500 e mantém o mesmo envelope de erro.
+            try {
+                $user = User::query()->create([
+                    'tenant_id' => $invitation->tenant_id,
+                    'user_type' => $invitation->userType(),
+                    'name' => (string) $attributes['name'],
+                    'email' => $invitation->email,
+                    'password' => (string) $attributes['password'],
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                throw InvitationInvalidException::make();
+            }
 
             $user->assignRole($invitation->role);
 

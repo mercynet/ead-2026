@@ -14,8 +14,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('renders 422 tenant_not_resolved in the canonical envelope', function (): void {
-    // Guest hits a tenant-required route with no X-Tenant-ID header.
-    $response = $this->postJson('/api/v1/core/users', []);
+    // Authenticated non-developer hits a tenant-required route with no
+    // X-Tenant-ID header: tenant.required.unless.developer throws.
+    [$admin, $headers] = actingAsUserType(UserType::Admin);
+
+    $response = $this->getJson('/api/v1/core/users', [
+        'Authorization' => $headers['Authorization'],
+    ]);
 
     assertApiErrorEnvelope($response, 422, 'tenant_not_resolved');
 });

@@ -58,8 +58,11 @@ Cada usuário pertence a um tenant; a mesma pessoa em duas escolas = dois regist
 |------|-----------------|------------------|
 | developer | Apenas developer | Apenas developer |
 | admin | Developer ou admin | Apenas developer |
-| instructor | Developer ou admin | Apenas developer |
-| student | Developer, admin, ou self-register | Apenas developer |
+| instructor | Developer ou admin (via convite) | Apenas developer |
+| student | Developer ou admin (via convite) | Apenas developer |
+
+> **Onboarding invite-only:** não há mais auto-registro público. `instructor`/`student` entram
+> por convite tenant-bound (ver [`../spec.md`](../spec.md) e a tabela de endpoints abaixo).
 
 UserType é imutável exceto por developer (define o teto — ver
 [`../../00-architecture/rbac.md`](../../00-architecture/rbac.md)).
@@ -73,7 +76,8 @@ Filtrar por tenant via scope/trait, não `where('tenant_id', ...)` espalhado. Ve
 
 | Método | Path | Descrição | Permission |
 |--------|------|-----------|------------|
-| POST | `/api/v1/core/users` | Criar usuário (registro; atrela a `student`) | aberto |
+| POST | `/api/v1/core/invitations` | Emitir convite (`student`\|`instructor`); token 1x | `core.invitations.create` |
+| POST | `/api/v1/core/invitations/accept` | Aceitar convite → cria usuário + papel | público (token) |
 | GET | `/api/v1/core/users` | Listar (tenant-scoped; developer vê todos) | `core.users.list` |
 | GET | `/api/v1/core/users/{id}` | Ver usuário | `core.users.view` |
 | PATCH | `/api/v1/core/users/{id}` | Atualizar usuário | `core.users.update` |
@@ -92,7 +96,8 @@ Matriz por UserType em [`../../00-architecture/rbac.md`](../../00-architecture/r
 
 ## Notes
 
-- Fluxo de acesso: registro (`POST /users`) → login (`POST /auth/login` com email+senha+tenant via
-  header) → uso com `Authorization: Bearer {token}` + `X-Tenant-ID` (exceto developer).
+- Fluxo de acesso: convite (`POST /invitations` por um admin) → aceite (`POST /invitations/accept`
+  com token+nome+senha) → login (`POST /auth/login` com email+senha+tenant via header) → uso com
+  `Authorization: Bearer {token}` + `X-Tenant-ID` (exceto developer).
 - `GET /users/{id}`: a permission canônica é `core.users.view` (o documento legado usava
   `core.users.show` em alguns pontos — usar `view`).

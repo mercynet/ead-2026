@@ -15,6 +15,22 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int $id
+ * @property int|null $tenant_id
+ * @property \App\Modules\Core\Enums\UserType $user_type
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property string|null $cpf
+ * @property string|null $headline
+ * @property string|null $bio
+ * @property string|null $avatar
+ * @property string|null $linkedin_url
+ * @property string|null $twitter_url
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class User extends Authenticatable
 {
     protected static string $factory = \Database\Factories\UserFactory::class;

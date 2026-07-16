@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Core\Http\Controllers\AuthController;
+use App\Modules\Core\Http\Controllers\InvitationController;
 use App\Modules\Core\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,17 +23,31 @@ Route::prefix('v1/core')
                 });
             });
 
+        Route::prefix('invitations')
+            ->controller(InvitationController::class)
+            ->group(function (): void {
+                Route::post('/accept', 'accept')->middleware('throttle:10,1');
+
+                Route::middleware([
+                    'tenant.required.unless.developer',
+                    'auth:sanctum',
+                    'tenant.access',
+                ])->group(function (): void {
+                    Route::post('/', 'store')->middleware('throttle:60,1');
+                });
+            });
+
         Route::prefix('users')
             ->controller(UserController::class)
-            ->middleware('tenant.required.unless.developer')
+            ->middleware([
+                'tenant.required.unless.developer',
+                'auth:sanctum',
+                'tenant.access',
+            ])
             ->group(function (): void {
-                Route::post('/', 'store');
-
-                Route::middleware(['auth:sanctum', 'tenant.access'])->group(function (): void {
-                    Route::get('/', 'index');
-                    Route::get('/{user}', 'show');
-                    Route::patch('/me', 'updateMe');
-                    Route::patch('/me/password', 'updatePassword');
-                });
+                Route::get('/', 'index');
+                Route::get('/{user}', 'show');
+                Route::patch('/me', 'updateMe');
+                Route::patch('/me/password', 'updatePassword');
             });
     });

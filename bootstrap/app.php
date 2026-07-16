@@ -3,6 +3,7 @@
 use App\Shared\Exceptions\AccessDeniedException;
 use App\Shared\Exceptions\AreaAccessDeniedException;
 use App\Shared\Exceptions\InvalidCredentialsException;
+use App\Shared\Exceptions\InvitationInvalidException;
 use App\Shared\Exceptions\ResourceNotFoundException;
 use App\Shared\Exceptions\TenantContextRequiredException;
 use Illuminate\Auth\AuthenticationException;
@@ -59,6 +60,18 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 401);
         });
 
+        $exceptions->render(function (InvitationInvalidException $exception, Request $request) {
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'invitation_invalid',
+                        'message' => $exception->getMessage(),
+                    ],
+                ],
+            ], 422);
+        });
+
         $exceptions->render(function (ResourceNotFoundException $exception, Request $request) {
             return response()->json([
                 'data' => null,
@@ -93,6 +106,22 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ],
             ], 403);
+        });
+
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $exception, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'too_many_requests',
+                        'message' => 'Muitas requisições. Tente novamente em instantes.',
+                    ],
+                ],
+            ], 429);
         });
 
         $exceptions->render(function (AuthenticationException $exception, Request $request) {

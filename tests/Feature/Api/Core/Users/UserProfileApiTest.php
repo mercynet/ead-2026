@@ -7,47 +7,6 @@ use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
-it('registers a user within the resolved tenant', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
-    $response = $this->postJson(
-        '/api/v1/core/users',
-        [
-            'name' => 'Jane Doe',
-            'email' => 'jane@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ],
-        [
-            'X-Tenant-ID' => (string) $tenant->id,
-        ],
-    );
-
-    $response
-        ->assertCreated()
-        ->assertJsonPath('data.email', 'jane@example.com');
-
-    $user = User::query()->where('email', 'jane@example.com')->first();
-
-    expect($user)->not->toBeNull();
-    expect($user?->tenant_id)->toBe($tenant->id);
-    expect($user?->hasRole('student'))->toBeTrue();
-});
-
-it('rejects registration without tenant context', function (): void {
-    $this->postJson('/api/v1/core/users', [
-        'name' => 'Jane Doe',
-        'email' => 'jane@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
-    ])->assertUnprocessable();
-});
-
 it('updates own profile in the same tenant', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',

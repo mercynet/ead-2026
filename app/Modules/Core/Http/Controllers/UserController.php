@@ -3,11 +3,9 @@
 namespace App\Modules\Core\Http\Controllers;
 
 use App\Modules\Core\Actions\Users\ListUsersAction;
-use App\Modules\Core\Actions\Users\RegisterUserAction;
 use App\Modules\Core\Actions\Users\ShowUserAction;
 use App\Modules\Core\Actions\Users\UpdatePasswordAction;
 use App\Modules\Core\Actions\Users\UpdateProfileAction;
-use App\Modules\Core\Http\Requests\Users\RegisterUserRequest;
 use App\Modules\Core\Http\Requests\Users\UpdatePasswordRequest;
 use App\Modules\Core\Http\Requests\Users\UpdateProfileRequest;
 use App\Modules\Core\Http\Resources\UserResource;
@@ -26,7 +24,6 @@ use Illuminate\Support\Facades\Gate;
 class UserController extends Controller
 {
     public function __construct(
-        private readonly RegisterUserAction $registerUserAction,
         private readonly ListUsersAction $listUsersAction,
         private readonly ShowUserAction $showUserAction,
         private readonly UpdateProfileAction $updateProfileAction,
@@ -45,20 +42,6 @@ class UserController extends Controller
         $paginator = $this->listUsersAction->handle($context);
 
         return UserResource::collection($paginator);
-    }
-
-    /**
-     * Criar Usuário
-     *
-     * Registra um novo usuário no sistema.
-     *
-     * @unauthenticated
-     */
-    public function store(RegisterUserRequest $request, ApiContext $context): UserResource
-    {
-        $user = $this->registerUserAction->handle($context->requiredTenant(), $request->validated());
-
-        return UserResource::make($user);
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Core\Models\Invitation;
 use App\Modules\Core\Models\User;
 
 /**
@@ -21,6 +22,9 @@ return [
             'avatar',
             'linkedin_url',
             'twitter_url',
+        ],
+        Invitation::class => [
+            'email',
         ],
     ],
 

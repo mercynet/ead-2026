@@ -29,12 +29,15 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `POST /api/v1/core/auth/login` (rate limit 5/min, token com device type).
 - [x] `POST /api/v1/core/auth/logout`.
 - [x] `GET /api/v1/core/auth/me` (usuário + roles + permissions).
-- [x] `POST /api/v1/core/users` (registro).
+- [x] ~~`POST /api/v1/core/users` (registro público)~~ **removido** — substituído por onboarding invite-only.
+- [x] `POST /api/v1/core/invitations` (admin emite convite tenant-bound; token opaco 1x, rate limit 60/min).
+- [x] `POST /api/v1/core/invitations/accept` (público; cria usuário+papel com tenant/email/role fixos; uso único, expiry, falha genérica; rate limit 10/min).
 - [x] `GET /api/v1/core/users` (tenant-scoped; developer vê todos).
 - [x] `GET /api/v1/core/users/{id}`.
 - [x] `PATCH /api/v1/core/users/me`.
 - [x] `PATCH /api/v1/core/users/me/password`.
 - [x] Models `User`, `Tenant`, `TenantCustomization`, `TenantIntegration` (+ relacionamentos).
+- [x] Command `tenant:provision` — bootstrap idempotente de tenant + primeiro admin (semeia RBAC; não duplica nem sobrescreve senha; gera senha forte se omitida). Runbook do onboarding invite-only.
 
 ## In Progress
 

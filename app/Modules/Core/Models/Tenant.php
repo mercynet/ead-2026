@@ -10,6 +10,16 @@ use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Contracts\IsTenant;
 use Spatie\Multitenancy\Models\Concerns\ImplementsTenant;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $domain
+ * @property string|null $database
+ * @property string|null $description
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Tenant extends Model implements IsTenant
 {
     protected static string $factory = \Database\Factories\TenantFactory::class;

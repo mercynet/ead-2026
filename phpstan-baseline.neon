@@ -535,106 +535,16 @@ parameters:
 			path: app/Modules/Assessment/Listeners/IssueCertificateOnCourseCompletedListener.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\Tenant\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Auth/LoginAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Auth/LoginAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Auth/LoginAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$password\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Auth/LoginAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$tenant_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Auth/LoginAction.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Laravel\\Sanctum\\PersonalAccessToken\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Modules/Core/Actions/Auth/LogoutAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$avatar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$bio\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$cpf\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$headline\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$linkedin_url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$twitter_url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Actions/Users/ShowUserAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$password\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Core/Actions/Users/UpdatePasswordAction.php
-
-		-
 			message: '#^Property App\\Modules\\Core\\Http\\Controllers\\UserController\:\:\$showUserAction is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
 			path: app/Modules/Core/Http/Controllers/UserController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$user_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Core/Http/Middleware/EnsureAreaAccess.php
 
 		-
 			message: '#^Variable \$tenant in PHPDoc tag @var does not exist\.$#'
@@ -755,18 +665,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Modules/Core/Http/Resources/UserResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$tenant_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Core/Models/User.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Core\\Models\\User\:\:\$user_type\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Modules/Core/Models/User.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Lesson\:\:\$is_free\.$#'

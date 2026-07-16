@@ -15,7 +15,7 @@ class LoginAction
     public function handle(Request $request, ApiContext $context): array
     {
         $tenant = $this->resolveTenant($context);
-        $user = $this->findUser($request);
+        $user = $this->findUser($request, $tenant);
 
         $this->validateCredentials($request, $user);
         $this->validateTenantAccess($user, $tenant);
@@ -37,11 +37,28 @@ class LoginAction
         return $context->tenant;
     }
 
-    private function findUser(Request $request): User
+    private function findUser(Request $request, ?Tenant $tenant): User
     {
-        $user = User::query()
-            ->where('email', $request->string('email')->toString())
-            ->first();
+        $email = $request->string('email')->toString();
+
+        // Identidade tenant-scoped: primeiro o usuário DENTRO do tenant resolvido;
+        // se não houver, cai para o developer global (tenant_id null), que autentica
+        // em qualquer contexto. Sem contexto de tenant, só o developer é localizável.
+        $user = null;
+
+        if ($tenant !== null) {
+            $user = User::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('email', $email)
+                ->first();
+        }
+
+        if ($user === null) {
+            $user = User::query()
+                ->whereNull('tenant_id')
+                ->where('email', $email)
+                ->first();
+        }
 
         if ($user === null) {
             throw InvalidCredentialsException::make();

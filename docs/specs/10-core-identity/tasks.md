@@ -52,7 +52,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Remover código Spatie não utilizado.
 
 ### Core
-- [ ] Migration: trocar `unique` global de `cpf`/`email` por compostos `(tenant_id, cpf)` e `(tenant_id, email)` — alinha ao modelo tenant-scoped (corrige dívida de schema).
+- [x] Migration: trocar `unique` global de `cpf`/`email` por compostos `(tenant_id, cpf)` e `(tenant_id, email)` — alinha ao modelo tenant-scoped. Login agora é tenant-scoped (fallback developer global); usuário de tenant sem `X-Tenant-ID` → 401 genérico.
 - [ ] Padronizar permission de `GET /users/{id}` para `core.users.view` (canônico); remover `core.users.show` das roles instructor/student no seeder/`config/permissions.php`.
 - [ ] `PATCH /api/v1/core/users/{id}` (update por admin).
 - [ ] `DELETE /api/v1/core/users/{id}`.

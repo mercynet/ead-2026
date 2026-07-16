@@ -43,13 +43,17 @@
 
 ## Próximos passos (1-3)
 
-1. **Dívida de schema tenant-scoped:** trocar `unique` global de `users.email`/`cpf` por compostos
-   `(tenant_id, …)` + login tenant-scoped — hoje o convite valida email por tenant na app, mas o DB
-   ainda é global (o aceite falha genericamente em vez de 500, mas dois tenants não podem compartilhar email).
-2. **Operação de produção:** deploy/rollback, backup/restore, revogação de sessão/token, mail/worker/storage,
+1. **Operação de produção:** deploy/rollback, backup/restore, revogação de sessão/token, mail/worker/storage,
    observabilidade. Sem isso não expor publicamente.
-3. **Endpoint de gestão de convites (opcional):** listar pendentes / revogar / reenviar. Só se o piloto
+2. **Endpoint de gestão de convites (opcional):** listar pendentes / revogar / reenviar. Só se o piloto
    exigir — o par create/accept + `tenant:provision` já cobrem o fluxo mínimo.
+3. **Recuperação de senha** (tenant-scoped) — hoje inexistente; necessária para operação real do piloto.
+
+## Identidade tenant-scoped (concluído 2026-07-16)
+
+- `unique(tenant_id, email)` + `unique(tenant_id, cpf)` (migration `..._tenant_scope_user_unique_constraints`);
+  mesma pessoa pode existir em tenants distintos. Login tenant-scoped (fallback developer global);
+  usuário de tenant sem `X-Tenant-ID` → 401 genérico. Fecha a dívida de schema e a finding Alta do review.
 
 ## Provisioning (concluído) — runbook
 

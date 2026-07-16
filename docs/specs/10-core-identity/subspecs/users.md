@@ -42,15 +42,20 @@ Cada usuário pertence a um tenant; a mesma pessoa em duas escolas = dois regist
 
 - **Unicidade por tenant:** `unique(tenant_id, cpf)` e `unique(tenant_id, email)`. CPF e email
   **podem repetir** entre tenants distintos.
-- **Login via email**, dentro do contexto do tenant resolvido (`X-Tenant-ID`/host).
+- **Login via email**, dentro do contexto do tenant resolvido (`X-Tenant-ID`/host). O lookup é
+  tenant-scoped: procura o usuário no tenant resolvido e, se não houver, cai para o developer
+  global (`tenant_id` null). Sem contexto de tenant, só o developer é localizável — usuário de
+  tenant sem `X-Tenant-ID` recebe 401 genérico (não revela que o email existe em algum tenant).
 - Ao registrar/matricular, buscar **dentro do tenant**:
   - CPF já existe **no tenant** → atualiza dados.
   - CPF não existe no tenant → cria novo usuário (ainda que o CPF exista em outro tenant).
 - **Sem identidade global compartilhada.** A visão "pessoa universal" (marketplace — tabela
   `people` ligando por CPF) fica **diferida** em `docs/ROADMAP.md`, sem precludir.
 
-> **Dívida de schema (corrigir):** hoje as migrations aplicam `unique` **global** em `cpf` e `email`
-> — contradiz o modelo. Trocar por uniques compostos `(tenant_id, cpf)` e `(tenant_id, email)`.
+> **Dívida de schema (resolvida 2026-07-16):** o `unique` global de `cpf`/`email` foi trocado por
+> compostos `(tenant_id, cpf)` e `(tenant_id, email)` (migration
+> `2026_07_16_130000_tenant_scope_user_unique_constraints`). NULLs em `tenant_id`
+> (developer/landlord) não colidem.
 
 ### Quem pode criar/editar cada UserType
 

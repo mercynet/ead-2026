@@ -64,12 +64,51 @@ it('rejects login for tenant user when tenant context is missing', function (): 
         'password' => Hash::make('password123'),
     ]);
 
-    $response = $this->postJson('/api/v1/core/auth/login', [
+    // Identidade tenant-scoped: sem contexto de tenant, um usuário de tenant não é
+    // localizável — falha genérica (401), sem revelar que o email existe num tenant.
+    $this->postJson('/api/v1/core/auth/login', [
         'email' => 'john@example.com',
         'password' => 'password123',
+    ])->assertUnauthorized();
+});
+
+it('scopes identity per tenant: same email in two tenants logs into the right account', function (): void {
+    $tenantA = Tenant::query()->create([
+        'name' => 'Tenant A', 'domain' => 'tenant-a.local', 'database' => null, 'is_active' => true,
+    ]);
+    $tenantB = Tenant::query()->create([
+        'name' => 'Tenant B', 'domain' => 'tenant-b.local', 'database' => null, 'is_active' => true,
     ]);
 
-    $response->assertUnprocessable();
+    // Mesmo email em tenants distintos — agora permitido (unique composto).
+    $userA = User::query()->create([
+        'tenant_id' => $tenantA->id, 'name' => 'Ana A', 'email' => 'shared@example.com',
+        'password' => Hash::make('senha-a-123'),
+    ]);
+    $userB = User::query()->create([
+        'tenant_id' => $tenantB->id, 'name' => 'Bruno B', 'email' => 'shared@example.com',
+        'password' => Hash::make('senha-b-456'),
+    ]);
+
+    // Login no tenant A com a senha de A → resolve o usuário de A.
+    $this->postJson('/api/v1/core/auth/login', [
+        'email' => 'shared@example.com', 'password' => 'senha-a-123',
+    ], ['X-Tenant-ID' => (string) $tenantA->id])
+        ->assertSuccessful()
+        ->assertJsonPath('data.user.id', $userA->id);
+
+    // A senha de B não autentica no tenant A (usuário errado não é sequer localizado).
+    $this->postJson('/api/v1/core/auth/login', [
+        'email' => 'shared@example.com', 'password' => 'senha-b-456',
+    ], ['X-Tenant-ID' => (string) $tenantA->id])
+        ->assertUnauthorized();
+
+    // Login no tenant B resolve o usuário de B.
+    $this->postJson('/api/v1/core/auth/login', [
+        'email' => 'shared@example.com', 'password' => 'senha-b-456',
+    ], ['X-Tenant-ID' => (string) $tenantB->id])
+        ->assertSuccessful()
+        ->assertJsonPath('data.user.id', $userB->id);
 });
 
 it('rejects login when user does not belong to tenant', function (): void {

@@ -1,103 +1,46 @@
 # State — Sessão Atual
 
-> Efêmero: handoff e próximos passos. Reconstruído em 2026-07-16 sem usar versão anterior como
-> evidência. Status fino permanece nos `docs/specs/*/tasks.md`.
+> Efêmero: handoff e próximos passos. Status fino permanece em `docs/specs/*/tasks.md`.
 
 ## Sessão
 
-- **Baseline restabelecido:** stack de containers no ar; suite (395 passed), Architecture (16),
-  Larastan (0 erros) e Pint verdes contra o HEAD atual.
-- **Fatia entregue — onboarding invite-only** (fecha o passo 3 e contém o cadastro público):
-  - `POST /invitations` (admin, tenant-bound, token opaco só-hash, expiry, rate limit) +
-    `POST /invitations/accept` (público; cria usuário/papel com tenant/email/role fixos, uso único,
-    falha genérica `invitation_invalid`).
-  - Cadastro público antigo (`POST /users`) **removido** — criação agora só via aceite de convite.
-  - Cobertura: Feature (happy, 401, 403, 422, IDOR, replay, expiry, escalada) + E2E
-    (convite → aceite → login → catálogo). Specs 10-core-identity atualizadas.
-  - **Endurecimento pós-review:** aceite serializado sob `lockForUpdate()` (uso-único à prova de
-    corrida) + guard de email ocupado entre emissão/aceite (falha genérica, sem 500); checagem de
-    unicidade movida para a Action (após o Gate) — sem oráculo de enumeração de PII; renderer 429
-    no envelope canônico; Resources tipados via `@mixin` (User agora com `@property`), removendo
-    ~11 supressões PHPStan em vez de adicionar. Gate final: suite 397, Architecture 16, Larastan 0.
-- **Veredito:** ainda não expor publicamente. Gargalo remanescente até receita: provisioning de
-  tenant/primeiro admin, operação (deploy/rollback/backup) e evidência de release.
-- Caminho comercial: piloto pago controlado, operação Mzrt assistida e cobrança manual.
-
-## Inconsistências prioritárias confirmadas
-
-- **Segurança:** `POST /api/v1/core/users` público cria student no tenant resolvido sem convite,
-  aprovação ou throttle; tokens podem não expirar e troca de senha não revoga sessões.
-- **Identidade/LGPD:** email/CPF são únicos globalmente apesar do contrato tenant-scoped;
-  cadastro não persiste aceite/versionamento de termos.
-- **Operação:** sem evidência atual de deploy, rollback, backup/restore, mail, worker, storage e
-  observabilidade de produção. Container local parado impediu validar HEAD.
-- **Produto:** não há provisioning de tenant/primeiro admin, convite ou recuperação de senha.
-  Financial/Ecosystem têm fundações, mas nenhuma rota operacional; cobrança deve ficar manual.
-- **API:** contrato area-first diverge de rotas domain-first atuais; não bloquear piloto com migração
-  ampla. Admin area-first cobre principalmente curso, não operação de tenant/membros.
-- **Docs:** ROADMAP chama Financial/Ecosystem de não iniciados; specs ainda carregam entidades
-  anteriores ao ADR-005; `CHECKLIST-VERIFICACAO.md` e auditoria `*-pending.md` estão obsoletos/mistos;
-  README/composer continuam skeleton Laravel.
-- **Release:** CI existe, mas dependency audit usa `continue-on-error`; `tests/e2e-http/*` e geração
-  Scribe ficam fora do `qa:gate`.
+- Auditoria segura consolidada em `docs/auditoria-e2e-http-2026-07-16.md`.
+- Veredito: estratégia proposta é adequada, mas ambiente/runner atuais não cumprem isolamento,
+  timeout, orçamento, circuit breaker, cleanup fatal e sanitização; HTTP mutante recebeu NO-GO.
+- Inventário atual: 65 rotas `/api/v1`; 10 specs HTTP/55 casos, não 57.
+- E2E-002 e E2E-003 estão resolvidos em `a99026b`; E2E-001 é condicional ao `APP_URL` no Sail.
+- Stack trace com `APP_DEBUG=true` não foi classificada como vulnerabilidade. Reteste debug=false ficou
+  bloqueado por falta de stack E2E exclusiva.
+- Troca autenticada de senha mantém tokens, mas spec não define política; password reset do working
+  tree revoga todos. Não tratar divergência contratual como vulnerabilidade automática.
+- Architecture/Feature não foram confirmados nesta rodada: processos concorrentes disputaram o banco
+  `testing`. Resíduos sintéticos conferidos: 0 tenants e 0 users com prefixo E2E.
+- Working tree contém implementação de password reset e outros arquivos de sessão externa; auditoria
+  não os alterou.
 
 ## Próximos passos (1-3)
 
-1. **Operação de produção:** deploy/rollback, backup/restore, mail/worker/storage, observabilidade.
-   Sem isso não expor publicamente. (Requer contexto de infra: alvo de deploy, backup, Sentry.)
-2. **Endpoint de gestão de convites (opcional):** listar pendentes / revogar / reenviar. Só se o piloto
-   exigir — o par create/accept + `tenant:provision` já cobrem o fluxo mínimo.
-3. **Revogação na troca de senha autenticada** (`PATCH /users/me/password`): revoke-others preservando
-   o token atual — o *reset* já revoga tudo; falta o change autenticado.
+1. **Stack E2E Sail exclusiva** (`APP_ENV=e2e`, DB novo/identificável, sem Pest concorrente); então
+   rodar Architecture/Feature isolado (gate limpo) e a bateria HTTP mutante com `APP_DEBUG=false`.
+2. **Operação de produção:** deploy/rollback, backup/restore, mail/worker/storage, observabilidade
+   (requer contexto de infra).
+3. **Gestão de convites (opcional):** listar pendentes / revogar / reenviar — só se o piloto exigir.
 
-## Auditoria E2E HTTP (resolvida 2026-07-16)
-
-- E2E-002 (3 falsos-positivos no harness) e E2E-003 (contrato) corrigidos; E2E-001 documentado
-  (`e2e:run --base=http://localhost` dentro do Sail). Contrato fixado: progresso sem matrícula → 404.
-- Specs e2e-http de Learning verdes contra o app: courses-store 8/8, modules-store 4/4,
-  lessons-store 4/4, lessons-progress 11/11.
-
-## Identidade tenant-scoped (concluído 2026-07-16)
-
-- `unique(tenant_id, email)` + `unique(tenant_id, cpf)` (migration `..._tenant_scope_user_unique_constraints`);
-  mesma pessoa pode existir em tenants distintos. Login tenant-scoped (fallback developer global);
-  usuário de tenant sem `X-Tenant-ID` → 401 genérico. Fecha a dívida de schema e a finding Alta do review.
-
-## Recuperação de senha (concluído 2026-07-16)
-
-- `POST /auth/password/forgot` (tenant-scoped, anti-enumeração, token por e-mail) + `POST /auth/password/reset`
-  (token-driven, uso único, expiry, revoga todas as sessões Sanctum). Feature + E2E verdes.
-- **Nota de ambiente:** o gate full-suite ficou não-determinístico durante a sessão por corrida no banco
-  `testing` compartilhado com validação externa concorrente. Rodar isolado: Core+E2E+Console 70,
-  Architecture 16, Larastan 0 — todos verdes. Para o gate completo, rodar sem outra suite concorrente.
-
-## Provisioning (concluído) — runbook
-
-```bash
-php artisan tenant:provision \
-  --name="Escola Piloto" --domain=piloto.example.com \
-  --admin-name="Nome Admin" --admin-email=admin@piloto.example.com
-# senha omitida → gerada e exibida uma vez. Reexecução é idempotente (não duplica, não troca senha).
-```
-
-## Concluído nesta fatia (critério de saída atingido)
-
-- ✅ Admin convida somente no próprio tenant (`tenant.access` 403 cross-tenant; Action fixa tenant do contexto).
-- ✅ Request não troca tenant/role (tenant do contexto; role restrita a `student|instructor`).
-- ✅ Token expirado/adulterado/reutilizado falha genericamente; aceite cria usuário/role → login.
-- ✅ Testes cobrem happy, IDOR, replay, expiry, escalada; E2E cobre convite → login → catálogo.
-- ✅ Cadastro público antigo removido — sem criação sem convite.
-
-## Adiar
-
-- Checkout B2C, gateways/webhooks, marketplace, painel admin amplo e provisioning self-service.
-- Migração geral area-first, white-label avançado, RabbitMQ/microservices, analytics e app mobile.
+> Concluídos nesta sessão (eram passos 1-2 do snapshot anterior): política de sessão na troca de
+> senha e endurecimento do `E2eRunCommand` (gate ambiente, timeout, circuit breaker, cleanup,
+> sanitização — escopo proporcional). SEC-001 (bucket de throttle) corrigido com limiters nomeados.
 
 ## Decisões abertas
 
-- Dono: autorizar política **invite-only** e escolher associação piloto. Branding mínimo pode ser
-  manual no primeiro piloto; cobrança da licença permanece manual.
+- ~~Política de sessões na troca autenticada de senha~~ **resolvida**: revoga as **outras**
+  (mantém a atual); reset por token revoga todas. Implementado + na spec (`subspecs/auth.md`).
+- Autorizar criação da stack E2E dedicada (`APP_ENV=e2e`, DB novo) para a próxima bateria HTTP
+  mutante e o reteste com `APP_DEBUG=false`.
 
 ## Último commit
 
-- `d7279b1` em `main`. Auditoria/STATE estão no working tree, sem commit/push.
+- `1925db7` em `main` (pushed). Fatias desta sessão, todas commitadas/pushed:
+  `7407f45` invite-only + provisioning · `16cfcc1` identidade tenant-scoped ·
+  `a99026b` fix specs e2e-http + contrato progresso · `fcf091b` password reset ·
+  `1925db7` limiters nomeados + política de sessão + runner endurecido.
+- STATE e o relatório de auditoria estão agora commitados (antes o snapshot dizia `a99026b`/não commitado).

@@ -47,6 +47,9 @@ lesson_progress
 - **Heartbeat de progresso:** o frontend envia `POST /lessons/{id}/progress` periodicamente com
   `{ duration_watched / progress_percentage, is_completed / time_spent_seconds }` para atualizar o
   tracking.
+- **Sem matrícula → `404 not_found`** (não `403`): o heartbeat resolve o `Enrollment` do
+  aluno/curso com `firstOrFail`; ausência de matrícula é tratada como recurso de progresso
+  inexistente (semântica fixada 2026-07-16; também reduz enumeração).
 - A `ProgressStrategy` (ex.: `80_percent`, `full_duration`, `manual`, `time_based`) é configurável
   por aula e define quando a meta de conclusão é batida.
 - **Auditoria financeira:** toda matrícula, mesmo gratuita, idealmente gera registro espelho no Financial.

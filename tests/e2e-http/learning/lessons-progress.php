@@ -240,14 +240,18 @@ return [
         ],
 
         [
-            'name' => 'student sem enrollment na aula → 403',
+            // Contrato fixado (2026-07-16): sem matrícula, o heartbeat de progresso
+            // devolve 404 not_found (UpdateProgressAction resolve o Enrollment com
+            // firstOrFail). Semântica escolhida: ausência de matrícula = recurso de
+            // progresso inexistente (também reduz enumeração), não 403.
+            'name' => 'student sem enrollment na aula → 404',
             'as' => 'student',
             'path' => fn (array $ctx): string => "/api/v1/learning/lessons/{$ctx['fixtures']['noEnroll']['lesson']->id}/progress",
             'body' => [
                 'time_spent_seconds' => 10,
                 'is_completed' => false,
             ],
-            'expect' => ['status' => 403],
+            'expect' => ['status' => 404, 'json' => ['errors.0.code' => 'not_found']],
         ],
 
         [

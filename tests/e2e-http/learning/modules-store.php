@@ -11,6 +11,9 @@ return [
     'setup' => function (array $ctx): array {
         $course = Course::query()->create([
             'tenant_id' => $ctx['tenant']->id,
+            // O instructor do harness precisa ser dono do curso: create-check
+            // (CourseModulePolicy) só autoriza módulo em curso próprio.
+            'instructor_id' => $ctx['users']['instructor']->id,
             'title' => 'Curso Modulo E2E',
             'slug' => 'curso-modulo-e2e',
             'description' => 'descrição',

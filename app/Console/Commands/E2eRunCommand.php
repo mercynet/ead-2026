@@ -24,7 +24,7 @@ use Throwable;
 class E2eRunCommand extends Command
 {
     protected $signature = 'e2e:run {spec : Caminho do spec relativo a tests/e2e-http (ex.: learning/courses-store)}
-        {--base= : Base URL do app rodando (default: config app.url)}
+        {--base= : Base URL do app rodando (default: config app.url). Dentro do container Sail use --base=http://localhost (a porta publicada no host, ex. 8099, não é acessível de dentro do container)}
         {--keep : Não limpar as fixtures efêmeras no fim (debug)}';
 
     protected $description = 'Executa um spec E2E contra o app rodando (HTTP real + asserts de DB)';

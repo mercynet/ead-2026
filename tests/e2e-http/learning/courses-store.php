@@ -79,15 +79,18 @@ return [
         ],
 
         [
-            'name' => 'status published seta published_at (side effect)',
+            // Contrato: StoreCourseAction força status=draft; o status do body é
+            // ignorado (publicação só via endpoint administrativo dedicado).
+            'name' => 'status published no body é ignorado (curso nasce draft)',
             'as' => 'admin',
             'body' => ['title' => 'Curso Publicado E2E', 'status' => 'published'],
-            'expect' => ['status' => 201, 'json' => ['data.status' => 'published']],
+            'expect' => ['status' => 201, 'json' => ['data.status' => 'draft']],
             'db' => function (array $ctx): array {
                 $c = Course::query()->where('title', 'Curso Publicado E2E')->first();
 
                 return [
-                    'published_at preenchido' => [true, $c?->published_at !== null],
+                    'status persistido draft' => ['draft', $c?->status],
+                    'published_at vazio' => [null, $c?->published_at],
                 ];
             },
         ],

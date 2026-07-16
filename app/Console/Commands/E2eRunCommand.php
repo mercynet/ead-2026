@@ -8,6 +8,7 @@ use App\Modules\Core\Models\User;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Role;
@@ -20,6 +21,15 @@ use Throwable;
  *
  * Cria fixtures efêmeras (tenants + users por papel + tokens Sanctum), roda os casos
  * e limpa tudo no fim (a menos de --keep). Nunca roda em produção.
+ *
+ * Segurança (auditoria 2026-07-16): só roda em local|testing|e2e; recusa DB que não
+ * pareça descartável (nome sem e2e/test) salvo --force-db; canário prova servidor↔DB
+ * antes de qualquer mutação; timeout por request; circuit breaker no 5xx inesperado;
+ * saída sanitizada (sem token/segredo).
+ *
+ * Stack e2e dedicada (recomendado): copie .env.e2e.example → .env.e2e (DB_DATABASE=ead2026_e2e,
+ * APP_ENV=e2e, APP_DEBUG=false), suba a app com esse env e rode:
+ *   php artisan e2e:run <spec> --base=http://localhost --fresh
  */
 class E2eRunCommand extends Command
 {
@@ -27,6 +37,8 @@ class E2eRunCommand extends Command
         {--base= : Base URL do app rodando (default: config app.url). Dentro do container Sail use --base=http://localhost (a porta publicada no host, ex. 8099, não é acessível de dentro do container)}
         {--timeout=10 : Timeout por request em segundos (evita travar num endpoint pendurado)}
         {--continue-on-error : Não abortar no primeiro 5xx inesperado (por padrão a corrida para)}
+        {--fresh : Roda migrate:fresh no DB atual antes da bateria (só após o gate de DB descartável)}
+        {--force-db : Permite rodar contra um DB que não parece descartável (dev). Use com cuidado}
         {--keep : Não limpar as fixtures efêmeras no fim (debug)}';
 
     protected $description = 'Executa um spec E2E contra o app rodando (HTTP real + asserts de DB)';
@@ -53,6 +65,18 @@ class E2eRunCommand extends Command
             return self::FAILURE;
         }
 
+        $database = (string) DB::connection()->getDatabaseName();
+        if (! $this->isDisposableDatabase($database) && ! $this->option('force-db')) {
+            $this->error("e2e:run recusa mutar o DB '{$database}' — não parece descartável.");
+            $this->line('  Aponte a app+runner para um DB e2e (APP_ENV=e2e, DB_DATABASE=..._e2e) ou passe --force-db.');
+
+            return self::FAILURE;
+        }
+
+        if ($this->option('fresh')) {
+            $this->components->task("migrate:fresh em {$database}", fn (): bool => $this->callSilent('migrate:fresh', ['--force' => true]) === self::SUCCESS);
+        }
+
         $base = rtrim((string) ($this->option('base') ?: config('app.url')), '/');
         [$method, $specPath] = $this->parseEndpoint($spec['endpoint']);
 
@@ -61,16 +85,22 @@ class E2eRunCommand extends Command
         try {
             $this->bootFixtures();
 
-            if (isset($spec['setup']) && is_callable($spec['setup'])) {
-                $this->ctx['fixtures'] = (array) $spec['setup']($this->ctx);
-            }
+            if (! $this->canaryServerDbAligned($base)) {
+                $this->error("Canário falhou: a app em {$base} não vê as fixtures do runner (DB '{$database}').");
+                $this->line('  App fora do ar ou servida em outro DB — nenhuma mutação executada.');
+                $this->failed++;
+            } else {
+                if (isset($spec['setup']) && is_callable($spec['setup'])) {
+                    $this->ctx['fixtures'] = (array) $spec['setup']($this->ctx);
+                }
 
-            foreach ($spec['cases'] as $case) {
-                $this->runCase($base, $method, $specPath, $case);
+                foreach ($spec['cases'] as $case) {
+                    $this->runCase($base, $method, $specPath, $case);
 
-                if ($this->aborted) {
-                    $this->error('Abortado no primeiro 5xx inesperado (use --continue-on-error para prosseguir).');
-                    break;
+                    if ($this->aborted) {
+                        $this->error('Abortado no primeiro 5xx inesperado (use --continue-on-error para prosseguir).');
+                        break;
+                    }
                 }
             }
         } catch (Throwable $e) {
@@ -351,6 +381,44 @@ class E2eRunCommand extends Command
             '$1[REDACTED]$2',
             $text,
         ) ?? $text;
+    }
+
+    /**
+     * DB é "descartável" se o nome sinaliza teste/e2e — nunca o DB de dev/prod.
+     * Barra mutação acidental no banco errado (o --force-db é o escape explícito).
+     */
+    private function isDisposableDatabase(string $database): bool
+    {
+        return preg_match('/(e2e|test)/i', $database) === 1;
+    }
+
+    /**
+     * Canário: prova que a app SERVIDA (via HTTP) enxerga as fixtures que o runner
+     * acabou de criar no seu DB. Um token de fixture só autentica em /auth/me se
+     * servidor e runner compartilham o mesmo banco — se não, aborta antes de mutar.
+     */
+    private function canaryServerDbAligned(string $base): bool
+    {
+        $token = $this->ctx['tokens']['admin'] ?? null;
+        $tenant = $this->ctx['tenant'] ?? null;
+
+        if ($token === null || $tenant === null) {
+            return false;
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$token,
+                'X-Tenant-ID' => (string) $tenant->id,
+            ])
+                ->timeout(max(1, (int) $this->option('timeout')))
+                ->acceptJson()
+                ->get($base.'/api/v1/core/auth/me');
+        } catch (Throwable) {
+            return false;
+        }
+
+        return $response->status() === 200;
     }
 
     private function teardownFixtures(): void

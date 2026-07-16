@@ -59,6 +59,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `PATCH /api/v1/core/users/me/password`: revoga as **outras** sessões na troca, preservando a atual (reset por token revoga todas).
 - [x] Rate limiters nomeados e separados por rota (login/forgot/reset/invitation-accept/invitation-create) — corrige bucket `domínio|IP` compartilhado do throttle padrão (SEC-001).
 - [x] `E2eRunCommand` endurecido: gate de ambiente (local|testing|e2e), timeout por request, circuit breaker no 5xx inesperado (`--continue-on-error`), cleanup surfacing e sanitização de token no output (AUD-001, escopo proporcional).
+- [x] Isolamento E2E: gate de DB descartável (recusa dev salvo `--force-db`), canário servidor↔DB antes de mutar, `--fresh`, `.env.e2e.example` + DB `ead2026_e2e` provisionado. Fecha o gate "stack E2E dedicada" da auditoria.
 - [ ] `PATCH /api/v1/core/users/{id}` (update por admin).
 - [ ] `DELETE /api/v1/core/users/{id}`.
 - [ ] `GET /api/v1/core/tenant/config` (público, white-label).

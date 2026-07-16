@@ -20,15 +20,22 @@
 
 ## Próximos passos (1-3)
 
-1. **Stack E2E Sail exclusiva** (`APP_ENV=e2e`, DB novo/identificável, sem Pest concorrente); então
-   rodar Architecture/Feature isolado (gate limpo) e a bateria HTTP mutante com `APP_DEBUG=false`.
-2. **Operação de produção:** deploy/rollback, backup/restore, mail/worker/storage, observabilidade
-   (requer contexto de infra).
-3. **Gestão de convites (opcional):** listar pendentes / revogar / reenviar — só se o piloto exigir.
+1. **Operação de produção:** deploy/rollback, backup/restore, mail/worker/storage, observabilidade
+   (requer contexto de infra: alvo de deploy, backup do MySQL, Sentry).
+2. **Gestão de convites (opcional):** listar pendentes / revogar / reenviar — só se o piloto exigir.
+3. **Rodar a bateria HTTP mutante na stack e2e** (`.env.e2e`, app em `APP_ENV=e2e`) com `APP_DEBUG=false`
+   e ampliar cobertura de specs (Core/Assessment) — agora que o runner tem gate+canário.
 
-> Concluídos nesta sessão (eram passos 1-2 do snapshot anterior): política de sessão na troca de
-> senha e endurecimento do `E2eRunCommand` (gate ambiente, timeout, circuit breaker, cleanup,
-> sanitização — escopo proporcional). SEC-001 (bucket de throttle) corrigido com limiters nomeados.
+## Isolamento E2E (concluído 2026-07-16)
+
+- Gate de DB descartável (recusa dev salvo `--force-db`), canário servidor↔DB antes de mutar, timeout,
+  circuit breaker no 5xx, `--fresh`, saída sanitizada. `.env.e2e.example` + DB `ead2026_e2e` migrado.
+- Validado: gate recusa `ead2026`; `--force-db` alinhado roda 8/8; canário pega desalinhamento (CLI em
+  `ead2026_e2e` vs app servida em dev) e aborta sem mutar. Fecha o gate "stack E2E dedicada" da auditoria.
+
+> Concluídos nesta sessão: identidade tenant-scoped, invite-only + provisioning, password reset,
+> política de sessão na troca de senha, SEC-001 (limiters nomeados), endurecimento + isolamento do
+> `E2eRunCommand`. Gate full-suite limpo: 417 passed · Larastan 0 · Pint pass.
 
 ## Decisões abertas
 

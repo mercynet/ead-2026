@@ -26,6 +26,9 @@ return [
         Invitation::class => [
             'email',
         ],
+        \App\Modules\Core\Models\PasswordReset::class => [
+            'email',
+        ],
     ],
 
 ];

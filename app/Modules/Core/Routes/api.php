@@ -12,6 +12,8 @@ Route::prefix('v1/core')
             ->controller(AuthController::class)
             ->group(function (): void {
                 Route::post('/login', 'login')->middleware('throttle:5,1');
+                Route::post('/password/forgot', 'forgotPassword')->middleware('throttle:5,1');
+                Route::post('/password/reset', 'resetPassword')->middleware('throttle:5,1');
 
                 Route::middleware([
                     'tenant.required.unless.developer',

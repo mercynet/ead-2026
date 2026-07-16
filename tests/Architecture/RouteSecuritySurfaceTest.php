@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 it('requires auth:sanctum on every api/v1 route not deliberately public', function (): void {
     $publicAllowlist = [
         'POST api/v1/core/auth/login',
+        'POST api/v1/core/auth/password/forgot',
+        'POST api/v1/core/auth/password/reset',
         'POST api/v1/core/invitations/accept',
         'GET api/v1/learning/catalog/courses',
         'GET api/v1/learning/catalog/courses/{slug}',
@@ -58,6 +60,8 @@ it('requires auth:sanctum on every api/v1 route not deliberately public', functi
 it('keeps the public allowlist free of stale entries', function (): void {
     $publicAllowlist = [
         'POST api/v1/core/auth/login',
+        'POST api/v1/core/auth/password/forgot',
+        'POST api/v1/core/auth/password/reset',
         'POST api/v1/core/invitations/accept',
         'GET api/v1/learning/catalog/courses',
         'GET api/v1/learning/catalog/courses/{slug}',

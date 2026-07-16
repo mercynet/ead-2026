@@ -29,6 +29,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `POST /api/v1/core/auth/login` (rate limit 5/min, token com device type).
 - [x] `POST /api/v1/core/auth/logout`.
 - [x] `GET /api/v1/core/auth/me` (usuário + roles + permissions).
+- [x] `POST /api/v1/core/auth/password/forgot` (público, tenant-scoped, throttle; resposta genérica anti-enumeração; notifica por e-mail com token opaco só-hash).
+- [x] `POST /api/v1/core/auth/password/reset` (público; token-driven, expiry, uso único, falha genérica `password_reset_invalid`; revoga todas as sessões Sanctum do usuário).
 - [x] ~~`POST /api/v1/core/users` (registro público)~~ **removido** — substituído por onboarding invite-only.
 - [x] `POST /api/v1/core/invitations` (admin emite convite tenant-bound; token opaco 1x, rate limit 60/min).
 - [x] `POST /api/v1/core/invitations/accept` (público; cria usuário+papel com tenant/email/role fixos; uso único, expiry, falha genérica; rate limit 10/min).
@@ -54,6 +56,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 ### Core
 - [x] Migration: trocar `unique` global de `cpf`/`email` por compostos `(tenant_id, cpf)` e `(tenant_id, email)` — alinha ao modelo tenant-scoped. Login agora é tenant-scoped (fallback developer global); usuário de tenant sem `X-Tenant-ID` → 401 genérico.
 - [ ] Padronizar permission de `GET /users/{id}` para `core.users.view` (canônico); remover `core.users.show` das roles instructor/student no seeder/`config/permissions.php`.
+- [ ] `PATCH /api/v1/core/users/me/password`: revogar sessões na troca (revoke-others, preservando o token atual) — hoje só o *reset* de senha revoga sessões.
 - [ ] `PATCH /api/v1/core/users/{id}` (update por admin).
 - [ ] `DELETE /api/v1/core/users/{id}`.
 - [ ] `GET /api/v1/core/tenant/config` (público, white-label).

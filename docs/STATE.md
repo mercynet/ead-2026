@@ -43,17 +43,33 @@
 
 ## Próximos passos (1-3)
 
-1. **Operação de produção:** deploy/rollback, backup/restore, revogação de sessão/token, mail/worker/storage,
-   observabilidade. Sem isso não expor publicamente.
+1. **Operação de produção:** deploy/rollback, backup/restore, mail/worker/storage, observabilidade.
+   Sem isso não expor publicamente. (Requer contexto de infra: alvo de deploy, backup, Sentry.)
 2. **Endpoint de gestão de convites (opcional):** listar pendentes / revogar / reenviar. Só se o piloto
    exigir — o par create/accept + `tenant:provision` já cobrem o fluxo mínimo.
-3. **Recuperação de senha** (tenant-scoped) — hoje inexistente; necessária para operação real do piloto.
+3. **Revogação na troca de senha autenticada** (`PATCH /users/me/password`): revoke-others preservando
+   o token atual — o *reset* já revoga tudo; falta o change autenticado.
+
+## Auditoria E2E HTTP (resolvida 2026-07-16)
+
+- E2E-002 (3 falsos-positivos no harness) e E2E-003 (contrato) corrigidos; E2E-001 documentado
+  (`e2e:run --base=http://localhost` dentro do Sail). Contrato fixado: progresso sem matrícula → 404.
+- Specs e2e-http de Learning verdes contra o app: courses-store 8/8, modules-store 4/4,
+  lessons-store 4/4, lessons-progress 11/11.
 
 ## Identidade tenant-scoped (concluído 2026-07-16)
 
 - `unique(tenant_id, email)` + `unique(tenant_id, cpf)` (migration `..._tenant_scope_user_unique_constraints`);
   mesma pessoa pode existir em tenants distintos. Login tenant-scoped (fallback developer global);
   usuário de tenant sem `X-Tenant-ID` → 401 genérico. Fecha a dívida de schema e a finding Alta do review.
+
+## Recuperação de senha (concluído 2026-07-16)
+
+- `POST /auth/password/forgot` (tenant-scoped, anti-enumeração, token por e-mail) + `POST /auth/password/reset`
+  (token-driven, uso único, expiry, revoga todas as sessões Sanctum). Feature + E2E verdes.
+- **Nota de ambiente:** o gate full-suite ficou não-determinístico durante a sessão por corrida no banco
+  `testing` compartilhado com validação externa concorrente. Rodar isolado: Core+E2E+Console 70,
+  Architecture 16, Larastan 0 — todos verdes. Para o gate completo, rodar sem outra suite concorrente.
 
 ## Provisioning (concluído) — runbook
 

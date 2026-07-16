@@ -4,7 +4,11 @@ namespace App\Modules\Core\Http\Controllers;
 
 use App\Modules\Core\Actions\Auth\LoginAction;
 use App\Modules\Core\Actions\Auth\LogoutAction;
+use App\Modules\Core\Actions\Auth\RequestPasswordResetAction;
+use App\Modules\Core\Actions\Auth\ResetPasswordAction;
+use App\Modules\Core\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Modules\Core\Http\Requests\Auth\LoginRequest;
+use App\Modules\Core\Http\Requests\Auth\ResetPasswordRequest;
 use App\Modules\Core\Http\Resources\Auth\AuthUserResource;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
@@ -20,6 +24,8 @@ class AuthController extends Controller
     public function __construct(
         private readonly LoginAction $loginAction,
         private readonly LogoutAction $logoutAction,
+        private readonly RequestPasswordResetAction $requestPasswordResetAction,
+        private readonly ResetPasswordAction $resetPasswordAction,
     ) {}
 
     /**
@@ -35,6 +41,51 @@ class AuthController extends Controller
 
         return new JsonResponse([
             'data' => $result,
+        ]);
+    }
+
+    /**
+     * Esqueci a Senha
+     *
+     * Emite um pedido de redefinição de senha para o email informado no tenant
+     * atual e envia o token por e-mail. A resposta é sempre genérica, exista o
+     * email ou não (anti-enumeração).
+     *
+     * @unauthenticated
+     */
+    public function forgotPassword(ForgotPasswordRequest $request, ApiContext $context): JsonResponse
+    {
+        $this->requestPasswordResetAction->handle(
+            $context->requiredTenant(),
+            $request->string('email')->toString(),
+        );
+
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Se o email existir, enviaremos instruções de redefinição.',
+            ],
+        ]);
+    }
+
+    /**
+     * Redefinir Senha
+     *
+     * Consome o token de redefinição e troca a senha. Token inválido, expirado
+     * ou já usado falha genericamente. Todas as sessões anteriores são revogadas.
+     *
+     * @unauthenticated
+     */
+    public function resetPassword(ResetPasswordRequest $request, ApiContext $context): JsonResponse
+    {
+        $this->resetPasswordAction->handle(
+            $request->string('token')->toString(),
+            $request->string('password')->toString(),
+        );
+
+        return new JsonResponse([
+            'data' => [
+                'password_reset' => true,
+            ],
         ]);
     }
 

@@ -72,6 +72,18 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422);
         });
 
+        $exceptions->render(function (\App\Shared\Exceptions\PasswordResetInvalidException $exception, Request $request) {
+            return response()->json([
+                'data' => null,
+                'errors' => [
+                    [
+                        'code' => 'password_reset_invalid',
+                        'message' => $exception->getMessage(),
+                    ],
+                ],
+            ], 422);
+        });
+
         $exceptions->render(function (ResourceNotFoundException $exception, Request $request) {
             return response()->json([
                 'data' => null,

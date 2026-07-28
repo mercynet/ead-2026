@@ -47,6 +47,10 @@ antigo (Filament, discovery por filesystem, `laravel/cashier`).
    é o caso do gateway).
 5. **Sem `laravel/cashier`:** cada gateway é um adaptador de `PaymentGatewayInterface` (SDK/HTTP
    direto). Isto **supersede** o ponto "StripeGateway via Cashier" do ADR-001.
+6. **Preset de onboarding:** todo tenant novo recebe o plugin gratuito curado `cash`
+   (`gateway.cash`) ativo e habilitado, para recebimento em dinheiro com confirmação manual. Admin
+   pode ativar e configurar outros gateways gratuitos ou pagos. Isso não provisiona nem altera o
+   gateway/billing da plataforma Mzrt, que permanece dedicado.
 
 O scaffold pré-spec (`2026_02_21_1830xx`: `plugins` PK=`name`, design filesystem) é órfão e será
 **reescrito in-place** para o schema normalizado, slice a slice.

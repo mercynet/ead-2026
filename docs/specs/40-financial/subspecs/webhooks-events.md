@@ -2,14 +2,14 @@
 domain: financial
 parent: ../spec.md
 resource: webhooks-events
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-28
 ---
 
 # Webhooks & Events
 
 ## Rules
 
-- **Rota cega de webhook:** `POST /webhooks/gateway/{gateway_slug}` recebe o ping do gateway
+- **Rota cega de webhook:** `POST /api/v1/webhooks/gateways/{gateway_slug}` recebe o ping do gateway
   sinalizando que `PAY-XXXXX` virou `paid` ou `failed`. É pública.
 - O webhook **não processa inline**: enfileira um Job (`ProcessPaymentWebhookJob`) para um worker,
   que vira a `Order` de `pending` → `completed`/`paid` e dispara `OrderPaidEvent`.
@@ -17,12 +17,14 @@ last-reviewed: 2026-06-10
   `EnrollService` (matrícula automática). Garante isolamento — não há código de matrícula nas
   rotas financeiras.
 - Exceções de gateway são capturadas e traduzidas para PT-BR antes de qualquer resposta ao cliente.
+- Gateways offline (`cash`) não têm webhook: o Admin confirma a transação manualmente na superfície
+  `/api/v1/admin`, com a mesma transição idempotente de Order/Payment e o mesmo `OrderPaidEvent`.
 
 ## Endpoints
 
 | Método | Path | Descrição | Permission |
 |--------|------|-----------|------------|
-| POST | `/api/v1/financial/webhooks/gateway/{gateway_slug}` | Recebe status do gateway (enfileira job) | público (rota cega) |
+| POST | `/api/v1/webhooks/gateways/{gateway_slug}` | Recebe status do gateway (enfileira job) | público (rota cega) |
 
 ## Events
 

@@ -11,11 +11,9 @@ use App\Modules\Financial\Gateways\Contracts\PaymentGatewayInterface;
  * fundação não trava em nenhum PSP (ADR-001) e serve os dois ledgers via
  * contrato agnóstico (ADR-003).
  *
- * A RESOLUÇÃO do gateway ativo por tenant (credenciais, escolha de default,
- * entitlement) depende da config de instância do plugin — âmbito do módulo
- * Ecosystem, ainda não implementado. Vive fora deste registro até lá; ao ser
- * construída, deve ligar adaptador + credenciais atomicamente e só resolver
- * config validada (ver Needs Review em docs/specs/40-financial/tasks.md).
+ * A resolução do gateway ativo por tenant vive no Ecosystem, que combina
+ * entitlement + config cifrada e os entrega atomicamente ao
+ * `TenantGatewayResolver`. Este manager conhece somente adaptadores stateless.
  */
 class PaymentGatewayManager
 {

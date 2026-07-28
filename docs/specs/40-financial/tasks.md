@@ -1,6 +1,6 @@
 ---
 domain: financial
-last-updated: 2026-07-12
+last-updated: 2026-07-28
 ---
 
 # Tasks — Financial
@@ -35,30 +35,35 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   neutra, **nunca o model do ledger** — para um mesmo adaptador (ex.: StripeGateway) servir o plano
   Venda (tenant→aluno) e o plano Plataforma (Mozart→tenant) sem duplicação. Testes em
   `tests/Unit/Financial/PaymentGatewayManagerTest.php` (registro + `charge` via adaptador + singleton).
-  **Escopo deliberadamente reduzido:** a RESOLUÇÃO por tenant (credenciais, default, entitlement) e o
-  store de config **não** entram aqui — decidido (2026-07-12) que a config de instância do gateway é
-  **config de plugin genérica** (âmbito Ecosystem, ainda não implementado). Por isso o
-  `TenantPaymentGateway`/`forTenant` do rascunho inicial foi **descartado**; ver Needs Review.
-  `parseWebhook` também fica na task do webhook.
+  A resolução por tenant e o store genérico cifrado foram entregues no Ecosystem; o
+  `TenantPaymentGateway`/`forTenant` do rascunho inicial foi descartado. `parseWebhook` fica na task
+  do webhook.
+- [x] **Gateway `cash` first-party + preset de onboarding.** Adapter sem credenciais aceita a cobrança
+  como `pending` para confirmação manual; `tenant:provision` cria idempotentemente catálogo,
+  activation e config habilitada, preservando escolhas existentes do Admin.
 
 ## In Progress
 
-- [ ] Registro financeiro espelho para matrículas gratuitas (auditoria/LTV).
+- [ ] Endpoint Admin para listar/configurar gateways do tenant (ativar/desativar e validar config).
 
 ## Pending
 
 - [ ] Completar a fundação financeira restante: `PriceHistory`.
-- [ ] `POST /financial/checkout` (calcula preço no servidor, gera Order + sessão do gateway).
-- [ ] `GET /financial/orders` e `GET /financial/orders/{id}`.
-- [ ] `POST /financial/webhooks/gateway/{gateway_slug}` (rota cega) + `ProcessPaymentWebhookJob`.
+- [ ] `POST /api/v1/student/checkout` (calcula preço no servidor, gera Order + sessão do gateway).
+- [ ] `GET /api/v1/student/orders` e `GET /api/v1/student/orders/{id}`.
+- [ ] `POST /api/v1/webhooks/gateways/{gateway_slug}` (rota cega) + `ProcessPaymentWebhookJob`.
+- [ ] `POST /api/v1/admin/orders/{id}/confirm-manual-payment` — confirmação idempotente e auditada
+  para gateways offline (`cash` inicialmente), transiciona Payment/Order e dispara `OrderPaidEvent`.
 - [ ] Tradução PT-BR de exceções de gateway.
 
 ### Reuso eadIA + billing (ver ADR-001)
 - [x] **`PaymentGatewayInterface`** (contrato + DTOs + registro de adaptadores) — portado/revisado do eadIA. Fundação que não trava em gateway. (ver Done)
-- [ ] **Config de instância do gateway = config de plugin (Ecosystem).** A credencial/config do tenant por gateway vive no store genérico de config-de-plugin do Ecosystem (gateway é um plugin como os outros), não em model financeiro dedicado. Depende do módulo Ecosystem existir. Ver Needs Review.
+- [x] **Config de instância do gateway = config de plugin (Ecosystem).** Credencial/config do tenant
+  vive em `TenantPluginConfig` cifrado, não em model financeiro dedicado.
 - [x] **Resolução do gateway ativo por tenant** — `TenantGatewayResolver` (Financial) consome o contrato `Ecosystem\Contracts\TenantGatewayProvider` (fronteira, invariante 11), casa `slug→adaptador`, valida config, devolve `ResolvedGateway {adapter, credentials}` atômico; honra entitlement (`PluginActivation` ativa + `TenantPluginConfig` enabled). Substitui o `forTenant`/`TenantPaymentGateway` descartado. Ver Done.
 - [x] **`PlatformPaymentGateway` (global, credenciais do Mozart) + `PlatformGatewayResolver`** — situação dev/admin→plataforma. Model (config `encrypted:array` + `$hidden`, `is_active`/`is_default`, `makeDefault()` **transacional** — fecha finding 4 no escopo plataforma) + resolver que devolve `ResolvedGateway` atômico via mesmo registro de adaptadores. Ledger `PlatformOrder*` segue em task própria (ADR-003). Ver Done.
-- [ ] **`StripeGateway` via `laravel/cashier`** (1º adaptador; add Cashier nesta task — **precisa aprovar a dependência**). Cobre cartão/PIX/boleto BR + global. Registra-se no `PaymentGatewayManager` e serve os **dois** ledgers via contrato agnóstico.
+- [ ] **Adaptadores de gateway first-party** (Stripe, Mercado Pago, PagSeguro, PIX-nativo, Asaas):
+  implementam `PaymentGatewayInterface`, sem Cashier, e servem os dois ledgers via contrato agnóstico.
 - [ ] **Gateways adicionais como plugins financeiros** (Mercado Pago, PagSeguro, PIX-nativo, Asaas) — cada um implementa `PaymentGatewayInterface`; tenant ativa via `50-ecosystem-plugins`. NÃO no MVP, mas o contrato já prevê.
 - [ ] **3ª camada — comissão de instrutor**: `commission_rate` + `CommissionLog` (repasse tenant/plataforma→instrutor). Não existia no eadIA — gap a modelar.
 - [ ] **Portar (revisar, não copiar cego):** `Order`, `OrderItem` (polimórfico itemable: Course/SubscriptionPlan/Plugin + `item_snapshot`), `Payment` (`gateway_response` cru), enum `OrderOriginType`. Padronizar **centavos inteiros** (eadIA mistura decimal/cents — corrigir).
@@ -86,5 +91,5 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Open Questions
 
-- _(resolvido)_ Gateways: **Stripe no MVP** (via Cashier); demais como **plugins financeiros**
-  tenant-selecionáveis (taxas variam por tamanho da escola). Ver ADR-001.
+- _(resolvido)_ Gateways: `cash` é preset gratuito de confirmação manual; demais adaptadores são
+  plugins financeiros tenant-selecionáveis (taxas variam por tamanho da escola), sem Cashier.

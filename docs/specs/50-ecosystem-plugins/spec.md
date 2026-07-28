@@ -1,7 +1,7 @@
 ---
 domain: ecosystem-plugins
 maturity: draft
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-28
 owners: [paulo]
 related:
   - ../00-architecture/rbac.md
@@ -43,7 +43,9 @@ Recursos detalhados nas subspecs:
 > `app/Plugins/` reservado a extensão externa futura). Config de instância = **`TenantPluginConfig`
 > genérico** (blob `encrypted:array`, schema declarado em código), que **supersede** o split
 > `PluginSetting`×`TenantIntegration` abaixo. Gateway é plugin (`kind='gateway'`); gateway da
-> plataforma é dedicado (`PlatformPaymentGateway`, no Financial). Tabela abaixo será convergida.
+> plataforma é dedicado (`PlatformPaymentGateway`, no Financial). Todo tenant novo recebe o preset
+> gratuito curado `cash` (`gateway.cash`) ativo e habilitado para confirmação manual; Admin pode
+> ativar/configurar gateways adicionais gratuitos ou pagos. Tabela abaixo será convergida.
 
 | Model | Papel |
 |-------|-------|
@@ -64,8 +66,12 @@ Recursos detalhados nas subspecs:
 
 ## Business Rules
 
-- **First-party only:** sem upload de terceiros. Plugins residem em `app/Plugins/` e são
-  desenvolvidos só pela master. Discovery é por **DB** (registrados no banco), não filesystem.
+- **First-party only:** sem upload de terceiros. Plugins são capabilities já presentes no core e
+  registrados por **DB**, não discovery de filesystem.
+- **Preset de gateway:** o provisionamento do tenant cria, se ausentes, catálogo global e entitlement
+  ativo + config habilitada do `cash` (Dinheiro, `gateway.cash`, free/curado), sem sobrescrever uma
+  escolha/configuração existente. O recebimento exige confirmação manual; Admin pode ativar e
+  configurar gateways adicionais gratuitos ou pagos.
 - **Provisionamento exclusivo do Mzrt:** apenas `developer` (área Mzrt) cria, edita, **ativa,
   desativa ou deprecia** plugins no catálogo. Ninguém mais — nem `tenant_admin`. Ver
   [`../00-architecture/areas-surfaces.md`](../00-architecture/areas-surfaces.md) §Mzrt.
@@ -78,6 +84,9 @@ Recursos detalhados nas subspecs:
   `PluginInstallation` + `PluginActivation`** (e um registro financeiro espelho de `amount_cents=0`
   no plano Plataforma — ver §"Billing — onde a venda de plugin entra") para o Mzrt contabilizar quem usa free.
   Desativar volta ao estado anterior; retenção de config no desativar segue LGPD (ver Notes).
+  Exceção transitória explícita: o preset de onboarding `cash` já cria `PluginActivation` +
+  `TenantPluginConfig`; o espelho `PluginInstallation`/`PlatformOrder` será retropreenchido quando
+  essas entidades do marketplace existirem, sem bloquear o primeiro tenant.
 - **Rating de plugin:** tenant avalia plugin que usa (`PluginRating`, 1-5 + moderação); o rollup
   (`PluginRatingAggregate`) alimenta o filtro **Featured** (stat de uso + rating) da vitrine.
 - **Comp por tenant:** Mzrt pode dar preço diferente ou **free por um período** a um tenant

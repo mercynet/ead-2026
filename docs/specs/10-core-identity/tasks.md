@@ -1,6 +1,6 @@
 ---
 domain: core-identity
-last-updated: 2026-06-10
+last-updated: 2026-07-28
 ---
 
 # Tasks — Core & Identity (inclui RBAC)
@@ -39,7 +39,9 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `PATCH /api/v1/core/users/me`.
 - [x] `PATCH /api/v1/core/users/me/password`.
 - [x] Models `User`, `Tenant`, `TenantCustomization`, `TenantIntegration` (+ relacionamentos).
-- [x] Command `tenant:provision` — bootstrap idempotente de tenant + primeiro admin (semeia RBAC; não duplica nem sobrescreve senha; gera senha forte se omitida). Runbook do onboarding invite-only.
+- [x] Command `tenant:provision` — bootstrap idempotente de tenant + primeiro admin (semeia RBAC;
+  provisiona preset gratuito `cash` de confirmação manual via contrato Ecosystem; não duplica nem
+  sobrescreve senha, ativação ou config existente; gera senha forte se omitida). Runbook do onboarding invite-only.
 
 ## In Progress
 

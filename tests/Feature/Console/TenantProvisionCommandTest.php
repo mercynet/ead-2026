@@ -3,6 +3,13 @@
 use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Ecosystem\Contracts\TenantGatewayProvider;
+use App\Modules\Ecosystem\Models\Plugin;
+use App\Modules\Ecosystem\Models\PluginActivation;
+use App\Modules\Ecosystem\Models\TenantPluginConfig;
+use App\Modules\Financial\Gateways\Adapters\CashPaymentGateway;
+use App\Modules\Financial\Gateways\TenantGatewayResolver;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 it('provisions a tenant and first admin with the admin role', function (): void {
@@ -39,6 +46,83 @@ it('is idempotent — running twice creates no duplicates', function (): void {
 
     expect(Tenant::query()->where('domain', 'piloto.local')->count())->toBe(1)
         ->and(User::query()->where('email', 'admin@piloto.local')->count())->toBe(1);
+});
+
+it('provisions resolver-ready cash gateway preset for first admin', function (): void {
+    $this->artisan('tenant:provision', [
+        '--name' => 'Escola Dinheiro',
+        '--domain' => 'dinheiro.local',
+        '--admin-name' => 'Admin Dinheiro',
+        '--admin-email' => 'admin@dinheiro.local',
+        '--admin-password' => 'senha-forte-123',
+    ])->assertExitCode(0);
+
+    $tenant = Tenant::query()->where('domain', 'dinheiro.local')->firstOrFail();
+    $admin = User::query()->where('email', 'admin@dinheiro.local')->firstOrFail();
+    $plugin = Plugin::query()->where('slug', 'cash')->firstOrFail();
+    $activation = PluginActivation::query()->where('tenant_id', $tenant->id)->where('plugin_id', $plugin->id)->firstOrFail();
+    $config = TenantPluginConfig::query()->where('tenant_id', $tenant->id)->where('plugin_id', $plugin->id)->firstOrFail();
+    $rawConfig = DB::table('tenant_plugin_configs')->where('id', $config->id)->value('config');
+
+    expect($plugin->name)->toBe('Dinheiro')
+        ->and($plugin->capability_key)->toBe('gateway.cash')
+        ->and($plugin->kind)->toBe('gateway')
+        ->and($plugin->status)->toBe('published')
+        ->and($plugin->visibility)->toBe('public')
+        ->and($plugin->tier)->toBe('free')
+        ->and($plugin->is_curated)->toBeTrue()
+        ->and($plugin->directory_name)->toBeNull()
+        ->and($plugin->short_description)->toContain('confirmação manual')
+        ->and($plugin->long_description)->toContain('confirma')
+        ->and($activation->status)->toBe('active')
+        ->and($activation->activated_at)->not->toBeNull()
+        ->and($activation->activated_by)->toBe($admin->id)
+        ->and($config->enabled)->toBeTrue()
+        ->and($config->config)->toBe([])
+        ->and($config->credentials())->toBe([])
+        ->and($rawConfig)->toBeString()
+        ->and($rawConfig)->not->toBe('[]');
+
+    $gateway = app(TenantGatewayProvider::class)->activeFor($tenant);
+
+    expect($gateway)->not->toBeNull()
+        ->and($gateway->slug)->toBe('cash')
+        ->and($gateway->credentials)->toBe([]);
+
+    $resolvedGateway = app(TenantGatewayResolver::class)->resolve($tenant);
+
+    expect($resolvedGateway->adapter)->toBeInstanceOf(CashPaymentGateway::class)
+        ->and($resolvedGateway->adapter->identifier())->toBe('cash')
+        ->and($resolvedGateway->credentials)->toBe([]);
+});
+
+it('does not duplicate or overwrite cash gateway preset choices on re-run', function (): void {
+    $args = [
+        '--name' => 'Escola Dinheiro',
+        '--domain' => 'dinheiro.local',
+        '--admin-name' => 'Admin Dinheiro',
+        '--admin-email' => 'admin@dinheiro.local',
+        '--admin-password' => 'senha-forte-123',
+    ];
+
+    $this->artisan('tenant:provision', $args)->assertExitCode(0);
+
+    $tenant = Tenant::query()->where('domain', 'dinheiro.local')->firstOrFail();
+    $plugin = Plugin::query()->where('slug', 'cash')->firstOrFail();
+    $activation = PluginActivation::query()->where('tenant_id', $tenant->id)->where('plugin_id', $plugin->id)->firstOrFail();
+    $config = TenantPluginConfig::query()->where('tenant_id', $tenant->id)->where('plugin_id', $plugin->id)->firstOrFail();
+
+    $activation->update(['status' => 'inactive', 'deactivated_at' => now()]);
+    $config->update(['enabled' => false, 'config' => ['instructions' => 'Conferir no caixa']]);
+
+    $this->artisan('tenant:provision', $args)->assertExitCode(0);
+
+    expect(Plugin::query()->where('slug', 'cash')->count())->toBe(1)
+        ->and(PluginActivation::query()->where('tenant_id', $tenant->id)->where('plugin_id', $plugin->id)->count())->toBe(1)
+        ->and(TenantPluginConfig::query()->where('tenant_id', $tenant->id)->where('plugin_id', $plugin->id)->count())->toBe(1)
+        ->and($activation->fresh()->status)->toBe('inactive')
+        ->and($config->fresh()->enabled)->toBeFalse()
+        ->and($config->fresh()->config)->toBe(['instructions' => 'Conferir no caixa']);
 });
 
 it('generates a password when none is provided', function (): void {

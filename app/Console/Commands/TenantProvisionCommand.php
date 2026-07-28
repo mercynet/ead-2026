@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Ecosystem\Contracts\DefaultGatewayProvisioner;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Console\Command;
@@ -33,7 +34,7 @@ class TenantProvisionCommand extends Command
 
     protected $description = 'Provisiona (idempotente) um tenant e seu primeiro admin, semeando RBAC';
 
-    public function handle(): int
+    public function handle(DefaultGatewayProvisioner $defaultGatewayProvisioner): int
     {
         /** @var array<string, string> $data */
         $data = [
@@ -101,6 +102,7 @@ class TenantProvisionCommand extends Command
         [$admin, $generatedPassword] = $ensured;
 
         $admin->syncRoles([UserType::Admin->value]);
+        $defaultGatewayProvisioner->ensureForTenant($tenant->id, $admin->id);
 
         if ($generatedPassword !== null) {
             $this->newLine();
@@ -109,7 +111,7 @@ class TenantProvisionCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info('Provisionamento concluído. O admin já pode emitir convites via POST /api/v1/core/invitations.');
+        $this->components->info('Provisionamento concluído. Gateway Dinheiro (confirmação manual) ativado; o admin já pode emitir convites via POST /api/v1/core/invitations.');
 
         return self::SUCCESS;
     }

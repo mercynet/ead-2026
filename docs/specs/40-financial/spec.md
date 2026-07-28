@@ -1,7 +1,7 @@
 ---
 domain: financial
 maturity: draft
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-28
 owners: [paulo]
 related:
   - ../00-architecture/api-conventions.md
@@ -42,7 +42,7 @@ Recursos detalhados nas subspecs:
 | `OrderItem` | Polimórfico (`itemable_type/id` → Curso/Plano); guarda `item_snapshot` para histórico. |
 | `PriceHistory` | Auditoria de alterações de preço. |
 | `Payment` | Atrelado a `Order`; `gateway_response` cru, `external_id`; status `pending|completed|failed`. |
-| `TenantPaymentGateway` | Credenciais cifradas **por tenant** (`encrypted:json`); múltiplos gateways. |
+| `TenantPluginConfig` (Ecosystem) | Configuração/credenciais cifradas por tenant (`encrypted:array`) de gateway-plugin; múltiplos gateways. Todo tenant novo recebe `cash` free/habilitado para confirmação manual. |
 | `Cart` / `CartItem` (plugin) | Carrinho por usuário; itens polimórficos. |
 | `Coupon` (plugin) | Desconto percentual/fixo, validade e limite de uso. |
 
@@ -65,6 +65,9 @@ Recursos detalhados nas subspecs:
   Schema em [`subspecs/orders-payments.md`](subspecs/orders-payments.md).
 - **Gateway-agnostic:** core não acopla lógica de checkout. Gera `Order`, submete intenção via
   Factory, recebe webhooks. Exceções de gateway são capturadas e **traduzidas para PT-BR**.
+- **Gateways do tenant são plugins:** `cash` é preset gratuito de confirmação manual; Admin pode
+  ativar/configurar adaptadores gratuitos ou pagos via Ecosystem. Isso é separado do
+  `PlatformPaymentGateway` e billing Mzrt→tenant. Sem Cashier.
 - **Valores em centavos:** `price_cents` (inteiros) para evitar floating math. Ver
   [`../00-architecture/api-conventions.md`](../00-architecture/api-conventions.md).
 - **Checkout desacoplado:** backend envia intenção e devolve `client_secret`/URL de redirect; o
@@ -93,7 +96,10 @@ Permissions financeiras (`financial.*`) chegam principalmente via plugin/role. V
 
 | Recurso | Endpoint | Permission |
 |---------|----------|------------|
-| Checkout | `POST /api/v1/financial/checkout` | autenticado |
-| Listar orders | `GET /api/v1/financial/orders` | autenticado (own) |
-| Ver order | `GET /api/v1/financial/orders/{id}` | autenticado (own) |
-| Webhook de gateway | `POST /api/v1/financial/webhooks/gateway/{gateway_slug}` | público (rota cega) |
+| Gateways do tenant | `GET /api/v1/admin/payment-gateways` | Admin |
+| Configurar gateway | `PUT /api/v1/admin/payment-gateways/{plugin}` | Admin |
+| Confirmar pagamento manual | `POST /api/v1/admin/orders/{id}/confirm-manual-payment` | Admin |
+| Checkout | `POST /api/v1/student/checkout` | Student |
+| Listar orders | `GET /api/v1/student/orders` | Student (own) |
+| Ver order | `GET /api/v1/student/orders/{id}` | Student (own) |
+| Webhook de gateway | `POST /api/v1/webhooks/gateways/{gateway_slug}` | público (rota cega) |

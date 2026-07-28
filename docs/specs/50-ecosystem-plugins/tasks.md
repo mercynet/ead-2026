@@ -1,6 +1,6 @@
 ---
 domain: ecosystem-plugins
-last-updated: 2026-07-12
+last-updated: 2026-07-28
 ---
 
 # Tasks — Ecosystem & Plugins
@@ -33,9 +33,15 @@ core gated por flag + config por tenant; gateway é plugin). Cada task = 1 slice
   × `TenantPluginConfig` enabled) sem vazar models; consumido pelo `TenantGatewayResolver` do Financial.
   Bind no `EcosystemServiceProvider`.
 
+- [x] **Preset `cash` no provisionamento de tenant.** `DefaultGatewayProvisioner` (contrato
+  Ecosystem) cria idempotentemente catálogo global `Dinheiro`/`gateway.cash` (gateway, publicado,
+  público, free, curado) e, apenas se ausentes, `PluginActivation` ativa pelo primeiro admin e
+  `TenantPluginConfig` habilitada com config encriptada vazia. Reexecução preserva desativação e
+  config do Admin; dados ficam prontos para `TenantGatewayProvider`.
+
 ## In Progress
 
-- _(nenhuma)_
+- [ ] Endpoint Admin para listar/configurar gateways do tenant (ativar/desativar e validar config).
 
 ## Pending
 
@@ -53,6 +59,8 @@ core gated por flag + config por tenant; gateway é plugin). Cada task = 1 slice
 ### Consumo / billing
 - [ ] Models + migrations: `PluginInstallation`, `PluginActivation`, `PluginSubscription`, `PluginBilling`, `PluginGrant` (comp por tenant), `PluginUsageLog`, `PluginLicense`, `PluginSetting`, `PluginCoupon` (deferred).
 - [ ] **Ledger do plano Plataforma** (no Financial): `PlatformOrder`/`PlatformOrderItem`/`PlatformPayment`/`PlatformPaymentGateway`. **Descartar `plugin_purchases` legado.**
+- [ ] Retropreencher `PluginInstallation` + `PlatformOrder` de valor zero para presets `cash`
+  provisionados antes da entrega do marketplace/ledger Plataforma.
 - [ ] `POST /ecosystem/marketplace/subscriptions` (free → `PlatformOrder` $0 + activation; pago → `PlatformOrder` no gateway do Mozart).
 - [ ] `DELETE /ecosystem/marketplace/subscriptions/{id}` (desativar; retém config/segredos por padrão).
 - [ ] `GET /ecosystem/admin/subscriptions` (dashboard developer: uso free + pago, LGPD).
@@ -65,14 +73,16 @@ core gated por flag + config por tenant; gateway é plugin). Cada task = 1 slice
 - [ ] Injeção event-driven de `TenantIntegration` (credenciais `encrypted:json`).
 
 ### Estágio de implementação dos plugins first-party
-- [ ] Stripe (funcional), PixPayments (parcial).
+- [ ] Stripe, PixPayments e demais adaptadores first-party conforme prioridade.
 - [ ] Cart (funcional, free default), DiscountCoupons / Subscriptions / Affiliates (estrutura).
 - [ ] Comments / Community / CourseReviews / CustomCertificates (estrutura).
 - [ ] EmailMarketing (estrutura), SalesIntelligence (parcial), PerformanceReportsEnterprise (vazio).
 - [ ] GamificationRewards (vazio).
 
 ### Reuso eadIA (ver ADR-001)
-- [ ] **Plugins financeiros = gateways de pagamento**: cada gateway (Mercado Pago, PagSeguro, PIX-nativo, Asaas) é um plugin que implementa `PaymentGatewayInterface` (do Financial). Tenant ativa conforme taxa/tamanho. Stripe fica no core do Financial; demais entram aqui.
+- [ ] **Plugins financeiros = gateways de pagamento**: cada gateway (Stripe, Mercado Pago, PagSeguro,
+  PIX-nativo, Asaas) é um plugin que implementa `PaymentGatewayInterface` (do Financial). Tenant
+  ativa conforme taxa/tamanho; `cash` é preset free de confirmação manual.
 - [ ] **Modelo de dados pronto no eadIA** (migrations `2025_11_30_*`): `plugin_installations/activations/purchases/licenses/audit_financials/settings/attachments/logs`. Portar **revisando** (não copiar cego): `tenant_id` deve ser FK inteiro (eadIA usa string em alguns), centavos inteiros, índices.
 - [ ] `AbstractPlugin` + `PluginManager`: adaptar discovery de filesystem (`plugin.json`) → **DB** (plugins são só nossos, registrados no banco).
 

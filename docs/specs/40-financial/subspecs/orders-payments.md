@@ -2,7 +2,7 @@
 domain: financial
 parent: ../spec.md
 resource: orders-payments
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-28
 ---
 
 # Orders & Payments
@@ -108,9 +108,10 @@ extensão e a fronteira de módulo de uma vez só:
 
 | Método | Path | Descrição | Permission |
 |--------|------|-----------|------------|
-| POST | `/api/v1/financial/checkout` | Submete itens, calcula preço, gera Order + sessão do gateway | autenticado |
-| GET | `/api/v1/financial/orders` | Histórico financeiro do aluno | autenticado (own) |
-| GET | `/api/v1/financial/orders/{id}` | Detalhe da compra | autenticado (own) |
+| POST | `/api/v1/student/checkout` | Submete itens, calcula preço, gera Order + sessão do gateway | Student |
+| GET | `/api/v1/student/orders` | Histórico financeiro do aluno | Student (own) |
+| GET | `/api/v1/student/orders/{id}` | Detalhe da compra | Student (own) |
+| POST | `/api/v1/admin/orders/{id}/confirm-manual-payment` | Confirma pagamento offline, audita ator e dispara `OrderPaidEvent` | Admin |
 
 ## Permissions
 

@@ -4,22 +4,21 @@
 
 ## Sessão
 
-- Revisão da revisão externa (range `7407f45^..bc12782`): os 8 findings foram verificados contra o
-  código real. Todos confirmados como fatos técnicos, mas com severidade **rebaixada** — nenhum
-  bloqueante, nenhum explorável remotamente. O finding #4 tinha causa certa (spec-drift + dead code)
-  mas enquadramento de segurança errado (não havia bucket compartilhado ativo).
-- Lote de hardening low-priority implementado e testado (todos os 8 findings):
-  1. **#1** rotação de password reset serializada sob `lockForUpdate` + transação; notificação após commit.
-  2. **#2** `PasswordResetNotification implements ShouldQueue` — remove envio SMTP síncrono (anti-timing).
-  3. **#3** `AcceptInvitationAction` converte `UniqueConstraintViolationException` em `InvitationInvalidException` (fecha a corrida entre convites distintos p/ mesmo email; sem 500).
-  4. **#4** rotas de convite usam `throttle:invitation-accept`/`throttle:invitation-create` (limiters nomeados; dead code eliminado).
-  5. **#5** `E2eRunCommand` incrementa `$failed` em falha de cleanup do spec e de teardown → exit code reflete resíduo.
-  6. **#6** `tenant:provision` recusa promover usuário existente não-admin salvo `--promote` explícito.
-  7. **#7** `tenant:provision` valida `--admin-password` com `min:8` (mesma política dos FormRequests).
-  8. **#8** unique de email global (developer/landlord): coluna gerada `tenant_scope = COALESCE(tenant_id, 0)` (VIRTUAL — STORED barrada pela FK ON DELETE SET NULL, erro 1215) + unique `(tenant_scope, email)`.
-- 12 testes de regressão adicionados; `vendor/bin/pint` limpo.
-- Armadilha registrada: o formatter (PostToolUse) remove `use` recém-adicionado enquanto ainda não há
-  uso no arquivo — adicionar import + uso no mesmo passo, ou reconferir imports após editar.
+- Auditoria completa do projeto (2026-07-28, skill validate-ai-work): claims de todos os `tasks.md`
+  verificados contra código com evidência `arquivo:linha`. Nenhum claim "Done" refutado.
+  Suites verdes: Architecture (17), Feature (396), Unit (14), E2E (2).
+- Fixes do pós-auditoria:
+  1. `guzzlehttp/guzzle` 7.14.0 → 7.15.x (4 advisories médios publicados 2026-07-20 derrubavam o
+     `qa:gate` no PHP Insights; `composer audit --locked` limpo).
+  2. `phpinsights.php`: `disable-security-check => true` — auditoria de dependências deixa de ser
+     duplicada no gate; fonte única passa a ser `composer qa:deps` (`security:audit-deps` +
+     `composer audit --locked`). Causa raiz do "CI falha sempre": qualquer advisory novo quebrava
+     o gate independente do código.
+  3. Gate/controller padronizados para `core.users.view` (canônico); `core.users.show` removido
+     (nunca existiu em `config/permissions.php` — drift de nomenclatura, sem impacto de authz
+     porque `UserPolicy::show` faz a checagem real).
+- Revisão anterior (range `7407f45^..bc12782`): os 8 findings foram verificados contra o código
+  real e corrigidos no commit `1a329eb` (ver histórico).
 
 ## Próximos passos (1-3)
 
@@ -35,4 +34,5 @@
 
 ## Último commit
 
-- `bc12782` em `main` (antes deste lote). Commit do hardening a seguir.
+- `1a329eb` em `main` (hardening dos 8 findings). Fixes pós-auditoria (guzzle bump, insights
+  security-check, `core.users.view`) no working tree — commit a seguir.

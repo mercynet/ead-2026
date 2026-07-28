@@ -55,7 +55,7 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ### Core
 - [x] Migration: trocar `unique` global de `cpf`/`email` por compostos `(tenant_id, cpf)` e `(tenant_id, email)` — alinha ao modelo tenant-scoped. Login agora é tenant-scoped (fallback developer global); usuário de tenant sem `X-Tenant-ID` → 401 genérico.
-- [ ] Padronizar permission de `GET /users/{id}` para `core.users.view` (canônico); remover `core.users.show` das roles instructor/student no seeder/`config/permissions.php`.
+- [x] Padronizar permission de `GET /users/{id}` para `core.users.view` (canônico); `core.users.show` removido do gate/controller (nunca existiu em `config/permissions.php`).
 - [x] `PATCH /api/v1/core/users/me/password`: revoga as **outras** sessões na troca, preservando a atual (reset por token revoga todas).
 - [x] Rate limiters nomeados e separados por rota (login/forgot/reset/invitation-accept/invitation-create) — corrige bucket `domínio|IP` compartilhado do throttle padrão (SEC-001).
 - [x] `E2eRunCommand` endurecido: gate de ambiente (local|testing|e2e), timeout por request, circuit breaker no 5xx inesperado (`--continue-on-error`), cleanup surfacing e sanitização de token no output (AUD-001, escopo proporcional).

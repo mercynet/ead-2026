@@ -57,5 +57,9 @@ return [
         'min-complexity' => 85,
         'min-architecture' => 75,
         'min-style' => 88,
+        // Auditoria de dependências NÃO vive aqui: qualquer advisory novo (ex.: Guzzle)
+        // derrubava o qa:gate inteiro mesmo sem relação com o código. Fonte única de
+        // supply-chain é `composer qa:deps` (security:audit-deps + composer audit --locked).
+        'disable-security-check' => true,
     ],
 ];

@@ -15,10 +15,11 @@
 
 ## Próximos passos (1-3)
 
-1. Commitar o slice `cash` e rodar `composer qa:gate` com tree limpa.
-2. Implementar endpoint Admin area-first para listar/configurar/ativar gateways do tenant, validando
+1. Implementar endpoint Admin area-first para listar/configurar/ativar gateways do tenant, validando
    schema na persistência e nunca expondo segredos.
-3. Depois: confirmação manual idempotente de pagamentos offline → Student checkout → webhook.
+2. Depois: confirmação manual idempotente de pagamentos offline → Student checkout → webhook.
+3. Retropreencher `PluginInstallation`/`PlatformOrder` de valor zero para presets `cash` quando o
+   marketplace/ledger Plataforma existirem.
 
 ## Decisões abertas
 
@@ -27,4 +28,4 @@
 
 ## Último commit
 
-- `1d71ef5` em `main`, pushed. Slice `cash` está no working tree, ainda sem commit.
+- `1d7f8e7` em `main`, pushed. Slice `cash` commitado; `qa:gate` verde (434 testes / 1889 asserts).

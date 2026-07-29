@@ -5,25 +5,45 @@ e permissions em **inglês**.
 
 ## Como navegar
 
-- **Cross-cutting** (vale para todos os domínios) → `00-architecture/`. Regra escrita **uma vez**
-  aqui; as specs de domínio **linkam** em vez de repetir.
+- **Cross-cutting** (vale para todos domínios) → `00-architecture/`. Regra escrita **uma vez** aqui;
+  specs de domínio **linkam** em vez de repetir.
 - **Por domínio** → pastas numeradas por dezenas. Cada uma tem:
-  - `spec.md` — o **contrato durável** (intenção, entidades, regras, boundaries, eventos,
-    autorização, quick reference). **Nunca** contém status/checkbox.
-  - `tasks.md` — **estado mutável**: o que está feito, em progresso, pendente, em revisão e
-    questões abertas.
-  - `subspecs/` — detalhe por recurso (schema de colunas, endpoints, permissions, notas).
+  - `spec.md` — contrato durável (intenção, entidades, regras, boundaries, eventos, autorização,
+    quick reference). **Nunca** contém status/checkbox.
+  - `tasks.md` — estado mutável: feito, progresso, pendente, revisão e questões abertas.
+  - `subspecs/` — detalhe por recurso (schema, endpoints, permissions, notas).
+
+## Governança e hierarquia
+
+1. [`docs/ROADMAP.md`](../ROADMAP.md) governa jornadas cross-domain por área e matriz de
+   planejamento área × capability.
+2. `tasks.md` decompõe slices locais. Metadados de jornada são migração **prospectiva**, não
+   reclassificação em massa do backlog.
+3. `STATE.md` registra somente sessão ativa, handoff e próximos passos; não é roadmap nem status
+   durável.
+
+**Endpoint é unidade de execução; jornada é unidade de sucesso.** Endpoint pode fechar fatia, mas
+só jornada com DoD no roadmap entrega valor à persona.
+
+### Metadados de task para jornada
+
+Em task nova ou tocada, usar bloco compacto:
+`Journey: <ID> | Area: <area|neutral> | Depends on: <IDs|none>`. Antes do próximo slice de código de
+jornada ativa, retrofitar suas tasks ativas. Backlog intocado migra somente quando selecionado; não
+alterar só para cumprir formato.
 
 ## Estrutura
 
 ```
 docs/
-  ROADMAP.md                 # fases/milestones cross-domain
-  STATE.md                   # efêmero: sessão atual + próximos passos
+  ROADMAP.md                 # jornadas cross-domain por área + matriz de planejamento
+  STATE.md                   # efêmero: sessão ativa + próximos passos
   specs/
     README.md                # este arquivo
     00-architecture/
-      overview.md            # visão, stack, princípios, lifecycle, mapa de domínios
+      overview.md            # visão, stack, princípios, lifecycle, módulos e áreas
+      areas-surfaces.md      # contratos de área/persona e superfícies API
+      decisions/             # ADRs arquiteturais
       backend-patterns.md    # modular monolith, ports/adapters seletivo, YAGNI×SOLID, fronteira de módulo
       testing-strategy.md    # pirâmide unit/feature/e2e/architecture, onde cada nível cabe
       api-conventions.md     # envelope de erro, cursorPaginate, ApiContext, Response, FormRequest, API-DX
@@ -42,24 +62,22 @@ docs/
 
 ## Convenção de Numeração
 
-Pastas de domínio numeradas **por dezenas** (`10`, `20`, `30`, …) para permitir inserção de novos
-domínios entre os existentes (ex.: um futuro `25-` entre learning e assessment) sem renumerar tudo.
-`00-architecture/` é a base cross-cutting.
+Pastas de domínio numeradas **por dezenas** (`10`, `20`, `30`, …) permitem inserir domínio entre
+existentes (ex.: futuro `25-`) sem renumerar. `00-architecture/` é base cross-cutting.
 
 ## Como manter
 
-- **Mudou regra de negócio / contrato?** Edite a `spec.md` (ou subspec) e ajuste `last-reviewed`
-  no frontmatter.
-- **Avançou implementação?** Edite o `tasks.md` do domínio (`last-updated`). **Nunca** coloque
-  status na `spec.md`.
+- **Mudou regra de negócio / contrato?** Edite `spec.md` (ou subspec) e ajuste `last-reviewed`.
+- **Avançou implementação?** Edite `tasks.md` (`last-updated`). **Nunca** coloque status em `spec.md`.
 - **Regra cross-cutting?** Vai em `00-architecture/`; nas specs, apenas linke.
-- **Milestone cross-domain?** `docs/ROADMAP.md`. **Sessão atual / próximos passos?** `docs/STATE.md`.
+- **Jornada ou matriz cross-domain?** `docs/ROADMAP.md`. **Slice local?** `tasks.md`; tarefa nova ou
+  tocada usa `Journey | Area | Depends on`, conforme migração prospectiva. **Sessão atual / próximos
+  passos?** `docs/STATE.md`.
 
 ### Frontmatter
 
-- `spec.md`: `{domain, maturity: draft|stable|deprecated, last-reviewed, owners, related}`
-  — `maturity` = maturidade do **contrato** (quão estável é a spec em si), **não** status de
-  implementação (esse vive só no `tasks.md`).
+- `spec.md`: `{domain, maturity: draft|stable|deprecated, last-reviewed, owners, related}` —
+  `maturity` = maturidade do **contrato**, não status de implementação (vive em `tasks.md`).
 - `tasks.md`: `{domain, last-updated}`
 - `subspecs/*.md`: `{domain, parent, resource, last-reviewed}`
 - `00-architecture/*`: `{layer: architecture, applies-to: all-domains, last-reviewed}`

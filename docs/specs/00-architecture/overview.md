@@ -1,7 +1,7 @@
 ---
 layer: architecture
 applies-to: all-domains
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-29
 ---
 
 # Visão de Arquitetura
@@ -19,13 +19,14 @@ extensibilidade via plugins.
 - Laravel Sanctum (autenticação por token opaco)
 - spatie/laravel-permission (RBAC)
 - spatie/laravel-multitenancy (resolução/escopo de tenant)
-- MySQL 8.0 / MariaDB (estatísticas) / Redis (cache) / RabbitMQ (filas de eventos)
+- MySQL 8.0 / MariaDB (estatísticas) / Redis (cache); RabbitMQ é transporte assíncrono diferido
 - Pest 4 (testes)
 - Scribe (documentação de API)
 
 ## Princípios
 
-1. **Action Layer** — regra de negócio vive em `app/Actions/<Domain>/<Resource>/...`.
+1. **Action Layer** — regra de negócio vive em
+   `app/Modules/<Module>/Actions/<Resource>/...`.
    Controllers apenas orquestram request → autorização → action → resource.
 2. **Autorização por endpoint** — todo método de controller valida Gate/Policy antes da Action.
 3. **ApiContext** — Value Object (`$user` + `$tenant`) injetado por middleware; controllers e
@@ -45,35 +46,44 @@ flowchart LR
     Act --> Model[(Eloquent / DB)]
     Act --> Res[API Resource]
     Res -->|toResponse| Client
-    Act -.dispatch.-> Ev[Domain Event]
-    Ev -.queue.-> RabbitMQ
+    Act -.dispatch.-> Ev[Domain Event / Outbox]
+    Ev -.dispatch pós-commit.-> Worker[Dispatcher atual]
+    Worker -.transporte futuro.-> RabbitMQ
 ```
 
 Sequência canônica: **Route → Middleware (resolve tenant, ApiContext) → Controller → Gate/Policy
-→ Action → Eloquent → Resource → Response**. Eventos de domínio são despachados pelas Actions e
-processados de forma assíncrona (ver `performance-scalability.md`).
+→ Action → Eloquent → Resource → Response**. Eventos são registrados/despachados pelas Actions;
+efeitos críticos usam outbox e dispatcher pós-commit atual. RabbitMQ é alvo de transporte assíncrono,
+não fato operacional atual (ver `performance-scalability.md`).
 
-## Mapa de Domínios
+## Módulos de domínio e áreas API
 
-| # | Domínio | Base URL | Responsabilidade |
-|---|---------|----------|------------------|
-| 10 | Core & Identity | `api/v1/core` | Auth, usuários, tenants, configuração white-label |
-| 20 | Catalog & Learning | `api/v1/learning` | Catálogo, cursos/módulos/aulas, matrículas, progresso, mídia, ratings |
-| 30 | Assessment | `api/v1/assessment` | Questionários, questões, tentativas, certificados |
-| 40 | Financial | `api/v1/financial` | Orders, payments, webhooks de gateway |
-| 50 | Ecosystem & Plugins | `api/v1/ecosystem` | Marketplace de plugins, assinaturas SaaS, billing recorrente |
+Domínios limitados organizam ownership de código; não definem prefixo público de URL. Rotas de
+produto seguem `/api/v1/{area}/{resource}`. Mapa de personas, contratos de área e migração dos
+endpoints legado: [Áreas & Superfícies](areas-surfaces.md). Roadmap de jornadas:
+[`docs/ROADMAP.md`](../../ROADMAP.md).
 
-## Boundaries de Evento (cross-domain)
+| # | Módulo | Responsabilidade |
+|---|--------|------------------|
+| 10 | Core & Identity | Auth, usuários, tenants, configuração white-label |
+| 20 | Catalog & Learning | Catálogo, cursos/módulos/aulas, matrículas, progresso, mídia, ratings |
+| 30 | Assessment | Questionários, questões, tentativas, certificados |
+| 40 | Financial | Orders, payments, webhooks de gateway |
+| 50 | Ecosystem & Plugins | Capabilities, configuração de plugins, marketplace e billing recorrente |
 
-Domínios se comunicam por **eventos de domínio**, nunca por chamadas diretas a código de outro
-domínio. Exemplos de contratos:
+## Fronteiras cross-domain
+
+Domínios comunicam por **eventos de domínio ou Contracts públicos**, nunca por Models, Actions ou
+internals de outro módulo. Financial→Ecosystem já prova Contract público: Financial resolve gateway
+via `Ecosystem\Contracts\TenantGatewayProvider`, sem importar model Ecosystem. Exemplos:
 
 - `OrderPaidEvent` (Financial) → Learning escuta e dispara matrícula automática (`EnrollService`).
 - `LessonCompletedEvent` (Learning) → recalcula progresso e pode engatilhar emissão de certificado (Assessment).
 - Ativação/expiração de plugin (Ecosystem) → invalida cache de features do tenant.
 
-Os nomes de eventos vivem na seção `## Events` da `spec.md` de cada domínio; a mecânica de
-transporte (RabbitMQ, MariaDB de stats) vive em `performance-scalability.md`.
+Nomes de eventos vivem em `## Events` da `spec.md`; Contracts públicos ficam no namespace
+`Contracts` do módulo dono. Transporte futuro (RabbitMQ, MariaDB de stats) vive em
+`performance-scalability.md`.
 
 ## Legado eadIA (fonte de referência)
 

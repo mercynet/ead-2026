@@ -2,7 +2,7 @@
 layer: architecture
 applies-to: all-domains
 maturity: stable
-last-reviewed: 2026-06-13
+last-reviewed: 2026-07-29
 owners: [paulo]
 related:
   - rbac.md
@@ -36,6 +36,17 @@ Não há frontend hoje, mas haverá vários (web admin, app mobile do aluno, pai
 público). A área é o **contrato estável** que cada um desses clients consome. Por isso precisa
 estar definida antes, não depois.
 
+## Planejamento operacional
+
+Área/persona define valor, contrato e ordem das jornadas; domínio limitado define ownership de
+código. Ver [ROADMAP](../../ROADMAP.md) e
+[ADR-006](decisions/006-planejamento-por-jornadas-de-area.md). Execução é por fatias verticais:
+endpoint é unidade de execução, mas jornada é unidade de sucesso.
+
+Mzrt começa cedo apenas com walking skeleton de control plane (tenant, primeiro admin, status e
+limits/entitlements). Marketplace, billing da plataforma e expansão de plugins ficam para etapa
+posterior, conforme demanda; não se completa todo Mzrt antes de Admin, Student e Instructor.
+
 ## As 5 Áreas
 
 | # | Área | Persona / `UserType` | Scope de dados | Frontend(s) futuro(s) |
@@ -60,6 +71,9 @@ sempre (ver `security-privacy-lgpd.md`). Particularidades exclusivas:
 - **Provisionamento de plugins:** Mzrt é o **único** que cria/disponibiliza plugins. Nunca
   abriremos para terceiros criarem. Define o catálogo e o *range* que cada tenant pode ativar.
 - Vê e gerencia qualquer tenant; único que edita permissions e `UserType`.
+
+> **Contrato-alvo, migração em curso:** esta seção define superfície pretendida; não afirma que
+> todos endpoints, limites ou operações Mzrt já existem.
 
 ### 2. Admin — administrador do tenant
 
@@ -145,9 +159,9 @@ app/Modules/Learning/
 O `ModuleBoundaryTest` continua valendo: áreas não cruzam módulos; um controller de área importa
 só Actions/Models do próprio domínio (+ contratos compartilhados).
 
-## URLs
+## Taxonomia de URLs
 
-**Área-first**, domínio implícito no recurso (o domínio é organização de código, não da URL):
+**Produto por persona** é área-first; domínio é organização de código, não URL:
 
 ```
 /api/v1/{area}/{resource}/...
@@ -162,6 +176,11 @@ só Actions/Models do próprio domínio (+ contratos compartilhados).
 > **Sub-decisão (A) — FECHADA:** `v1/{area}/{resource}` (área-first puro, domínio fora da URL). O
 > domínio é organização de código, não da URL.
 
+Rotas técnicas/cross-area usam namespace neutro explícito quando necessário: `/api/v1/auth/*`,
+`/api/v1/webhooks/*` e `/api/v1/public/*`. Prefixos existentes `/api/v1/core/*`,
+`/api/v1/learning/*` e `/api/v1/assessment/*` são rotas legadas; não se tornam conformes por serem
+versionadas. Inventário, alvo e condição de remoção vivem no [ROADMAP](../../ROADMAP.md#inventário-agrupado-de-migração-legada).
+
 ## Área × RBAC
 
 A área restringe **qual superfície** o usuário alcança; o RBAC restringe **o que ele faz** lá.
@@ -170,17 +189,22 @@ Cada grupo de rota de área aplica um guard que valida `UserType × área`:
 | Área | `UserType` permitido | Auth |
 |------|----------------------|------|
 | `mzrt` | `developer` | obrigatória |
-| `admin` | `admin` (+ `developer` por hierarquia) | obrigatória |
-| `instructor` | `instructor` (+ acima) | obrigatória |
-| `student` | `student` (+ acima) | obrigatória |
+| `admin` | `admin` | obrigatória |
+| `instructor` | `instructor` | obrigatória |
+| `student` | `student` | obrigatória |
 | `home` | qualquer / anônimo | opcional |
 
-Dentro da área, a permission (`<domain>.<resource>.<action>` / `<plugin>.<resource>.<action>`)
-decide a ação. Hierarquia de `UserType` (`rbac.md` §1) ainda vale: um `developer` pode entrar em
-áreas abaixo.
+Dentro da área, permission (`<domain>.<resource>.<action>` / `<plugin>.<resource>.<action>`)
+decide ação. Hierarquia de `UserType` em [`rbac.md`](rbac.md) é teto de autorização, mas não altera
+silenciosamente contrato de persona: developer não passa a consumir payload Admin/Instructor/Student
+por herança. Override operacional de developer deve ser explícito no endpoint e auditado. Atuar como
+outra persona requer impersonação futura, explícita e auditada; não usar hierarquia como
+impersonação implícita.
 
 > **Sub-decisão (B) — FECHADA:** middleware `area.guard:{area}` dedicado (legível, testável por
 > invariante), não reuso de `tenant.required.unless.developer` + checagem ad-hoc de `UserType`.
+> Implementação atual é migratória: somente slices entregues devem alegar enforcement; tabela e
+> regras acima são contrato-alvo até cada rota ser migrada e testada.
 
 ## Três camadas de billing
 
@@ -203,16 +227,15 @@ São fluxos distintos e não devem se misturar no payload nem no controller. A 3
 
 ## Impacto e migração (não é rewrite imediato)
 
-Os endpoints atuais são **domínio-first** e **persona-borrados** (ex.: `GET /v1/learning/courses/{id}`
-usa `learning.courses.view`, permission ampla que as 4 personas têm). Sob este modelo:
+Endpoints atuais domínio-first são legados e persona-borrados. Sob este modelo:
 
-- **Novos endpoints** nascem área-first.
+- **Novos endpoints de produto** nascem área-first; técnicos/cross-area seguem taxonomia neutra.
 - **Existentes** migram incrementalmente (slice a slice), não de uma vez. Mapa de migração e
   ordem ficam no `tasks.md` de cada domínio + `ROADMAP.md`.
 - **Home é a última área** a implementar (decisão de produto).
-- O slice recém-entregue `GET /v1/learning/courses/{id}` será re-slotado em `admin` e/ou
-  `instructor`/`student` com Resources distintos (hoje serve as 4 personas no mesmo payload — o
-  sintoma que motivou esta spec).
+- Admin já entregou `GET /api/v1/admin/courses/{id}` e publish/unpublish. Re-slot de Instructor e
+  Student continua pendente. Destino final e remoção/depreciação de `GET /api/v1/learning/courses/{id}`
+  ainda são decisão pendente; não presumir que todo legado migra para todas áreas.
 
 ## Caveats do eadIA (referência) — o que NÃO copiar
 

@@ -4,7 +4,7 @@
 
 ## Sessão
 
-- Branch `feat/financial-checkout` contém commits locais de gateways Admin, confirmação manual
+- Branch `feat/financial-checkout` contém commits pushed de gateways Admin, confirmação manual
   `cash`, outbox durável e checkout aluno com claim atômico, replay por identidade histórica cifrada
   e transporte ambíguo conservador. Oracle Gate 2: `PASS`; status fino em
   `40-financial/tasks.md` e `50-ecosystem-plugins/tasks.md`.
@@ -13,9 +13,9 @@
 
 ## Próximos passos (1-3)
 
-1. Push de `feat/financial-checkout` para `origin`.
-2. Abrir PR se solicitado.
-3. Próxima task Financial: `PriceHistory` (ver `40-financial/tasks.md`).
+1. Abrir PR se solicitado.
+2. Próxima task Financial: `PriceHistory` (ver `40-financial/tasks.md`).
+3. Após `clear`, retomar lendo `AGENTS.md` e este STATE.
 
 ## Decisões abertas
 
@@ -24,5 +24,5 @@
 
 ## Último commit
 
-- `ba8b19d` é o HEAD local de `feat/financial-checkout`; aguardando push. Entrega principal:
-  `c53e54c` (`feat(financial): add durable checkout flow`).
+- Entrega pushed: `c53e54c` (`feat(financial): add durable checkout flow`), `ba8b19d`
+  (`fix(learning): align rating stats morph aliases`) e `842f7df` (checkpoint).

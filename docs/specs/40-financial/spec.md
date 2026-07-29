@@ -39,8 +39,7 @@ Recursos detalhados nas subspecs:
 | Model | Invariantes |
 |-------|-------------|
 | `Order` | tenant-scoped; `order_number`; status `pending|paid|failed|cancelled|refunded`; `origin_type` lowercase (`direct|cart|subscription|renewal`). |
-| `OrderItem` | Polimórfico (`itemable_type/id` → Curso/Plano); guarda `item_snapshot` para histórico. |
-| `PriceHistory` | Auditoria de alterações de preço. |
+| `OrderItem` | Polimórfico (`itemable_type/id` → Curso/Plano); dono do preço contratado imutável (`price_cents`) e de `item_snapshot` para histórico. |
 | `Payment` | Atrelado a `Order`; `gateway_response` cru privado, `external_id`, identidade persistida de gateway e estado de execução `created|processing|resolved|unknown`; status `pending|completed|failed`. |
 | `TenantPluginConfig` (Ecosystem) | Configuração/credenciais cifradas por tenant (`encrypted:array`) de gateway-plugin; `TenantPluginConfigRevision` preserva snapshots imutáveis cifrados, consultados por identidade exata. Todo tenant novo recebe `cash` free/habilitado para confirmação manual. |
 | `Cart` / `CartItem` (plugin) | Carrinho por usuário; itens polimórficos. |

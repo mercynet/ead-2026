@@ -2,7 +2,7 @@
 domain: catalog-learning
 parent: ../spec.md
 resource: courses-modules-lessons
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-29
 ---
 
 # Courses, Modules & Lessons
@@ -25,6 +25,11 @@ courses
 - certificate_requires_quiz  // boolean
 - certificate_min_score      // %
 - created_at, updated_at     // soft deletes
+
+course_price_histories
+- id, tenant_id, course_id, changed_by_user_id // FKs; changed_by_user_id nullable
+- old_price_cents, new_price_cents             // inteiros em centavos
+- changed_at
 
 course_modules
 - id
@@ -55,6 +60,14 @@ lessons
 - **Fluxo de publicação:** instrutor cria draft → adiciona módulos/aulas → configura certificado
   → publica (`is_published=true`) → alunos veem e matriculam.
 - **Drafts** não acessíveis por alunos; rota de preview restrita a instrutor dono / tenant_admin / developer.
+- **Histórico de preço:** `course_price_histories` é append-only e específico de `Course`; não há
+  histórico polimórfico/genérico no Financial. Registrar somente atualização real de
+  `Course.price_cents` — nunca criação do curso nem valor idêntico — na mesma transação do update
+  com `Course` bloqueado. O ator deve ser explícito; `changed_by_user_id` pode ser nulo apenas
+  quando não houver usuário responsável. Não há `reason` livre neste momento. Futuro update em
+  lote deve preservar mesma cadeia de auditoria por curso.
+- **Preço contratado:** Financial é dono do `price_cents` e `item_snapshot` imutáveis em
+  `OrderItem`; histórico Learning não altera orders já criadas.
 
 ### Decisão — modelo de acesso/conteúdo (resolvido 2026-06-10)
 

@@ -136,7 +136,7 @@ class CourseController extends Controller
 
         Gate::forUser($context->requiredUser())->authorize('learning.courses.update-check', [$context->tenant, $course]);
 
-        $course = $this->updateCourseAction->handle($course, $request->validated());
+        $course = $this->updateCourseAction->handle($course, $request->validated(), $context->requiredUser()->id);
 
         return CourseDetailResource::make($course);
     }

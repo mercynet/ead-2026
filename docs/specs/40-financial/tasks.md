@@ -25,7 +25,6 @@ _Nenhuma task em progresso._
 
 ## Pending
 
-- [ ] Completar fundação financeira: `PriceHistory`.
 - [ ] `GET /api/v1/student/orders` e `GET /api/v1/student/orders/{id}`.
 - [ ] `POST /api/v1/webhooks/gateways/{gateway_slug}` + `ProcessPaymentWebhookJob`.
 - [ ] Tradução PT-BR de exceções de gateway.

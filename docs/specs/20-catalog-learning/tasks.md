@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-07-11
+last-updated: 2026-07-29
 ---
 
 # Tasks — Catalog & Learning
@@ -25,6 +25,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `POST /courses` (criar curso).
 - [x] `POST /courses` cria sempre em `draft`; publicação fica exclusiva da área Admin (`learning.courses.publish`).
 - [x] `PATCH /courses/{id}` (atualizar curso).
+- [x] `CoursePriceHistory`: histórico append-only, tenant-aware e específico de curso para mudanças
+  reais de `price_cents`, gravado com ator explícito na mesma transação do update bloqueado.
 - [x] `POST /api/v1/admin/courses/{id}/publish` + `POST /api/v1/admin/courses/{id}/unpublish` (2026-06-30): área Admin, `learning.courses.publish-check`, `published_at` preservado como primeira publicação, bloqueio de `archived`, bypass de publish fechado no `POST/PATCH /api/v1/learning/courses`.
 - [x] `DELETE /courses/{id}`.
 - [x] `GET /courses/{id}/enrollment`.

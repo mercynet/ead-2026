@@ -23,9 +23,6 @@ order_items
 - id, order_id, itemable_type, itemable_id
 - item_snapshot, price_cents
 
-price_history
-- id, priceable_type, priceable_id, old_price_cents, new_price_cents, changed_at
-
 payments
 - id, order_id, gateway_slug, confirmation_mode, gateway_response, external_id, status
 - tenant_plugin_config_id, gateway_configuration_version, psp_idempotency_key
@@ -76,7 +73,8 @@ platform_payment_gateways
 ## Rules
 
 - Valores em centavos; preço calculado no servidor.
-- `OrderItem` preserva `item_snapshot` histórico.
+- `OrderItem` preserva `price_cents` e `item_snapshot` como preço/snapshot contratado imutável;
+  não consulta histórico de preço genérico do Financial.
 - Configuração/credenciais do gateway vivem em `TenantPluginConfig.config` (`encrypted:array` + `$hidden`); `TenantPluginConfigRevision` guarda snapshots imutáveis cifrados tenant-bound. API aceita escrita de segredo, mas nunca o devolve.
 - `gateway_slug` e `confirmation_mode` (`manual|automatic`) são classificação interna autoritativa do pagamento; `gateway_response` permanece payload cru privado e nunca decide elegibilidade.
 - `POST /api/v1/student/checkout` aceita somente `{course_id}` e header UUID `Idempotency-Key`; preço, snapshot, origem `direct` e gateway são autoridade do servidor.

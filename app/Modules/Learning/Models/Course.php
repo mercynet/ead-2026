@@ -85,6 +85,11 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    public function priceHistories(): HasMany
+    {
+        return $this->hasMany(CoursePriceHistory::class);
+    }
+
     public function certificates(): HasMany
     {
         return $this->hasMany(Certificate::class);

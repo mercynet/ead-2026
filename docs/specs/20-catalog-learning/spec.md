@@ -1,7 +1,7 @@
 ---
 domain: catalog-learning
 maturity: stable
-last-reviewed: 2026-07-01
+last-reviewed: 2026-07-29
 owners: [paulo]
 related:
   - ../00-architecture/api-conventions.md
@@ -43,6 +43,7 @@ Recursos detalhados nas subspecs:
 |-------|--------|-------------|
 | `Category` | `categories` | Tabela única; hierárquica (`parent_id`+materialized `path`/`depth`, parent de mesmo escopo); system (`tenant_id=null,is_system=true`, só developer) vs. tenant; unicidade `UNIQUE(tenant_key=COALESCE(tenant_id,0), normalized_name)` + guard app (tenant ≠ nome de sistema); soft delete com proteção. Ver ADR-002. |
 | `Course` | `courses` | Agrupador raiz; soft deletes; status publicação; preço em centavos; config de certificado. |
+| `CoursePriceHistory` | `course_price_histories` | Auditoria Learning, específica de curso, append-only; preserva alterações reais de `price_cents`. |
 | `CourseModule` | `course_modules` | Pertence a um único curso; reordenável (`sort_order`). |
 | `Lesson` | `lessons` | Conteúdo da aula; pode ser gratuita (`is_free`); reordenável. |
 | `Enrollment` | `enrollments` | Vínculo de acesso/participação no curso; no máximo uma matrícula `active` por aluno/curso, permitindo histórico inativo (`cancelled`/`expired`). |
@@ -78,6 +79,9 @@ Recursos detalhados nas subspecs:
 - **Matrículas manuais por instrutor** (switch do tenant_admin); cobrança `external` pode cair
   como `pending` para aprovação.
 - **Auditoria financeira:** toda matrícula (mesmo gratuita) origina registro espelho no Financial.
+- **Histórico de preço do curso:** Learning é dono de `CoursePriceHistory`; cada mudança real de
+  `Course.price_cents` registra valores antigo/novo em centavos, ator explícito e instante da
+  alteração. O Financial preserva somente preço/snapshot contratado no `OrderItem`.
 
 ## Domain Boundaries
 

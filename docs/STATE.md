@@ -4,9 +4,10 @@
 
 ## Sessão
 
-- Branch `feat/financial-checkout` contém `CoursePriceHistory` no Learning: histórico append-only e
+- `main` integra `feat/financial-checkout` por fast-forward até `008c2be`, incluindo checkout
+  financeiro durável, gateways Admin e `CoursePriceHistory` no Learning: histórico append-only e
   tenant-aware, gravado atomicamente sob lock; Financial mantém somente preço/snapshot contratado no
-  `OrderItem`. Entrega committed e pushed em `c51ea72`.
+  `OrderItem`.
 - Evidência focada: `CoursePriceHistoryTest` 7/24, `CourseCrudApiTest` 34/89, Architecture 17/68,
   Larastan e Pint verdes; antes do push, `CoursePriceHistoryTest`, Architecture e Pint revalidados.
 - Governança replanejada por jornadas de área: ADR-006, `ROADMAP.md`, taxonomia área-first/neutra e
@@ -18,10 +19,9 @@
 
 ## Próximos passos (1-3)
 
-1. Abrir PR somente se solicitado.
-2. Antes do próximo slice, retrofitar metadados da jornada ativa e derivar primeiro gate
+1. Antes do próximo slice, retrofitar metadados da jornada ativa e derivar primeiro gate
    `FOUNDATION-0` (`area.guard`/permission ceiling) no `tasks.md` dono.
-3. Planejar `MZRT-SKELETON`; `STUDENT-PAID` retoma depois conforme sequência do `ROADMAP.md`.
+2. Planejar `MZRT-SKELETON`; `STUDENT-PAID` retoma depois conforme sequência do `ROADMAP.md`.
 
 ## Decisões abertas
 
@@ -32,6 +32,4 @@
 
 ## Último commit
 
-- Entregas pushed na branch `feat/financial-checkout`: `c51ea72`
-  (`feat(learning): record course price history`) e `cd0a63b`
-  (`docs: plan delivery by area journeys`).
+- Base integrada em `main`: `008c2be` (`docs: record learning and roadmap push`).

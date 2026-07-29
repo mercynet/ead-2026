@@ -148,7 +148,7 @@ it('orders top rated courses by tenant and exposes rating stats', function (): v
 
     RatingStats::query()->create([
         'tenant_id' => $tenant->id,
-        'rateable_type' => Course::class,
+        'rateable_type' => $courseHighA->getMorphClass(),
         'rateable_id' => $courseHighA->id,
         'average_stars' => 4.80,
         'total_ratings' => 10,
@@ -164,7 +164,7 @@ it('orders top rated courses by tenant and exposes rating stats', function (): v
 
     RatingStats::query()->create([
         'tenant_id' => $tenant->id,
-        'rateable_type' => Course::class,
+        'rateable_type' => $courseHighB->getMorphClass(),
         'rateable_id' => $courseHighB->id,
         'average_stars' => 4.80,
         'total_ratings' => 10,
@@ -180,7 +180,7 @@ it('orders top rated courses by tenant and exposes rating stats', function (): v
 
     RatingStats::query()->create([
         'tenant_id' => $tenant->id,
-        'rateable_type' => Course::class,
+        'rateable_type' => $courseLow->getMorphClass(),
         'rateable_id' => $courseLow->id,
         'average_stars' => 4.20,
         'total_ratings' => 3,

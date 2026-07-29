@@ -63,9 +63,9 @@ class ListCoursesAction
 
     private function applyTopRatedSorting(Builder $coursesQuery, ApiContext $context, ?int $minRatings): void
     {
-        $coursesQuery->leftJoin('rating_stats', function ($join) use ($context): void {
+        $coursesQuery->leftJoin('rating_stats', function ($join) use ($context, $coursesQuery): void {
             $join->on('rating_stats.rateable_id', '=', 'courses.id')
-                ->where('rating_stats.rateable_type', '=', Course::class);
+                ->where('rating_stats.rateable_type', '=', $coursesQuery->getModel()->getMorphClass());
 
             if ($context->tenant !== null) {
                 $join->where('rating_stats.tenant_id', '=', $context->tenant->id);

@@ -17,7 +17,7 @@ class RatingStatsFactory extends Factory
     public function definition(): array
     {
         return [
-            'rateable_type' => Course::class,
+            'rateable_type' => Course::query()->getModel()->getMorphClass(),
             'rateable_id' => Course::factory(),
             'tenant_id' => fn (array $attributes): ?int => Course::query()->find($attributes['rateable_id'])?->tenant_id,
             'average_stars' => fake()->randomFloat(2, 0, 5),

@@ -18,6 +18,8 @@ class PaymentFactory extends Factory
         return [
             'order_id' => Order::factory(),
             'status' => 'pending',
+            'gateway_slug' => 'internal',
+            'confirmation_mode' => 'automatic',
             'external_id' => fake()->optional()->uuid(),
             'gateway_response' => ['status' => 'pending'],
             'metadata' => ['provider' => 'internal'],

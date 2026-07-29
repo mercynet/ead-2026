@@ -2,7 +2,7 @@
 domain: financial
 parent: ../spec.md
 resource: webhooks-events
-last-reviewed: 2026-07-28
+last-reviewed: 2026-07-29
 ---
 
 # Webhooks & Events
@@ -12,10 +12,11 @@ last-reviewed: 2026-07-28
 - **Rota cega de webhook:** `POST /api/v1/webhooks/gateways/{gateway_slug}` recebe o ping do gateway
   sinalizando que `PAY-XXXXX` virou `paid` ou `failed`. É pública.
 - O webhook **não processa inline**: enfileira um Job (`ProcessPaymentWebhookJob`) para um worker,
-  que vira a `Order` de `pending` → `completed`/`paid` e dispara `OrderPaidEvent`.
-- **Event-driven:** quando `OrderPaidEvent` é disparado, o domínio Learning escuta e invoca
-  `EnrollService` (matrícula automática). Garante isolamento — não há código de matrícula nas
-  rotas financeiras.
+  que vira a `Order` de `pending` → `completed`/`paid` e grava `OrderPaidEvent` no outbox.
+- **Outbox durável:** transição financeira para pago grava `OrderPaidEvent` no outbox dentro da
+  mesma transação. Após commit, publicação imediata é best-effort; drainer agendado recupera
+  pendências com entrega ao menos uma vez. Learning consome o evento e invoca `EnrollService`
+  (matrícula automática), sem garantia de matrícula antes da resposta de checkout.
 - Exceções de gateway são capturadas e traduzidas para PT-BR antes de qualquer resposta ao cliente.
 - Gateways offline (`cash`) não têm webhook: o Admin confirma a transação manualmente na superfície
   `/api/v1/admin`, com a mesma transição idempotente de Order/Payment e o mesmo `OrderPaidEvent`.
@@ -28,8 +29,8 @@ last-reviewed: 2026-07-28
 
 ## Events
 
-- `OrderPaidEvent` — emitido pelo worker; consumido por Learning (matrícula automática). Mecânica
-  de fila em
+- `OrderPaidEvent` — registrado no outbox por transição paga e publicado após commit; consumido
+  por Learning (matrícula automática). Mecânica de fila em
   [`../../00-architecture/performance-scalability.md`](../../00-architecture/performance-scalability.md).
 
 ## Notes

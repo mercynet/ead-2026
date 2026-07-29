@@ -15,5 +15,11 @@ final readonly class ActiveGateway
     public function __construct(
         public string $slug,
         public array $credentials,
-    ) {}
+        public int $tenantPluginConfigId,
+        public string $configurationVersion,
+    ) {
+        if ($tenantPluginConfigId <= 0 || $configurationVersion === '') {
+            throw new \InvalidArgumentException('Gateway configuration identity is required.');
+        }
+    }
 }

@@ -39,7 +39,7 @@ class PlatformGatewayResolver
             throw GatewayResolutionException::invalidConfiguration($config->gateway_slug);
         }
 
-        return new ResolvedGateway($adapter, $config->credentials());
+        return new ResolvedGateway($adapter, $config->credentials(), $config->id, 'platform-'.$config->id);
     }
 
     public function hasActive(): bool

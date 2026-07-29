@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Config de instância de um plugin por tenant (ADR-005): store genérico, um por
@@ -23,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $plugin_id
  * @property array<string, mixed> $config
  * @property bool $enabled
+ * @property string $configuration_version
  * @property-read Plugin $plugin
  */
 class TenantPluginConfig extends Model
@@ -43,6 +48,35 @@ class TenantPluginConfig extends Model
         'config',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $config): void {
+            $config->configuration_version ??= (string) Str::uuid();
+        });
+
+        static::saving(function (self $config): void {
+            if ($config->exists && ($config->isDirty('plugin_id') || $config->isDirty('tenant_id'))) {
+                throw new RuntimeException('Tenant and plugin identity cannot change after configuration creation.');
+            }
+
+            if ($config->exists && ($config->isDirty('config') || $config->isDirty('enabled'))) {
+                $config->configuration_version = (string) Str::uuid();
+            }
+        });
+
+        static::saved(function (self $config): void {
+            $config->revisions()->firstOrCreate(
+                ['configuration_version' => $config->configuration_version],
+                ['config' => $config->config],
+            );
+        });
+    }
+
+    public function save(array $options = []): bool
+    {
+        return DB::transaction(fn (): bool => parent::save($options));
+    }
+
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -51,6 +85,14 @@ class TenantPluginConfig extends Model
     public function plugin(): BelongsTo
     {
         return $this->belongsTo(Plugin::class);
+    }
+
+    /**
+     * @return HasMany<TenantPluginConfigRevision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(TenantPluginConfigRevision::class);
     }
 
     /**
@@ -84,6 +126,7 @@ class TenantPluginConfig extends Model
             'plugin_id' => 'integer',
             'config' => 'encrypted:array',
             'enabled' => 'boolean',
+            'configuration_version' => 'string',
         ];
     }
 }

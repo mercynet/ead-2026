@@ -46,7 +46,7 @@ it('creates an active enrollment when an order paid event carries a course item'
         userId: $student->id,
         paidAt: now()->toIso8601String(),
         items: [[
-            'itemable_type' => Course::class,
+            'itemable_type' => 'course',
             'itemable_id' => $course->id,
             'item_snapshot' => ['title' => $course->title],
             'price_cents' => 10000,
@@ -61,7 +61,7 @@ it('creates an active enrollment when an order paid event carries a course item'
         ->assertJsonPath('data.is_active', true);
 });
 
-it('ignores non-learning items and keeps order paid replays idempotent', function (): void {
+it('consumes historical course class payloads, ignores non-learning items, and keeps order paid replays idempotent', function (): void {
     $tenant = makeTenant(['domain' => 'tenant-a.local']);
     [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
 

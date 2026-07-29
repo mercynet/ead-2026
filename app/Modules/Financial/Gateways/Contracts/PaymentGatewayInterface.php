@@ -2,6 +2,8 @@
 
 namespace App\Modules\Financial\Gateways\Contracts;
 
+use App\Modules\Financial\Contracts\GatewayConfigurationDefinition;
+use App\Modules\Financial\Enums\PaymentConfirmationMode;
 use App\Modules\Financial\Gateways\Data\ChargeIntent;
 use App\Modules\Financial\Gateways\Data\ChargeResult;
 
@@ -26,6 +28,13 @@ interface PaymentGatewayInterface
      * Nome legível para exibição, ex.: 'Stripe'.
      */
     public function label(): string;
+
+    public function confirmationMode(): PaymentConfirmationMode;
+
+    /**
+     * Schema público de configuração requerido para operar este gateway.
+     */
+    public function configurationSchema(): GatewayConfigurationDefinition;
 
     /**
      * Cria uma cobrança avulsa a partir das credenciais e da intenção neutra.

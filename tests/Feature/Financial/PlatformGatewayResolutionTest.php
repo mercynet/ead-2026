@@ -1,5 +1,8 @@
 <?php
 
+use App\Modules\Financial\Contracts\GatewayConfigurationDefinition;
+use App\Modules\Financial\Enums\PaymentChargeStatus;
+use App\Modules\Financial\Enums\PaymentConfirmationMode;
 use App\Modules\Financial\Exceptions\GatewayResolutionException;
 use App\Modules\Financial\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Financial\Gateways\Data\ChargeIntent;
@@ -23,11 +26,32 @@ class PlatformFakeGateway implements PaymentGatewayInterface
         return 'Stripe';
     }
 
+    public function confirmationMode(): PaymentConfirmationMode
+    {
+        return PaymentConfirmationMode::Automatic;
+    }
+
+    public function configurationSchema(): GatewayConfigurationDefinition
+    {
+        return new GatewayConfigurationDefinition(
+            identifier: $this->id,
+            label: $this->label(),
+            fields: [
+                'secret_key' => [
+                    'label' => 'Chave secreta',
+                    'input' => 'password',
+                    'required' => true,
+                    'secret' => true,
+                    'rules' => ['string', 'min:8'],
+                ],
+            ],
+        );
+    }
+
     public function charge(array $credentials, ChargeIntent $intent): ChargeResult
     {
         return new ChargeResult(
-            successful: true,
-            status: 'pending',
+            status: PaymentChargeStatus::Pending,
             externalId: 'ch_'.$intent->reference,
             raw: ['secret_seen' => $credentials['secret_key'] ?? null],
         );
@@ -70,9 +94,9 @@ it('resolves the active platform gateway and charges', function (): void {
 
     $resolved = platformResolver()->resolve();
 
-    $result = $resolved->charge(new ChargeIntent(amountCents: 2990, currency: 'brl', reference: 'PLAT-1'));
+    $result = $resolved->charge(new ChargeIntent(amountCents: 2990, currency: 'brl', reference: 'PLAT-1', idempotencyKey: '3b4e1dc1-0ef6-46d8-9bea-aa992d719744'));
 
-    expect($result->successful)->toBeTrue()
+    expect($result->status)->toBe(PaymentChargeStatus::Pending)
         ->and($result->raw['secret_seen'])->toBe('sk_test_platform');
 });
 

@@ -28,7 +28,7 @@ class EnrollStudentFromOrderPaidListener
             $itemableType = (string) $item['itemable_type'];
             $resolvedType = Relation::getMorphedModel($itemableType) ?? $itemableType;
 
-            if ($resolvedType !== Course::class) {
+            if ($itemableType !== 'course' && $resolvedType !== Course::class) {
                 continue;
             }
 

@@ -6,6 +6,7 @@ use App\Modules\Core\Models\Tenant;
 use App\Modules\Ecosystem\Models\Plugin;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<TenantPluginConfig>
@@ -21,6 +22,7 @@ class TenantPluginConfigFactory extends Factory
             'plugin_id' => Plugin::factory(),
             'config' => ['configured' => true],
             'enabled' => true,
+            'configuration_version' => (string) Str::uuid(),
         ];
     }
 

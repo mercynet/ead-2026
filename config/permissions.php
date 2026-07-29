@@ -345,4 +345,28 @@ return [
         'user_types' => ['developer', 'admin'],
     ],
 
+    // ─────────────────────────────────────────────
+    // Financial — Gateways de pagamento
+    // ─────────────────────────────────────────────
+
+    'financial.payment-gateways.list' => [
+        'label' => 'Listar gateways de pagamento',
+        'user_types' => ['developer', 'admin'],
+    ],
+
+    'financial.payment-gateways.update' => [
+        'label' => 'Configurar gateways de pagamento',
+        'user_types' => ['developer', 'admin'],
+    ],
+
+    'financial.orders.confirm-manual-payment' => [
+        'label' => 'Confirmar pagamento manual de pedidos',
+        'user_types' => ['developer', 'admin'],
+    ],
+
+    'financial.checkout.create' => [
+        'label' => 'Criar checkout de curso',
+        'user_types' => ['developer', 'student'],
+    ],
+
 ];

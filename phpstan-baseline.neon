@@ -781,12 +781,6 @@ parameters:
 			path: app/Modules/Learning/Actions/Course/SyncMaterialStatsAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\|App\\Modules\\Learning\\Models\\Lesson\:\:\$tenant_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Modules/Learning/Actions/Course/SyncRatingStatsAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
@@ -859,12 +853,6 @@ parameters:
 			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$price_cents\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$requirements\.$#'
 			identifier: property.notFound
 			count: 1
@@ -877,12 +865,6 @@ parameters:
 			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$target_audience\.$#'
 			identifier: property.notFound
 			count: 1
@@ -890,12 +872,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$thumbnail\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$title\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Modules/Learning/Actions/Course/UpdateCourseAction.php
@@ -925,22 +901,10 @@ parameters:
 			path: app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$user_id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Modules/Learning/Actions/Enrollment/EnrollStudentInCourseAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$price_cents\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Modules/Learning/Actions/Enrollment/StoreEnrollmentAction.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:manualFreeEnrollmentEnabled\(\)\.$#'
@@ -1741,12 +1705,6 @@ parameters:
 			path: app/Modules/Learning/Models/Course.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$price_cents\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Models/Course.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1754,12 +1712,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$access_expires_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Learning/Models/Enrollment.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 2
 			path: app/Modules/Learning/Models/Enrollment.php
@@ -1805,12 +1757,6 @@ parameters:
 			identifier: property.notFound
 			count: 3
 			path: app/Modules/Learning/Policies/CourseModulePolicy.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$tenant_id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Modules/Learning/Policies/CoursePolicy.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$tenant_id\.$#'

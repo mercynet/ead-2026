@@ -15,4 +15,6 @@ interface TenantGatewayProvider
      * O gateway ativo/configurado do tenant, ou null se nenhum.
      */
     public function activeFor(Tenant $tenant): ?ActiveGateway;
+
+    public function activeForIdentity(Tenant $tenant, int $tenantPluginConfigId, string $configurationVersion): ?ActiveGateway;
 }

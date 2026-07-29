@@ -23,6 +23,7 @@ final readonly class ChargeIntent
         public int $amountCents,
         public string $currency,
         public string $reference,
+        public string $idempotencyKey,
         public ?string $description = null,
         public array $metadata = [],
     ) {}

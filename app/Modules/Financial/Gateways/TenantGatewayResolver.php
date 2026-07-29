@@ -38,7 +38,24 @@ class TenantGatewayResolver
             throw GatewayResolutionException::invalidConfiguration($active->slug);
         }
 
-        return new ResolvedGateway($adapter, $active->credentials);
+        return new ResolvedGateway($adapter, $active->credentials, $active->tenantPluginConfigId, $active->configurationVersion);
+    }
+
+    public function resolveExact(Tenant $tenant, int $tenantPluginConfigId, string $configurationVersion, string $expectedSlug): ResolvedGateway
+    {
+        $active = $this->provider->activeForIdentity($tenant, $tenantPluginConfigId, $configurationVersion);
+        if ($active === null) {
+            throw GatewayResolutionException::noActiveGateway($tenant);
+        }
+        if ($active->slug !== $expectedSlug) {
+            throw GatewayResolutionException::noActiveGateway($tenant);
+        }
+        $adapter = $this->manager->get($active->slug);
+        if ($adapter === null || ! $adapter->validateConfiguration($active->credentials)) {
+            throw GatewayResolutionException::invalidConfiguration($active->slug);
+        }
+
+        return new ResolvedGateway($adapter, $active->credentials, $active->tenantPluginConfigId, $active->configurationVersion);
     }
 
     public function hasActiveFor(Tenant $tenant): bool

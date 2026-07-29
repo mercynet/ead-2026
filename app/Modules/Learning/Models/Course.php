@@ -16,7 +16,12 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * @property int $id
+ * @property int $tenant_id
  * @property int $instructor_id
+ * @property int $price_cents
+ * @property string $title
+ * @property string $slug
  */
 class Course extends Model
 {

@@ -5,6 +5,7 @@ use App\Modules\Core\Models\User;
 use App\Modules\Financial\Models\Order;
 use App\Modules\Financial\Models\OrderItem;
 use App\Modules\Financial\Models\Payment;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 
@@ -25,6 +26,7 @@ it('loads the financial ledger schema with money in cents', function (): void {
         'tax_cents',
         'total_cents',
         'source_key',
+        'idempotency_key',
         'metadata',
     ]))->toBeTrue();
 
@@ -39,9 +41,17 @@ it('loads the financial ledger schema with money in cents', function (): void {
     expect(Schema::hasColumns('payments', [
         'order_id',
         'status',
+        'gateway_slug',
+        'confirmation_mode',
         'external_id',
         'gateway_response',
         'metadata',
+        'tenant_plugin_config_id',
+        'gateway_configuration_version',
+        'psp_idempotency_key',
+        'charge_state',
+        'charge_claim_token',
+        'charge_claimed_at',
     ]))->toBeTrue();
 
     $tenant = Tenant::factory()->create();
@@ -60,6 +70,36 @@ it('loads the financial ledger schema with money in cents', function (): void {
     ]);
 
     expect($order->subtotal_cents)->toBeInt()->and($order->total_cents)->toBeInt();
+});
+
+it('enforces payment PSP and gateway external idempotency uniqueness', function (): void {
+    $order = Order::factory()->create();
+    $payment = Payment::factory()->for($order)->create([
+        'gateway_slug' => 'stripe',
+        'external_id' => 'ch_unique',
+        'psp_idempotency_key' => 'psp_unique',
+        'tenant_plugin_config_id' => 123,
+        'gateway_configuration_version' => 'config-v1',
+        'charge_state' => 'created',
+    ]);
+
+    expect($payment->tenant_plugin_config_id)->toBe(123)
+        ->and($payment->gateway_configuration_version)->toBe('config-v1')
+        ->and($payment->charge_state)->toBe('created');
+
+    expect(fn () => Payment::factory()->create(['psp_idempotency_key' => 'psp_unique']))
+        ->toThrow(UniqueConstraintViolationException::class)
+        ->and(fn () => Payment::factory()->create(['gateway_slug' => 'stripe', 'external_id' => 'ch_unique']))
+        ->toThrow(UniqueConstraintViolationException::class);
+
+    Payment::factory()->create(['gateway_slug' => 'stripe', 'external_id' => null]);
+    Payment::factory()->create(['gateway_slug' => 'stripe', 'external_id' => null]);
+});
+
+it('defaults newly created payments to the created charge state after historical backfill', function (): void {
+    $payment = Payment::factory()->create()->fresh();
+
+    expect($payment->charge_state)->toBe('created');
 });
 
 it('wires financial order relations and morph itemables', function (): void {
@@ -84,6 +124,8 @@ it('wires financial order relations and morph itemables', function (): void {
     $payment = Payment::query()->create([
         'order_id' => $order->id,
         'status' => 'paid',
+        'gateway_slug' => 'cash',
+        'confirmation_mode' => 'manual',
         'external_id' => 'pay_123',
         'gateway_response' => ['ok' => true],
         'metadata' => ['method' => 'internal'],
@@ -92,5 +134,7 @@ it('wires financial order relations and morph itemables', function (): void {
     expect($order->items)->toHaveCount(1)
         ->and($order->payments)->toHaveCount(1)
         ->and($item->itemable->is($itemable))->toBeTrue()
-        ->and($payment->order->is($order))->toBeTrue();
+        ->and($payment->order->is($order))->toBeTrue()
+        ->and($payment->gateway_slug)->toBe('cash')
+        ->and($payment->confirmation_mode)->toBe('manual');
 });

@@ -1,7 +1,7 @@
 ---
 domain: financial
 maturity: draft
-last-reviewed: 2026-07-28
+last-reviewed: 2026-07-29
 owners: [paulo]
 related:
   - ../00-architecture/api-conventions.md
@@ -38,11 +38,11 @@ Recursos detalhados nas subspecs:
 
 | Model | Invariantes |
 |-------|-------------|
-| `Order` | tenant-scoped; `order_number`; status `pending|paid|failed|cancelled|refunded`; `origin_type` (Direct/Cart/Subscription/Renewal — **Subscription = aluno→plano do tenant**, plugin Subscriptions). |
+| `Order` | tenant-scoped; `order_number`; status `pending|paid|failed|cancelled|refunded`; `origin_type` lowercase (`direct|cart|subscription|renewal`). |
 | `OrderItem` | Polimórfico (`itemable_type/id` → Curso/Plano); guarda `item_snapshot` para histórico. |
 | `PriceHistory` | Auditoria de alterações de preço. |
-| `Payment` | Atrelado a `Order`; `gateway_response` cru, `external_id`; status `pending|completed|failed`. |
-| `TenantPluginConfig` (Ecosystem) | Configuração/credenciais cifradas por tenant (`encrypted:array`) de gateway-plugin; múltiplos gateways. Todo tenant novo recebe `cash` free/habilitado para confirmação manual. |
+| `Payment` | Atrelado a `Order`; `gateway_response` cru privado, `external_id`, identidade persistida de gateway e estado de execução `created|processing|resolved|unknown`; status `pending|completed|failed`. |
+| `TenantPluginConfig` (Ecosystem) | Configuração/credenciais cifradas por tenant (`encrypted:array`) de gateway-plugin; `TenantPluginConfigRevision` preserva snapshots imutáveis cifrados, consultados por identidade exata. Todo tenant novo recebe `cash` free/habilitado para confirmação manual. |
 | `Cart` / `CartItem` (plugin) | Carrinho por usuário; itens polimórficos. |
 | `Coupon` (plugin) | Desconto percentual/fixo, validade e limite de uso. |
 
@@ -72,6 +72,14 @@ Recursos detalhados nas subspecs:
   [`../00-architecture/api-conventions.md`](../00-architecture/api-conventions.md).
 - **Checkout desacoplado:** backend envia intenção e devolve `client_secret`/URL de redirect; o
   SPA executa em iframe/redirect.
+- **Claim/replay de cobrança:** o `Payment` é reivindicado transacionalmente de `created` para
+  `processing`. Replay `resolved` devolve resposta persistida; `processing` recente retorna
+  `checkout_in_progress`; claim vencido vira `unknown` sem takeover; `unknown` exige
+  reconciliação, nunca recarga inline. A persistência do resultado exige token e identidade
+  completa persistida (configuração, versão, slug e chave PSP).
+- **Identidade histórica do gateway:** retry usa snapshot exato cifrado de
+  `TenantPluginConfigRevision`, mesmo após rotação/desabilitação da configuração atual. A chave
+  de idempotência PSP é gerada e mantida pelo servidor.
 - **Auditoria de transações:** toda matrícula, mesmo gratuita, gera registro financeiro espelho
   (ex.: método "Automático/Gratuito") para LTV/auditoria. Manter polimorfismo (`itemable`) sempre
   válido para evitar `RelationNotFoundException` em orders antigas.
@@ -90,7 +98,8 @@ Permissions financeiras (`financial.*`) chegam principalmente via plugin/role. V
 
 ## Events
 
-- `OrderPaidEvent` — disparado pelo worker ao virar `Order` de pending → paid (via webhook).
+- `OrderPaidEvent` — fato financeiro registrado no outbox durável ao virar `Order` de pending →
+  paid. Publicação imediata após commit é best-effort; drainer agendado recupera pendências.
 
 ## Quick Reference
 

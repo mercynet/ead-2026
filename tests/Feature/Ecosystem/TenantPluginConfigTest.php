@@ -49,3 +49,25 @@ it('scopes enabled configs', function (): void {
 
     expect(TenantPluginConfig::query()->enabled()->count())->toBe(1);
 });
+
+it('rotates version for direct persisted config and enabled mutations', function (): void {
+    $config = TenantPluginConfig::factory()->create(['config' => ['secret_key' => 'sk_original']]);
+    $originalVersion = $config->configuration_version;
+
+    $config->update(['config' => ['secret_key' => 'sk_rotated']]);
+    $config->refresh();
+    $configVersion = $config->configuration_version;
+
+    $config->update(['enabled' => false]);
+    $config->refresh();
+
+    expect($configVersion)->not->toBe($originalVersion)
+        ->and($config->configuration_version)->not->toBe($configVersion);
+});
+
+it('rejects direct persisted tenant and plugin identity mutations', function (): void {
+    $config = TenantPluginConfig::factory()->create();
+
+    expect(fn () => $config->update(['tenant_id' => makeTenant()->id]))->toThrow(RuntimeException::class)
+        ->and(fn () => $config->update(['plugin_id' => Plugin::factory()->create()->id]))->toThrow(RuntimeException::class);
+});

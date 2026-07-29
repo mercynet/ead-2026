@@ -7,6 +7,7 @@ use App\Modules\Ecosystem\Models\Plugin;
 use App\Modules\Ecosystem\Models\PluginActivation;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EcosystemDefaultGatewayProvisioner implements DefaultGatewayProvisioner
 {
@@ -48,6 +49,7 @@ class EcosystemDefaultGatewayProvisioner implements DefaultGatewayProvisioner
                 [
                     'config' => [],
                     'enabled' => true,
+                    'configuration_version' => (string) Str::uuid(),
                 ],
             );
         });

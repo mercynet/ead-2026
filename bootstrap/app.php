@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Financial\Exceptions\CheckoutConflictException;
+use App\Modules\Financial\Exceptions\GatewayUnavailableException;
 use App\Shared\Exceptions\AccessDeniedException;
 use App\Shared\Exceptions\AreaAccessDeniedException;
 use App\Shared\Exceptions\InvalidCredentialsException;
@@ -36,6 +38,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (CheckoutConflictException $exception, Request $request) {
+            return response()->json(['data' => null, 'errors' => [['code' => $exception->errorCode, 'message' => $exception->getMessage()]]], 409);
+        });
+
+        $exceptions->render(function (GatewayUnavailableException $exception, Request $request) {
+            return response()->json(['data' => null, 'errors' => [['code' => 'gateway_unavailable', 'message' => 'Gateway de pagamento indisponível.']]], 503);
+        });
         $exceptions->render(function (TenantContextRequiredException $exception, Request $request) {
             return response()->json([
                 'data' => null,

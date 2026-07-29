@@ -2,6 +2,7 @@
 
 namespace App\Modules\Financial\Gateways\Data;
 
+use App\Modules\Financial\Enums\PaymentConfirmationMode;
 use App\Modules\Financial\Gateways\Contracts\PaymentGatewayInterface;
 
 /**
@@ -17,10 +18,26 @@ final readonly class ResolvedGateway
     public function __construct(
         public PaymentGatewayInterface $adapter,
         public array $credentials,
-    ) {}
+        public int $tenantPluginConfigId,
+        public string $configurationVersion,
+    ) {
+        if ($tenantPluginConfigId <= 0 || $configurationVersion === '') {
+            throw new \InvalidArgumentException('Gateway configuration identity is required.');
+        }
+    }
 
     public function charge(ChargeIntent $intent): ChargeResult
     {
         return $this->adapter->charge($this->credentials, $intent);
+    }
+
+    public function slug(): string
+    {
+        return $this->adapter->identifier();
+    }
+
+    public function confirmationMode(): PaymentConfirmationMode
+    {
+        return $this->adapter->confirmationMode();
     }
 }

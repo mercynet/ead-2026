@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $activated_at
  * @property \Illuminate\Support\Carbon|null $deactivated_at
  * @property int|null $activated_by
+ * @property-read Plugin $plugin
  */
 class PluginActivation extends Model
 {

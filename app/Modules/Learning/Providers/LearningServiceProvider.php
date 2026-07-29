@@ -5,12 +5,16 @@ namespace App\Modules\Learning\Providers;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
 use App\Modules\Financial\Events\OrderPaidEvent;
+use App\Modules\Learning\Contracts\CourseCheckoutCatalog;
 use App\Modules\Learning\Listeners\EnrollStudentFromOrderPaidListener;
+use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Policies\CategoryPolicy;
 use App\Modules\Learning\Policies\CourseModulePolicy;
 use App\Modules\Learning\Policies\CoursePolicy;
 use App\Modules\Learning\Policies\EnrollmentPolicy;
 use App\Modules\Learning\Policies\LessonPolicy;
+use App\Modules\Learning\Services\CourseCheckoutCatalogResolver;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -18,9 +22,15 @@ use Illuminate\Support\ServiceProvider;
 
 class LearningServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->bind(CourseCheckoutCatalog::class, CourseCheckoutCatalogResolver::class);
+    }
+
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+        Relation::morphMap(['course' => Course::class]);
         $this->registerGates();
         $this->registerListeners();
         $this->registerRoutes();

@@ -7,6 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property int $id
+ * @property int $order_id
+ * @property string $itemable_type
+ * @property int $itemable_id
+ * @property array<string, mixed>|null $item_snapshot
+ * @property int $price_cents
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class OrderItem extends Model
 {
     protected static string $factory = \Database\Factories\OrderItemFactory::class;
@@ -21,6 +31,7 @@ class OrderItem extends Model
         'price_cents',
     ];
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

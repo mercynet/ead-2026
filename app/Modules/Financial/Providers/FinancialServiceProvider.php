@@ -2,6 +2,7 @@
 
 namespace App\Modules\Financial\Providers;
 
+use App\Modules\Financial\Contracts\GatewayConfigurationRegistry;
 use App\Modules\Financial\Gateways\Adapters\CashPaymentGateway;
 use App\Modules\Financial\Gateways\PaymentGatewayManager;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,7 @@ class FinancialServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(PaymentGatewayManager::class);
+        $this->app->alias(PaymentGatewayManager::class, GatewayConfigurationRegistry::class);
     }
 
     public function boot(PaymentGatewayManager $paymentGatewayManager): void

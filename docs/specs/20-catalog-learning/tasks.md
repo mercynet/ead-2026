@@ -82,7 +82,10 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Re-slot área-first: system → Mzrt (`v1/mzrt`), tenant → Admin (`v1/admin`); `CategoryPolicy` decide por `is_system`.
 
 ### Courses
-- [ ] Attach categories to courses (usa pivô dedicado + `sort_order`/`is_featured`).
+- [x] Attach categories to courses: `PUT /api/v1/admin/courses/{id}/categories` substitui o conjunto
+  completo pelo pivô dedicado — `sort_order` derivado da posição no array, `is_featured` por item,
+  categoria de sistema ou do próprio tenant, e payload inválido não altera o vínculo existente.
+  `Journey: ADMIN-OPS | Area: admin | Depends on: pivô category_course`
 
 ### Modules
 - [x] `POST /modules` (criação mínima; tenant isolation + sort_order automático).

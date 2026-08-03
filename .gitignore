@@ -27,3 +27,4 @@ public/docs
 .slim/deepwork/
 /graphify-out
 __pycache__/
+.env.e2e

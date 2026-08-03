@@ -92,6 +92,10 @@ category_course (pivô dedicado, tenant-aware)
 - `course_id` referencia curso do mesmo `tenant_id`.
 - `category_id` pode ser de sistema (`tenant_id=null`) ou do mesmo `tenant_id` do curso.
 - Nunca vincular categoria de outro tenant.
+- Vínculo é escrito só pela área **Admin**, em `PUT /api/v1/admin/courses/{id}/categories`, com
+  semântica de substituição total do conjunto: a posição no array vira `sort_order` (1..n) e array
+  vazio limpa os vínculos. O cliente **não** envia `sort_order` — derivar da posição evita colisão
+  com `UNIQUE(course_id, sort_order)`. Payload inválido não altera o vínculo existente.
 
 ### Descoberta de cursos
 
@@ -123,6 +127,7 @@ category_course (pivô dedicado, tenant-aware)
 | POST | `/api/v1/learning/catalog/categories` | Criar categoria (tenant→Admin / system→Mzrt) | `learning.categories.create` / `...system.manage` |
 | PUT | `/api/v1/learning/catalog/categories/{id}` | Atualizar categoria | `learning.categories.update` / `...system.manage` |
 | DELETE | `/api/v1/learning/catalog/categories/{id}` | Deletar categoria (com proteção) | `learning.categories.delete` / `...system.manage` |
+| PUT | `/api/v1/admin/courses/{id}/categories` | Sincronizar categorias do curso (área Admin) | `learning.courses.update` |
 
 ## Permissions
 

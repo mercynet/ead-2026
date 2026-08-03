@@ -23,5 +23,6 @@ Route::prefix('v1/admin')
                 Route::get('/courses/{id}', 'show');
                 Route::post('/courses/{id}/publish', 'publish');
                 Route::post('/courses/{id}/unpublish', 'unpublish');
+                Route::put('/courses/{id}/categories', 'syncCategories');
             });
     });

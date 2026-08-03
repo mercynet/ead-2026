@@ -79,9 +79,13 @@ Recursos detalhados nas subspecs:
 - **Identidade histórica do gateway:** retry usa snapshot exato cifrado de
   `TenantPluginConfigRevision`, mesmo após rotação/desabilitação da configuração atual. A chave
   de idempotência PSP é gerada e mantida pelo servidor.
-- **Auditoria de transações:** toda matrícula, mesmo gratuita, gera registro financeiro espelho
-  (ex.: método "Automático/Gratuito") para LTV/auditoria. Manter polimorfismo (`itemable`) sempre
-  válido para evitar `RelationNotFoundException` em orders antigas.
+- **Espelho de concessão manual zero-consideration:** `EnrollmentCreatedEvent` com `source=manual`
+  e sem `billing_type` cria na mesma transação uma `Order` direta paga, um item `course` e `Payment`
+  `free` automático/resolvido, independente do preço de catálogo; este preço é somente snapshot.
+  A identidade é `learning:enrollment:{id}`; replay não duplica ledger nem emite `OrderPaidEvent`.
+  Matrícula pendente de aprovação também preserva status no metadata. Manual externa permanece fora
+  deste escopo até reconciliação/decisão posterior. Manter polimorfismo (`itemable`) sempre válido
+  para evitar `RelationNotFoundException` em orders antigas.
 
 ## Domain Boundaries
 
@@ -99,6 +103,8 @@ Permissions financeiras (`financial.*`) chegam principalmente via plugin/role. V
 
 - `OrderPaidEvent` — fato financeiro registrado no outbox durável ao virar `Order` de pending →
   paid. Publicação imediata após commit é best-effort; drainer agendado recupera pendências.
+- `EnrollmentCreatedEvent` (Learning) — consumido sincronicamente apenas para o espelho manual
+  gratuito; falha cancela matrícula e ledger juntos.
 
 ## Quick Reference
 

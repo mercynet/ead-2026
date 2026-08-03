@@ -4,32 +4,27 @@
 
 ## Sessão
 
-- `main` integra `feat/financial-checkout` por fast-forward até `008c2be`, incluindo checkout
-  financeiro durável, gateways Admin e `CoursePriceHistory` no Learning: histórico append-only e
-  tenant-aware, gravado atomicamente sob lock; Financial mantém somente preço/snapshot contratado no
-  `OrderItem`.
-- Evidência focada: `CoursePriceHistoryTest` 7/24, `CourseCrudApiTest` 34/89, Architecture 17/68,
-  Larastan e Pint verdes; antes do push, `CoursePriceHistoryTest`, Architecture e Pint revalidados.
-- Governança replanejada por jornadas de área: ADR-006, `ROADMAP.md`, taxonomia área-first/neutra e
-  inventário legacy atualizados. Área define valor; domínio define ownership; Mzrt inicia como
-  walking skeleton, sem bloquear Admin/Student por control plane completo. Committed e pushed em
-  `cd0a63b`.
-- Evidência documental: revisão Oracle reconciliada, `git diff --check`, links internos e
-  `graphify update .` verdes.
+- `FOUNDATION-0` e `MZRT-SKELETON` atingiram `usable`, somente no working tree: tenant create
+  provisiona admin/role/`cash` atomicamente por contrato Shared→Ecosystem; MZRT lê entitlements sem
+  contexto/header de tenant; lifecycle HTTP cobre login, suspensão e reativação.
+- A task Learning em progresso foi concluída no working tree: concessão manual sem `billing_type`
+  cria `Order`/`OrderItem`/`Payment` zero-consideration, atômicos e idempotentes; preço de catálogo
+  fica só no snapshot; matrícula externa permanece diferida.
+- Evidência adicional: EnrollmentFinancialMirrorTest 8/48; EnrollmentApiTest 35/129;
+  EnrollmentOrderPaidEventTest 2/8; StudentCheckoutApiTest 16/183; Architecture 20/696; Larastan
+  377 arquivos; Pint, `git diff --check` e `graphify update .` verdes. Evidência Foundation/E2E
+  anterior permanece válida, incluindo E2E real 9/9 sem resíduos.
+- Branch `feat/foundation-area-guard`, HEAD/base `a908827`. Trabalho não está staged, committed ou pushed.
 
 ## Próximos passos (1-3)
 
-1. Antes do próximo slice, retrofitar metadados da jornada ativa e derivar primeiro gate
-   `FOUNDATION-0` (`area.guard`/permission ceiling) no `tasks.md` dono.
-2. Planejar `MZRT-SKELETON`; `STUDENT-PAID` retoma depois conforme sequência do `ROADMAP.md`.
+1. Revisar e consolidar atomicamente o working tree quando commit for solicitado.
+2. Selecionar a próxima fatia `ADMIN-OPS`; `docs/specs/20-catalog-learning/tasks.md` não tem task em progresso.
 
 ## Decisões abertas
 
-- Definir política do override developer nas áreas: remover bypass implícito ou torná-lo explícito
-  por endpoint e auditado.
-- Fechar destinos das rotas legacy mistas e estratégia de Resources multi-área quando cada slice
-  entrar em execução.
+- Nenhuma bloqueante. Billing manual `external` continua diferido até definir reconciliação e momento do espelho; commit/push aguardam pedido explícito.
 
 ## Último commit
 
-- Base integrada em `main`: `008c2be` (`docs: record learning and roadmap push`).
+- Branch `feat/foundation-area-guard`, HEAD/base `a908827`.

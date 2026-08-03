@@ -51,7 +51,7 @@ Recursos detalhados nas subspecs:
 | `LessonView` | `lesson_views` | Estatística: 1 registro por acesso (replay). |
 | `Rating` / `RatingStats` | `ratings` / `rating_stats` | Avaliação 1-5 + like/dislike; rollup agregado em cache. |
 | `CourseMaterial` / `MaterialDownload` | — | Materiais extras (≤50MB) com tracking de download. |
-| `category_course` (pivot) | `category_course` | Pivô **dedicado** (não polimórfico): `tenant_id, course_id, category_id, order, is_featured`; FK reais; nunca cruza tenants. Produtos futuros = `category_product`. |
+| `category_course` (pivot) | `category_course` | Pivô **dedicado** (não polimórfico): `tenant_id, course_id, category_id, sort_order, is_featured`; FK reais; nunca cruza tenants. Produtos futuros = `category_product`. |
 
 ## Business Rules
 

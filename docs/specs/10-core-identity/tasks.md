@@ -1,6 +1,6 @@
 ---
 domain: core-identity
-last-updated: 2026-07-28
+last-updated: 2026-07-29
 ---
 
 # Tasks — Core & Identity (inclui RBAC)
@@ -24,6 +24,12 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] Métodos `isDeveloper()/isAdmin()/isInstructor()/isStudent()` no `User`.
 - [x] Gate/Policy que verifica UserType.
 - [x] RolesSeeder atualizado com UserTypes.
+- [x] Guard universal de área com correspondência exata de persona, cobertura arquitetural de todas
+  as rotas área-first existentes e remoção do bypass implícito de `developer`.
+  `Journey: FOUNDATION-0 | Area: neutral | Depends on: none`
+- [x] Teto efetivo de permissions por `UserType`, derivado da matriz canônica, aplicado a grants de
+  role/direct permission, fail-closed para permissions não registradas e protegido por invariantes.
+  `Journey: FOUNDATION-0 | Area: neutral | Depends on: none`
 
 ### Core endpoints
 - [x] `POST /api/v1/core/auth/login` (rate limit 5/min, token com device type).
@@ -40,8 +46,28 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `PATCH /api/v1/core/users/me/password`.
 - [x] Models `User`, `Tenant`, `TenantCustomization`, `TenantIntegration` (+ relacionamentos).
 - [x] Command `tenant:provision` — bootstrap idempotente de tenant + primeiro admin (semeia RBAC;
-  provisiona preset gratuito `cash` de confirmação manual via contrato Ecosystem; não duplica nem
-  sobrescreve senha, ativação ou config existente; gera senha forte se omitida). Runbook do onboarding invite-only.
+   provisiona preset gratuito `cash` de confirmação manual via contrato Ecosystem; não duplica nem
+   sobrescreve senha, ativação ou config existente; gera senha forte se omitida). Runbook do onboarding invite-only.
+- [x] **`MZRT-SKELETON-STATUS`** `PATCH /api/v1/mzrt/tenants/{tenant}/status`: `core.tenants.update-status`; somente
+  `developer` via `auth:sanctum` + `area.guard:mzrt`, sem `tenant.required`, `tenant.access` ou
+  header de tenant. Aceita `status` (`active|suspended`), persiste em `is_active`, é idempotente e
+  Resource expõe `status`, nunca `is_active`. Cobrir 403 por persona/permission, 422 inválido, 404
+  inexistente e envelopes; suspensão bloqueia novo login e token tenant-bound sem afetar outro
+  tenant, reativação restaura acesso; incluir auditoria, Scribe e Feature tests. E2E fica no
+  fechamento da jornada.
+  `Journey: MZRT-SKELETON | Area: mzrt | Depends on: FOUNDATION-0`
+- [x] **`MZRT-SKELETON-CREATE`** `POST /api/v1/mzrt/tenants`: cria tenant, primeiro admin e role
+  e preset `cash` atomicamente via `ProvisionTenantAction` compartilhada com `tenant:provision`;
+  senha obrigatória não retorna; domínio duplicado, inclusive corrida controlada, retorna
+  `409 tenant_already_exists`. Rollback após falha de admin, role ou participante Ecosystem coberto;
+  colisão única do participante propaga sem retry. Evidência: TenantCreateApiTest 11/109,
+  TenantProvisionCommandTest 13/72, Architecture 20/688 e Larastan 370 arquivos sem erros.
+  `Journey: MZRT-SKELETON | Area: mzrt | Depends on: MZRT-SKELETON-STATUS`
+- [x] **`MZRT-SKELETON-E2E`** E2E HTTP real completo: create → `cash`/entitlements → admin login
+  → suspend → login/token negados → reactivate → login/token restaurados. Runner suporta método/path
+  por caso, captura segura e requests sem header automático; teardown remove fixtures e auditoria
+  sem tocar registros alheios. Evidência: 9/9 casos e zero resíduos no DB `ead2026_e2e`.
+  `Journey: MZRT-SKELETON | Area: mzrt | Depends on: MZRT-SKELETON-ENTITLEMENTS`
 
 ## In Progress
 
@@ -50,7 +76,6 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 ## Pending
 
 ### RBAC
-- [ ] Implementar "teto" de permissions baseado em UserType (clamp das permissions efetivas ao UserType).
 - [ ] Verificação de plugin permissions em runtime (`hasActivePluginPermission`).
 - [ ] CRUD de roles de tenant (criar/editar/excluir roles com `scope = 'tenant'`, só tenant_admin).
 - [ ] Remover código Spatie não utilizado.

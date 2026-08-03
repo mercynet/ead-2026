@@ -34,7 +34,7 @@ category_course (pivô dedicado, tenant-aware)
 - tenant_id
 - course_id          // FK
 - category_id        // FK
-- order
+- sort_order
 - is_featured
 ```
 

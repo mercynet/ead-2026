@@ -1,7 +1,7 @@
 ---
 domain: core-identity
 maturity: stable
-last-reviewed: 2026-06-10
+last-reviewed: 2026-07-29
 owners: [paulo]
 related:
   - ../00-architecture/rbac.md
@@ -35,7 +35,7 @@ Recursos detalhados nas subspecs:
 
 - [`subspecs/auth.md`](subspecs/auth.md) — login, logout, me.
 - [`subspecs/users.md`](subspecs/users.md) — usuários, perfil, senha, regra de CPF.
-- [`subspecs/tenant-config.md`](subspecs/tenant-config.md) — white-label, integrações.
+- [`subspecs/tenant-config.md`](subspecs/tenant-config.md) — white-label, integrações e gestão MZRT de tenants.
 
 ## Entities
 
@@ -43,7 +43,7 @@ Recursos detalhados nas subspecs:
 |-------|--------|-------------|
 | `User` | `users` | `tenant_id` nulo só para developer/landlord; `cpf`/`email` únicos **por tenant** (`unique(tenant_id, …)`); `user_type` (enum) define o teto de acesso. Roles/permissions via spatie/laravel-permission. |
 | `Invitation` | `invitations` | Onboarding tenant-bound. `tenant_id`/`email`/`role` fixos na emissão; só o `token_hash` (SHA-256) é persistido; `expires_at` obrigatório; `accepted_at`/`accepted_by` marcam uso único. `role` ∈ {student, instructor} (nunca admin/developer). |
-| `Tenant` | `tenants` (landlord) | `slug`/`domain` resolvem o tenant; só resolve se `is_active`. |
+| `Tenant` | `tenants` (landlord) | `name`, `domain`, `database` nullable, `description` nullable, `is_active` e timestamps. `domain` resolve o tenant; somente tenants ativos resolvem. `is_active` é exposto pela API como `status` (`active` ou `suspended`). |
 | `TenantCustomization` | `tenant_customizations` | Brand/white-label do tenant; lido por `GET /tenant/config` (público). |
 | `TenantIntegration` | `tenant_integrations` | `credentials` sempre `encrypted:json`. |
 | `SystemSetting` | `system_settings` | Config global da plataforma; só `developer` lê/escreve (`tenant_id` null = global). |
@@ -70,6 +70,16 @@ Detalhe colunar de cada entidade nas subspecs.
   carregar marca/cores/links antes do login.
 - **Impersonação segura** (diferida): tokens Sanctum com ability `impersonating`. Ver
   [`../00-architecture/security-privacy-lgpd.md`](../00-architecture/security-privacy-lgpd.md).
+- **Gestão MZRT de status.** `PATCH /api/v1/mzrt/tenants/{tenant}/status` recebe
+  `status ∈ {active, suspended}` e mapeia-o para `Tenant.is_active`; repetir estado atual é
+  idempotente. O Resource expõe somente `status`, nunca `is_active`. Suspensão bloqueia novo login
+  e uso de token tenant-bound daquele tenant, sem afetar outro tenant; reativação restaura ambos.
+- **Provisionamento MZRT.** `POST /api/v1/mzrt/tenants` requer `developer` autenticado por
+  `auth:sanctum` + `area.guard:mzrt`, sem contexto ou header de tenant. Recebe identidade do tenant
+  e primeiro admin aninhado com senha obrigatória; cria ambos atomicamente, com rollback integral.
+  Senha nunca integra resposta. A regra é compartilhada com `tenant:provision`. Domínio duplicado
+  responde `409 tenant_already_exists`; não há chave de idempotência. Entitlements pertencem a
+  Ecosystem; ver spec e tasks daquele domínio.
 
 ## Domain Boundaries
 
@@ -87,6 +97,7 @@ Permissions do domínio:
 core.users.list · core.users.create · core.users.view · core.users.update
 core.users.delete · core.users.update-self · core.users.update-password
 core.invitations.create
+core.tenants.create · core.tenants.update-status
 ```
 
 ## Events
@@ -110,3 +121,5 @@ core.invitations.create
 | Alterar própria senha | `PATCH /api/v1/core/users/me/password` | `core.users.update-password` |
 | Config pública do tenant | `GET /api/v1/core/tenant/config` | público |
 | Editar config do tenant | `PATCH /api/v1/core/tenant/config` | tenant_admin |
+| Alterar status de tenant | `PATCH /api/v1/mzrt/tenants/{tenant}/status` | `core.tenants.update-status` (developer; `auth:sanctum` + `area.guard:mzrt`) |
+| Criar tenant | `POST /api/v1/mzrt/tenants` | `core.tenants.create` (developer; `auth:sanctum` + `area.guard:mzrt`) |

@@ -8,9 +8,9 @@ Decisão: [ADR-006](specs/00-architecture/decisions/006-planejamento-por-jornada
 
 | ID | Status | Fatias mínimas / outcome | Saída objetiva |
 |---|---|---|---|
-| `FOUNDATION-0` | `partial` | normalizar contrato e gate universal | invariantes abaixo testados; E2E do primeiro slice de área |
-| `MZRT-SKELETON` | `not-started` | tenant, primeiro admin, status e limits/entitlements | E2E provisiona tenant e administra status; `tenant:provision` isolado já existe, não fecha jornada |
-| `ADMIN-OPS` | `partial` | catálogo/conteúdo, usuários e operação tenant | E2E Admin opera mínimo no próprio tenant; slice de curso atual não conforma até remediar override developer |
+| `FOUNDATION-0` | `usable` | contrato área-first, gate universal e teto de permissions | invariantes verdes; primeira jornada de área validada por E2E HTTP real |
+| `MZRT-SKELETON` | `usable` | status/create de tenant, `cash` e leitura de entitlements | E2E create→login→suspend/deny→reactivate/allow verde e sem resíduos |
+| `ADMIN-OPS` | `partial` | catálogo/conteúdo, usuários e operação tenant | E2E Admin opera mínimo no próprio tenant; guard estrito entregue, jornada ainda incompleta |
 | `STUDENT-PAID` | `partial` | orders list/show, webhook assíncrono, pagamento→matrícula→acesso | E2E integrado checkout→payment→enrollment→access; checkout, matrícula e progresso já existem separadamente |
 | `INSTRUCTOR-OWN` | `partial` | conteúdo próprio, alunos e avaliação necessária | E2E ownership sem contrato Admin |
 | `MZRT-PLATFORM` | `not-started` | marketplace, SaaS Mzrt→tenant, `PlatformOrder*`, plugins | E2E entitlement/billing de plataforma; não é pré-requisito de Admin/Student |
@@ -27,8 +27,8 @@ de outras jornadas antes do primeiro slice. Evidência atual é cautelosa:
 
 | Gate universal | Estado | Remediação / evidência exigida |
 |---|---|---|
-| `area.guard` + invariante de área | `partial` | Primeiro slice Admin aceita developer por hierarquia; bloquear: remover bypass implícito **ou** documentar override endpoint-específico e auditado. Alvo continua persona exata. |
-| teto de permissions | `not-started` | Clamp efetivo por `UserType`, com teste. |
+| `area.guard` + invariante de área | `usable` | Correspondência exata de persona aplicada a toda rota área-first existente; invariante bloqueia guard ausente ou incompatível. |
+| teto de permissions | `usable` | Clamp efetivo por `UserType` derivado da matriz canônica; role tenant excedente, exposição e metadata cobertas por testes. |
 | isolamento de tenant | `partial` | Middleware e testes existem; cada slice de área prova isolamento. |
 | envelopes API + Resources | `partial` | Padrão existe; cada rota nova usa Resource/envelope e teste. |
 
@@ -49,8 +49,8 @@ contrato/jornada, não certificação global.
 
 | Área | Control plane / configuração | Operar / criar | Comprar / consumir | Superfície área-first |
 |---|---|---|---|---|
-| Mzrt | `not-started` (só comando `tenant:provision`) | `not-started` | `not-started` | `not-started` |
-| Admin | `partial` (gateway tenant) | `partial` (curso publish) | n/a | `partial` — override developer pendente |
+| Mzrt | `usable` (status/create de tenant, `cash` e entitlements) | `not-started` | `not-started` | `usable` (jornada skeleton validada por E2E HTTP real) |
+| Admin | `partial` (gateway tenant) | `partial` (curso publish) | n/a | `partial` — guard exato; jornada E2E pendente |
 | Instructor | n/a | `partial` (ownership legado) | n/a | `not-started` |
 | Student | n/a | n/a | `partial` (checkout, acesso/progresso) | `partial` (checkout) |
 | Home | n/a | n/a | `not-started` | `not-started` |

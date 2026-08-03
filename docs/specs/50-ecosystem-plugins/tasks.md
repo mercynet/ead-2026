@@ -15,9 +15,25 @@ Domínio em fundação. ADR-005: capability gated por flag + config por tenant; 
 - [x] Identidade histórica de gateway: `configuration_version` e revisões imutáveis cifradas de `TenantPluginConfig`, consultáveis por identidade exata e vinculadas ao tenant. Seleção ativa atual permanece separada.
 - [x] `Contracts\TenantGatewayProvider` + `ActiveGateway` + `EcosystemTenantGatewayProvider`, consumido por Financial sem vazar models.
 - [x] Preset `cash`: provisionamento idempotente de catálogo, activation e config habilitada, preservando escolha/configuração do Admin.
+- [x] **`MZRT-SKELETON-CASH`** Provisionamento obrigatório de `cash` por contrato neutro em
+  `Shared`, executado sincronamente dentro da transação de `ProvisionTenantAction`; Core não importa
+  internals de Ecosystem e falha do participante reverte tenant, admin, role e artefatos do preset.
+  `Journey: MZRT-SKELETON | Area: mzrt | Depends on: MZRT-SKELETON-CREATE`
+- [x] **`MZRT-SKELETON-ENTITLEMENTS`** `GET /api/v1/mzrt/tenants/{tenant}/entitlements` com
+  `ecosystem.entitlements.list`, exclusivo de `developer` em `area.guard:mzrt`, sem contexto/header
+  de tenant; lista cursor-paginada expõe somente `capability` e `status` de cada activation.
+  `Journey: MZRT-SKELETON | Area: mzrt | Depends on: MZRT-SKELETON-CASH`
 - [x] **Admin gateways do tenant (dono canônico).** `GatewayConfigurationRegistry` em `Financial\Contracts` publica schema no `GET /api/v1/admin/payment-gateways`; `PUT /api/v1/admin/payment-gateways/{plugin}` valida antes de persistir `TenantPluginConfig`, trata adaptador indisponível, mantém no máximo um gateway habilitado por tenant por troca atômica e redige segredos nas respostas. Testes e gates cobrem slice. Par `GET`+`PUT` é exceção inseparável ao ≤1 endpoint: GET publica schema consumido por PUT.
 
+## In Progress
+
+- _(nenhuma)_
+
 ## Pending
+
+### MZRT-SKELETON
+
+- _(nenhuma)_
 
 ### Catálogo (marketplace)
 - [ ] Models + migrations: `PluginVersion`, `PluginPricing`, `PluginFeature`, `PluginPermission`.

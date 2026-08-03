@@ -27,7 +27,7 @@ class CourseController extends Controller
      * Ver Curso (Admin)
      *
      * Retorna um curso do próprio tenant com módulos e categorias, incluindo drafts.
-     * Restrito à área Admin (admin + developer por hierarquia).
+     * Restrito à área Admin.
      *
      * @urlParam id int required ID do curso
      *

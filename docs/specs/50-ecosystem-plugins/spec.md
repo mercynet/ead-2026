@@ -1,7 +1,7 @@
 ---
 domain: ecosystem-plugins
 maturity: draft
-last-reviewed: 2026-07-28
+last-reviewed: 2026-07-29
 owners: [paulo]
 related:
   - ../00-architecture/rbac.md
@@ -47,11 +47,16 @@ Rastreia marketplace, cobrança Mzrt→tenant e assinaturas dinâmicas. Padrões
 - Free gera entitlement; billing de marketplace segue pendente onde entidades ainda não existem.
 - Assinatura paga usa ledger `PlatformOrder` do Financial, nunca `Order` tenant-scoped.
 - Ativação/expiração invalida cache de features.
+- **Entitlements MZRT.** `GET /api/v1/mzrt/tenants/{tenant}/entitlements` exige
+  `ecosystem.entitlements.list`, `developer`, `auth:sanctum` e `area.guard:mzrt`; não usa contexto
+  ou header de tenant. Retorna somente capability e status, sem config, credenciais ou segredos.
+  Não implica quotas: `Tenant.limits` JSON permanece diferido para MZRT-PLATFORM.
 
 ## Domain Boundaries
 
 - **Emite:** eventos de ativação/expiração para invalidar cache de features.
-- **Possui:** `TenantPluginConfig` e endpoints Admin de gateway.
+- **Possui:** `PluginActivation`, seu read model de entitlements, `TenantPluginConfig` e endpoints Admin de gateway.
+- **Consome Core:** seam/evento de provisionamento para criar entitlement; Core nunca importa internals de Ecosystem.
 - **Consome:** `PlatformOrder` do Financial para assinatura paga; Financial fornece registry de schema, adaptadores e contrato de resolução, sem receber modelos do Ecosystem.
 
 ## Authorization
@@ -73,5 +78,6 @@ Rastreia marketplace, cobrança Mzrt→tenant e assinaturas dinâmicas. Padrões
 | Cadastrar | `POST /api/v1/ecosystem/admin/plugins` | developer |
 | Liberar/depreciar | `PATCH /api/v1/ecosystem/admin/plugins/{id}` | developer |
 | Dashboard | `GET /api/v1/ecosystem/admin/subscriptions` | developer |
+| Entitlements MZRT | `GET /api/v1/mzrt/tenants/{tenant}/entitlements` | `ecosystem.entitlements.list` (developer; `auth:sanctum` + `area.guard:mzrt`; sem contexto/header de tenant) |
 | Listar schemas/gateways | `GET /api/v1/admin/payment-gateways` | `financial.payment-gateways.list` |
 | Atualizar gateway | `PUT /api/v1/admin/payment-gateways/{plugin}` | `financial.payment-gateways.update` |

@@ -83,7 +83,14 @@ platform_payment_gateways
 - Resultado normalizado `pending|paid|failed` decide o ledger; `charge_state`, não `gateway_response`, é fonte de verdade de execução. Persistência exige token de claim e `tenant_plugin_config_id`, `gateway_configuration_version`, `gateway_slug` e `psp_idempotency_key` exatos. Payload cru permanece privado.
 - Retry resolve credenciais históricas exatas pelo snapshot cifrado persistido, inclusive após rotação ou desabilitação da configuração atual. `psp_idempotency_key` é gerada e controlada pelo servidor.
 - Transição para pago grava outbox durável dentro da transação financeira. Publicação imediata ocorre após commit em best-effort; drainer agendado recupera entregas pendentes ao menos uma vez.
-- Toda matrícula gera registro financeiro espelho, inclusive gratuita.
+- Concessão manual zero-consideration (`EnrollmentCreatedEvent` com `source=manual` e
+  `billing_type=null`) cria espelho atômico, independente do preço de catálogo: `Order`
+  `paid/direct`, valores zero, `source_key=learning:enrollment:{id}`, `order_number=ENR-{id}` e
+  UUIDv5 determinístico; um item `course` com preço de catálogo apenas no snapshot e `Payment`
+  `completed/free/automatic/resolved`. Replay só aceita agregado íntegro e compatível, preserva uma
+  única order/item/payment e não emite `OrderPaidEvent`. Pendente de aprovação também espelha zero
+  e preserva status no metadata. Matrícula manual externa não cria este espelho; reconciliação e
+  espelho pós-aprovação seguem pendentes.
 
 ## Endpoints
 

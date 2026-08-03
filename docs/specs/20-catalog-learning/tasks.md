@@ -21,7 +21,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] `PUT /catalog/categories/{id}`.
 - [x] `DELETE /catalog/categories/{id}`.
 - [x] `GET /courses/{id}/modules`.
-- [x] ~~`GET /courses/{id}` (admin view)~~ → **re-slotado área-first** para `GET /api/v1/admin/courses/{id}` (2026-06-13): `area.guard:admin` (admin+developer por hierarquia, student/instructor → 403 `area_forbidden`) + `learning.courses.view-check` + `CourseDetailResource`. 1º slice da área Admin: carrega scaffold (`Area` enum, `EnsureAreaAccess`, `Routes/admin.php`, `Http/Controllers/Admin/`).
+- [x] ~~`GET /courses/{id}` (admin view)~~ → **re-slotado área-first** para `GET /api/v1/admin/courses/{id}` (2026-06-13): `area.guard:admin` com persona exata (somente admin; demais tipos → 403 `area_forbidden`) + `learning.courses.view-check` + `CourseDetailResource`. 1º slice da área Admin: carrega scaffold (`Area` enum, `EnsureAreaAccess`, `Routes/admin.php`, `Http/Controllers/Admin/`).
+  `Journey: ADMIN-OPS | Area: admin | Depends on: FOUNDATION-0`
 - [x] `POST /courses` (criar curso).
 - [x] `POST /courses` cria sempre em `draft`; publicação fica exclusiva da área Admin (`learning.courses.publish`).
 - [x] `PATCH /courses/{id}` (atualizar curso).
@@ -61,10 +62,11 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] Pre-signed URLs para `LessonMedia` `internal`/`s3` no `GET /lessons/{id}`.
 - [x] Fechar contrato de providers externos de `LessonMedia` (ex.: Vimeo/embed) no mesmo envelope de leitura.
 - [x] Definir subtipos/contrato avançado de `LessonMedia` (YouTube/Vimeo/AWS via `s3`) junto de `LessonMediaProgress` e `ProgressStrategy`.
+- [x] Registrar espelho financeiro atômico para concessão manual sem `billing_type` via `EnrollmentCreatedEvent`: `Order`/`OrderItem`/`Payment` zero-consideration idempotentes por matrícula; inclui catálogo pago e pendente de aprovação. `Journey: ADMIN-OPS | Area: admin | Depends on: Financial orders/payments`. Matrícula manual externa permanece fora deste espelho; reconciliação financeira externa e decisão de espelhar após aprovação ficam pendentes.
 
 ## In Progress
 
-- [ ] Registrar o espelho financeiro das matrículas manuais/gratuitas a partir de `EnrollmentCreatedEvent`.
+- _(nenhuma)_
 
 ## Pending
 
@@ -75,12 +77,12 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Coluna gerada `tenant_key = COALESCE(tenant_id,0)` + `UNIQUE(tenant_key, normalized_name)`.
 - [ ] Materialized path: colunas `path`/`depth` + manutenção na escrita (create/move) + prevenção de ciclo.
 - [ ] Regra **parent de mesmo escopo** (system→system, tenant→mesmo tenant); proibir cross-escopo.
-- [ ] Pivô `category_course`: adicionar `order` + `is_featured`, FK reais; ajustar relação `Category::courses()`.
-- [ ] Soft delete + proteção no delete: system com cursos **bloqueia**; tenant com cursos exige `force/confirm` + **detach** dos pivôs (invariante: nenhum pivô → categoria soft-deletada).
+- [x] Pivô `category_course`: `sort_order` + `is_featured`, FKs reais incluindo integridade tenant↔curso, unicidade de categoria/ordem por curso e relações ordenadas em `Course::categories()`/`Category::courses()`.
+- [x] Soft delete + proteção no delete: system com cursos **bloqueia**; tenant com cursos exige `force`+`confirm` no `DeleteCategoryRequest` e faz **detach** sob lock antes do soft delete (invariante: nenhum pivô aponta para categoria soft-deletada).
 - [ ] Re-slot área-first: system → Mzrt (`v1/mzrt`), tenant → Admin (`v1/admin`); `CategoryPolicy` decide por `is_system`.
 
 ### Courses
-- [ ] Attach categories to courses (usa pivô dedicado + `order`/`is_featured`).
+- [ ] Attach categories to courses (usa pivô dedicado + `sort_order`/`is_featured`).
 
 ### Modules
 - [x] `POST /modules` (criação mínima; tenant isolation + sort_order automático).

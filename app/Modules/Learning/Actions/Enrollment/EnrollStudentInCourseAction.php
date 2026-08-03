@@ -61,19 +61,20 @@ class EnrollStudentInCourseAction
                 throw $exception;
             }
 
-            DB::afterCommit(function () use ($enrollment, $data): void {
-                Event::dispatch(new EnrollmentCreatedEvent(
-                    enrollmentId: $enrollment->id,
-                    tenantId: $data->tenantId,
-                    userId: $enrollment->user_id,
-                    courseId: $enrollment->course_id,
-                    status: (string) $enrollment->status,
-                    source: $data->source,
-                    billingType: $data->billingType?->value,
-                    createdByInstructorId: $data->createdByInstructorId,
-                    occurredAt: now()->toIso8601String(),
-                ));
-            });
+            Event::dispatch(new EnrollmentCreatedEvent(
+                enrollmentId: $enrollment->id,
+                tenantId: $data->tenantId,
+                userId: $enrollment->user_id,
+                courseId: $enrollment->course_id,
+                courseTitle: $course->title,
+                courseSlug: $course->slug,
+                coursePriceCents: $course->price_cents,
+                status: (string) $enrollment->status,
+                source: $data->source,
+                billingType: $data->billingType?->value,
+                createdByInstructorId: $data->createdByInstructorId,
+                occurredAt: now()->toIso8601String(),
+            ));
 
             return $enrollment->load(['course:id,title,slug']);
         });

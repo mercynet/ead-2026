@@ -341,6 +341,9 @@ it('creates free enrollment for instructor when manual free enrollment is enable
         return $event->tenantId === $tenant->id
             && $event->userId === $student->id
             && $event->courseId === $course->id
+            && $event->courseTitle === $course->title
+            && $event->courseSlug === $course->slug
+            && $event->coursePriceCents === $course->price_cents
             && $event->status === 'active'
             && $event->source === 'manual'
             && $event->billingType === null
@@ -448,6 +451,9 @@ it('creates pending paid enrollment for instructor when billing is external', fu
         return $event->tenantId === $tenant->id
             && $event->userId === $student->id
             && $event->courseId === $course->id
+            && $event->courseTitle === $course->title
+            && $event->courseSlug === $course->slug
+            && $event->coursePriceCents === $course->price_cents
             && $event->status === 'pending'
             && $event->source === 'manual'
             && $event->billingType === EnrollmentBillingType::External->value

@@ -132,7 +132,7 @@ it('requires authentication and manual payment confirmation permission', functio
     assertApiErrorEnvelope($this->postJson("/api/v1/admin/orders/{$order->id}/confirm-manual-payment", [], tenantHeaders($tenant)), 401, 'unauthenticated');
 
     [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
-    assertApiErrorEnvelope($this->postJson("/api/v1/admin/orders/{$order->id}/confirm-manual-payment", [], $headers), 403, 'access_denied');
+    assertApiErrorEnvelope($this->postJson("/api/v1/admin/orders/{$order->id}/confirm-manual-payment", [], $headers), 403, 'area_forbidden');
 });
 
 it('hides missing and cross-tenant orders', function (): void {

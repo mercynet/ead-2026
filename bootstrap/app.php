@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Core\Http\Middleware\EnsureAreaAccess;
 use App\Modules\Financial\Exceptions\CheckoutConflictException;
 use App\Modules\Financial\Exceptions\GatewayUnavailableException;
 use App\Shared\Exceptions\AccessDeniedException;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -36,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.required.unless.developer' => \App\Modules\Core\Http\Middleware\EnsureTenantRequiredForNonDeveloper::class,
             'area.guard' => \App\Modules\Core\Http\Middleware\EnsureAreaAccess::class,
         ]);
+
+        $middleware->prependToPriorityList(SubstituteBindings::class, EnsureAreaAccess::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (CheckoutConflictException $exception, Request $request) {

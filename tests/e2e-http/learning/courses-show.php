@@ -59,10 +59,10 @@ return [
         ],
 
         [
-            'name' => 'developer alcança a área admin por hierarquia',
+            'name' => 'developer é barrado pela guarda de área → 403',
             'as' => 'developer',
             'path' => fn (array $ctx): string => '/api/v1/admin/courses/'.$ctx['fixtures']['course']->id,
-            'expect' => ['status' => 200, 'json' => ['data.status' => 'draft']],
+            'expect' => ['status' => 403, 'json' => ['errors.0.code' => 'area_forbidden']],
         ],
 
         [

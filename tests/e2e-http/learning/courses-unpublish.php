@@ -36,6 +36,20 @@ return [
 
     'cases' => [
         [
+            'name' => 'developer é barrado pela guarda de área → 403',
+            'as' => 'developer',
+            'path' => fn (array $ctx): string => '/api/v1/admin/courses/'.$ctx['fixtures']['publishedCourse']->id.'/unpublish',
+            'expect' => ['status' => 403, 'json' => ['errors.0.code' => 'area_forbidden']],
+            'db' => function (array $ctx): array {
+                $course = $ctx['fixtures']['publishedCourse']->fresh();
+
+                return [
+                    'status permanece publicado' => ['published', $course->status],
+                    'published_at preservado' => [true, $course->published_at !== null],
+                ];
+            },
+        ],
+        [
             'name' => 'admin despublica curso',
             'as' => 'admin',
             'path' => fn (array $ctx): string => '/api/v1/admin/courses/'.$ctx['fixtures']['publishedCourse']->id.'/unpublish',
@@ -48,12 +62,6 @@ return [
                     'published_at preservado' => [true, $course->published_at !== null],
                 ];
             },
-        ],
-        [
-            'name' => 'developer despublica por hierarquia',
-            'as' => 'developer',
-            'path' => fn (array $ctx): string => '/api/v1/admin/courses/'.$ctx['fixtures']['publishedCourse']->id.'/unpublish',
-            'expect' => ['status' => 200, 'json' => ['data.status' => 'draft']],
         ],
         [
             'name' => 'student barrado pela área',

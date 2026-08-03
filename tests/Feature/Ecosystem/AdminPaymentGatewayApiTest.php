@@ -91,7 +91,7 @@ it('requires authentication and gateway permission to update', function (): void
     assertApiErrorEnvelope(
         $this->putJson('/api/v1/admin/payment-gateways/fake-gateway', ['enabled' => false], $headers),
         403,
-        'access_denied',
+        'area_forbidden',
     );
 });
 

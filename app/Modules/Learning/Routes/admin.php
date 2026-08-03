@@ -5,8 +5,8 @@ use Illuminate\Support\Facades\Route;
 
 /*
  * Área Admin — administrador do tenant. Vê tudo do próprio tenant (e só dele),
- * incluindo drafts. Guard de área: area.guard:admin (admin + developer por
- * hierarquia). Ver docs/specs/00-architecture/areas-surfaces.md.
+ * incluindo drafts. Guard de área: area.guard:admin. Ver
+ * docs/specs/00-architecture/areas-surfaces.md.
  */
 Route::prefix('v1/admin')
     ->middleware([

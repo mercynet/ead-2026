@@ -305,5 +305,20 @@ it('requires authenticated student checkout permission', function (): void {
     $course = checkoutCourse($tenant);
     assertApiErrorEnvelope($this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders(tenantHeaders($tenant))), 401, 'unauthenticated');
     [, $headers] = actingAsUserType(UserType::Instructor, $tenant);
-    assertApiErrorEnvelope($this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers)), 403, 'access_denied');
+    assertApiErrorEnvelope($this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers)), 403, 'area_forbidden');
+});
+
+it('forbids developer from student checkout without creating ledger records', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Developer);
+    $course = checkoutCourse($tenant);
+
+    assertApiErrorEnvelope(
+        $this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders(array_merge($headers, ['X-Tenant-ID' => (string) $tenant->id]))),
+        403,
+        'area_forbidden',
+    );
+
+    expect(Order::query()->count())->toBe(0)
+        ->and(Payment::query()->count())->toBe(0);
 });

@@ -15,25 +15,15 @@ enum Area: string
     case Student = 'student';
     case Home = 'home';
 
-    /**
-     * Posto mínimo de UserType para alcançar a área. A hierarquia de UserType
-     * (developer > admin > instructor > student) permite que um tipo mais alto
-     * entre em áreas abaixo (`rbac.md` §1). `Home` é público (posto 0).
-     */
-    public function minimumRank(): int
-    {
-        return match ($this) {
-            self::Mzrt => UserType::Developer->rank(),
-            self::Admin => UserType::Admin->rank(),
-            self::Instructor => UserType::Instructor->rank(),
-            self::Student => UserType::Student->rank(),
-            self::Home => 0,
-        };
-    }
-
     public function allows(UserType $userType): bool
     {
-        return $userType->rank() >= $this->minimumRank();
+        return match ($this) {
+            self::Mzrt => $userType === UserType::Developer,
+            self::Admin => $userType === UserType::Admin,
+            self::Instructor => $userType === UserType::Instructor,
+            self::Student => $userType === UserType::Student,
+            self::Home => true,
+        };
     }
 
     public function requiresAuthentication(): bool

@@ -597,7 +597,7 @@ it('forbids instructor from the admin area', function (): void {
         ->assertJsonPath('errors.0.code', 'area_forbidden');
 });
 
-it('allows developer into the admin area by hierarchy', function (): void {
+it('forbids developer from the admin area', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',
         'domain' => 'tenant-a.local',
@@ -633,8 +633,8 @@ it('allows developer into the admin area by hierarchy', function (): void {
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
     ])
-        ->assertSuccessful()
-        ->assertJsonPath('data.id', $course->id);
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'area_forbidden');
 });
 
 it('returns 404 viewing a missing course', function (): void {
@@ -1081,7 +1081,7 @@ it('forbids non-admin roles from admin publish surface', function (): void {
     ])->assertForbidden();
 });
 
-it('allows developer to publish through the admin surface', function (): void {
+it('forbids developer from publishing through the admin surface without side effects', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',
         'domain' => 'tenant-a.local',
@@ -1117,8 +1117,11 @@ it('allows developer to publish through the admin surface', function (): void {
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
     ])
-        ->assertSuccessful()
-        ->assertJsonPath('data.status', 'published');
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'area_forbidden');
+
+    expect($course->fresh()->status)->toBe('draft')
+        ->and($course->fresh()->published_at)->toBeNull();
 });
 
 it('deletes a course as admin', function (): void {

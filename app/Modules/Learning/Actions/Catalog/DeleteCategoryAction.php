@@ -17,6 +17,11 @@ class DeleteCategoryAction
         $this->database->transaction(function () use ($category, $force, $confirm): void {
             $lockedCategory = Category::query()
                 ->whereKey($category->id)
+                ->when(
+                    $category->tenant_id === null,
+                    fn ($query) => $query->whereNull('tenant_id'),
+                    fn ($query) => $query->where('tenant_id', $category->tenant_id),
+                )
                 ->lockForUpdate()
                 ->firstOrFail();
 

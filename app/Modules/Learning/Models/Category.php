@@ -10,6 +10,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int|null $tenant_id
+ * @property int|null $parent_id
+ * @property string $name
+ * @property string $slug
+ * @property string $normalized_name
+ * @property string|null $description
+ * @property string|null $icon
+ * @property string|null $color
+ * @property bool $is_system
+ * @property string $status
+ * @property bool $is_featured
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Category extends Model
 {
     protected static string $factory = \Database\Factories\CategoryFactory::class;

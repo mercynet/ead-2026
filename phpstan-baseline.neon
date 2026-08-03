@@ -673,54 +673,6 @@ parameters:
 			path: app/Modules/Learning/Actions/Access/EvaluateCourseAccessAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$is_system\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Catalog/StoreCategoryAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$tenant_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Catalog/StoreCategoryAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$is_system\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$normalized_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$parent_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$tenant_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Catalog/UpdateCategoryAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\CourseMaterial\:\:\$file_path\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1592,12 +1544,6 @@ parameters:
 			path: app/Modules/Learning/Listeners/EnrollStudentFromOrderPaidListener.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Models/Category.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$is_active\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1638,18 +1584,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Modules/Learning/Models/LessonProgress.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$is_system\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Modules/Learning/Policies/CategoryPolicy.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Category\:\:\$tenant_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Learning/Policies/CategoryPolicy.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\CourseModule\:\:\$tenant_id\.$#'

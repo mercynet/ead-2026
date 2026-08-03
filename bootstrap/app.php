@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Core\Exceptions\TenantAlreadyExistsException;
 use App\Modules\Core\Http\Middleware\EnsureAreaAccess;
 use App\Modules\Financial\Exceptions\CheckoutConflictException;
 use App\Modules\Financial\Exceptions\GatewayUnavailableException;
@@ -42,6 +43,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(SubstituteBindings::class, EnsureAreaAccess::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (TenantAlreadyExistsException $exception, Request $request) {
+            return response()->json(['data' => null, 'errors' => [['code' => 'tenant_already_exists', 'message' => $exception->getMessage()]]], 409);
+        });
+
         $exceptions->render(function (CheckoutConflictException $exception, Request $request) {
             return response()->json(['data' => null, 'errors' => [['code' => $exception->errorCode, 'message' => $exception->getMessage()]]], 409);
         });

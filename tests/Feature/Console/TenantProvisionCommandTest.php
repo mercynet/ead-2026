@@ -9,6 +9,9 @@ use App\Modules\Ecosystem\Models\PluginActivation;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
 use App\Modules\Financial\Gateways\Adapters\CashPaymentGateway;
 use App\Modules\Financial\Gateways\TenantGatewayResolver;
+use App\Shared\Contracts\TenantProvisioningParticipant;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -123,6 +126,74 @@ it('does not duplicate or overwrite cash gateway preset choices on re-run', func
         ->and($activation->fresh()->status)->toBe('inactive')
         ->and($config->fresh()->enabled)->toBeFalse()
         ->and($config->fresh()->config)->toBe(['instructions' => 'Conferir no caixa']);
+});
+
+it('rolls back provisioning when a participant fails', function (): void {
+    $this->app->instance(TenantProvisioningParticipant::class, new class implements TenantProvisioningParticipant
+    {
+        public function provision(int $tenantId, int $adminUserId): void
+        {
+            Plugin::query()->create([
+                'slug' => 'cash',
+                'name' => 'Dinheiro',
+                'capability_key' => 'gateway.cash',
+                'kind' => 'gateway',
+                'status' => 'published',
+                'visibility' => 'public',
+                'tier' => 'free',
+                'is_curated' => true,
+            ]);
+
+            throw new RuntimeException('Participant failed.');
+        }
+    });
+
+    expect(fn () => Artisan::call('tenant:provision', [
+        '--name' => 'Escola Falha',
+        '--domain' => 'falha.local',
+        '--admin-name' => 'Admin Falha',
+        '--admin-email' => 'admin@falha.local',
+        '--admin-password' => 'senha-forte-123',
+    ]))->toThrow(RuntimeException::class, 'Participant failed.');
+
+    expect(Tenant::query()->where('domain', 'falha.local')->exists())->toBeFalse()
+        ->and(User::query()->where('email', 'admin@falha.local')->exists())->toBeFalse()
+        ->and(DB::table('model_has_roles')->count())->toBe(0)
+        ->and(Plugin::query()->where('slug', 'cash')->exists())->toBeFalse()
+        ->and(PluginActivation::query()->exists())->toBeFalse()
+        ->and(TenantPluginConfig::query()->exists())->toBeFalse();
+});
+
+it('propagates a participant unique constraint violation without retrying provisioning', function (): void {
+    Tenant::factory()->create(['domain' => 'participant-failure.local']);
+    $participant = new class implements TenantProvisioningParticipant
+    {
+        public int $calls = 0;
+
+        public function provision(int $tenantId, int $adminUserId): void
+        {
+            $this->calls++;
+
+            throw new UniqueConstraintViolationException(
+                'mysql',
+                'insert into `plugin_activations` (`tenant_id`, `plugin_id`) values (?, ?)',
+                [$tenantId, 1],
+                new \PDOException('Duplicate entry'),
+                [],
+                null,
+            );
+        }
+    };
+    $this->app->instance(TenantProvisioningParticipant::class, $participant);
+
+    expect(fn () => Artisan::call('tenant:provision', [
+        '--name' => 'Escola Participante',
+        '--domain' => 'participant-failure.local',
+        '--admin-name' => 'Admin Participante',
+        '--admin-email' => 'admin@participant-failure.local',
+        '--admin-password' => 'senha-forte-123',
+    ]))->toThrow(UniqueConstraintViolationException::class)
+        ->and($participant->calls)->toBe(1);
 });
 
 it('generates a password when none is provided', function (): void {

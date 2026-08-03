@@ -2,6 +2,8 @@
 
 use App\Modules\Core\Http\Controllers\AuthController;
 use App\Modules\Core\Http\Controllers\InvitationController;
+use App\Modules\Core\Http\Controllers\MzrtTenantCreateController;
+use App\Modules\Core\Http\Controllers\MzrtTenantStatusController;
 use App\Modules\Core\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,4 +54,11 @@ Route::prefix('v1/core')
                 Route::patch('/me', 'updateMe');
                 Route::patch('/me/password', 'updatePassword');
             });
+    });
+
+Route::prefix('v1/mzrt')
+    ->middleware(['auth:sanctum', 'area.guard:mzrt', 'api.context'])
+    ->group(function (): void {
+        Route::post('/tenants', [MzrtTenantCreateController::class, 'store']);
+        Route::patch('/tenants/{tenant}/status', [MzrtTenantStatusController::class, 'update']);
     });

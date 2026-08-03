@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Multitenancy\Concerns\UsesMultitenancyConfig;
 use Spatie\Multitenancy\Contracts\IsTenant;
 use Spatie\Multitenancy\Models\Concerns\ImplementsTenant;
@@ -24,7 +26,7 @@ class Tenant extends Model implements IsTenant
 {
     protected static string $factory = \Database\Factories\TenantFactory::class;
 
-    use HasFactory;
+    use HasFactory, LogsActivity;
     use ImplementsTenant;
     use UsesMultitenancyConfig;
 
@@ -35,6 +37,15 @@ class Tenant extends Model implements IsTenant
         'description',
         'is_active',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('core')
+            ->logOnly(['is_active'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     public function users(): HasMany
     {

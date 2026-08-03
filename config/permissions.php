@@ -61,6 +61,20 @@ return [
     ],
 
     // ─────────────────────────────────────────────
+    // Core — Tenants
+    // ─────────────────────────────────────────────
+
+    'core.tenants.create' => [
+        'label' => 'Criar tenant',
+        'user_types' => ['developer'],
+    ],
+
+    'core.tenants.update-status' => [
+        'label' => 'Atualizar status de tenant',
+        'user_types' => ['developer'],
+    ],
+
+    // ─────────────────────────────────────────────
     // Learning — Categorias
     // ─────────────────────────────────────────────
 
@@ -367,6 +381,15 @@ return [
     'financial.checkout.create' => [
         'label' => 'Criar checkout de curso',
         'user_types' => ['developer', 'student'],
+    ],
+
+    // ─────────────────────────────────────────────
+    // Ecosystem — Entitlements
+    // ─────────────────────────────────────────────
+
+    'ecosystem.entitlements.list' => [
+        'label' => 'Listar entitlements do tenant',
+        'user_types' => ['developer'],
     ],
 
 ];

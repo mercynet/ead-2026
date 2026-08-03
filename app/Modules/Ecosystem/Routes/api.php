@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Ecosystem\Http\Controllers\Admin\PaymentGatewayController;
+use App\Modules\Ecosystem\Http\Controllers\Mzrt\TenantEntitlementController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')
@@ -12,4 +13,10 @@ Route::prefix('v1')
                 Route::get('/admin/payment-gateways', 'index');
                 Route::put('/admin/payment-gateways/{plugin}', 'update');
             });
+    });
+
+Route::prefix('v1/mzrt')
+    ->middleware(['auth:sanctum', 'area.guard:mzrt', 'api.context'])
+    ->group(function (): void {
+        Route::get('/tenants/{tenant}/entitlements', [TenantEntitlementController::class, 'index']);
     });

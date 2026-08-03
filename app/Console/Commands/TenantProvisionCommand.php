@@ -2,10 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Modules\Core\Enums\UserType;
-use App\Modules\Core\Models\Tenant;
-use App\Modules\Core\Models\User;
-use App\Modules\Ecosystem\Contracts\DefaultGatewayProvisioner;
+use App\Modules\Core\Actions\Tenants\ProvisionTenantAction;
+use App\Modules\Core\Exceptions\AdminPromotionRequiredException;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Console\Command;
@@ -34,7 +32,7 @@ class TenantProvisionCommand extends Command
 
     protected $description = 'Provisiona (idempotente) um tenant e seu primeiro admin, semeando RBAC';
 
-    public function handle(DefaultGatewayProvisioner $defaultGatewayProvisioner): int
+    public function handle(ProvisionTenantAction $provisionTenantAction): int
     {
         /** @var array<string, string> $data */
         $data = [
@@ -79,32 +77,50 @@ class TenantProvisionCommand extends Command
 
         $this->seedRbac();
 
-        $tenant = Tenant::query()->firstOrCreate(
-            ['domain' => $data['domain']],
-            [
-                'name' => $data['name'],
-                'database' => null,
-                'description' => ($description = trim((string) $this->option('description'))) !== '' ? $description : null,
-                'is_active' => true,
-            ],
-        );
+        $generatedPassword = $providedPassword === '' ? Str::password(16) : null;
+        $password = $providedPassword !== '' ? $providedPassword : $generatedPassword;
 
-        $this->components->info($tenant->wasRecentlyCreated
-            ? "Tenant criado: {$tenant->name} (#{$tenant->id}, {$tenant->domain})"
-            : "Tenant já existia: {$tenant->name} (#{$tenant->id}, {$tenant->domain})");
+        try {
+            $result = $provisionTenantAction->handle(
+                [
+                    'name' => $data['name'],
+                    'domain' => $data['domain'],
+                    'database' => null,
+                    'description' => ($description = trim((string) $this->option('description'))) !== '' ? $description : null,
+                ],
+                [
+                    'name' => $data['admin_name'],
+                    'email' => $data['admin_email'],
+                ],
+                $password,
+                reuseExistingTenant: true,
+                promoteExistingAdmin: (bool) $this->option('promote'),
+            );
+        } catch (AdminPromotionRequiredException $exception) {
+            $admin = $exception->admin;
+            $this->components->error("Usuário {$admin->email} (#{$admin->id}) já existe como '{$admin->user_type->value}' — recuso promoção silenciosa a admin. Reexecute com --promote se a intenção for promover.");
 
-        $ensured = $this->ensureAdmin($tenant, $data);
-
-        if ($ensured === null) {
             return self::FAILURE;
         }
 
-        [$admin, $generatedPassword] = $ensured;
+        $tenant = $result->tenant;
+        $admin = $result->admin;
 
-        $admin->syncRoles([UserType::Admin->value]);
-        $defaultGatewayProvisioner->ensureForTenant($tenant->id, $admin->id);
+        $this->components->info($result->tenantCreated
+            ? "Tenant criado: {$tenant->name} (#{$tenant->id}, {$tenant->domain})"
+            : "Tenant já existia: {$tenant->name} (#{$tenant->id}, {$tenant->domain})");
 
-        if ($generatedPassword !== null) {
+        if ($result->adminPromoted) {
+            $this->components->warn("Usuário {$admin->email} (#{$admin->id}) promovido a admin (--promote).");
+        }
+
+        if ($result->adminCreated) {
+            $this->components->info("Admin criado: {$admin->email} (#{$admin->id})");
+        } else {
+            $this->components->info("Admin já existia: {$admin->email} (#{$admin->id}) — senha preservada");
+        }
+
+        if ($result->adminCreated && $generatedPassword !== null) {
             $this->newLine();
             $this->components->warn('Senha gerada (exibida só agora — guarde-a):');
             $this->line("  {$generatedPassword}");
@@ -121,51 +137,5 @@ class TenantProvisionCommand extends Command
         $this->callSilent('db:seed', ['--class' => PermissionsSeeder::class, '--force' => true]);
         $this->callSilent('db:seed', ['--class' => RolesSeeder::class, '--force' => true]);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-    }
-
-    /**
-     * @param  array<string, string>  $data
-     * @return array{0: User, 1: string|null}|null null = provisionamento recusado
-     */
-    private function ensureAdmin(Tenant $tenant, array $data): ?array
-    {
-        $admin = User::query()
-            ->where('tenant_id', $tenant->id)
-            ->where('email', $data['admin_email'])
-            ->first();
-
-        if ($admin instanceof User) {
-            // Promover um student/instructor existente a admin é escalada de
-            // privilégio silenciosa (ex.: typo no email). Só com --promote explícito.
-            if ($admin->user_type !== UserType::Admin) {
-                if (! $this->option('promote')) {
-                    $this->components->error("Usuário {$admin->email} (#{$admin->id}) já existe como '{$admin->user_type->value}' — recuso promoção silenciosa a admin. Reexecute com --promote se a intenção for promover.");
-
-                    return null;
-                }
-
-                $admin->update(['user_type' => UserType::Admin]);
-                $this->components->warn("Usuário {$admin->email} (#{$admin->id}) promovido a admin (--promote).");
-            }
-
-            $this->components->info("Admin já existia: {$admin->email} (#{$admin->id}) — senha preservada");
-
-            return [$admin, null];
-        }
-
-        $providedPassword = trim((string) $this->option('admin-password'));
-        $generatedPassword = $providedPassword === '' ? Str::password(16) : null;
-
-        $admin = User::query()->create([
-            'tenant_id' => $tenant->id,
-            'user_type' => UserType::Admin,
-            'name' => $data['admin_name'],
-            'email' => $data['admin_email'],
-            'password' => $providedPassword !== '' ? $providedPassword : $generatedPassword,
-        ]);
-
-        $this->components->info("Admin criado: {$admin->email} (#{$admin->id})");
-
-        return [$admin, $generatedPassword];
     }
 }

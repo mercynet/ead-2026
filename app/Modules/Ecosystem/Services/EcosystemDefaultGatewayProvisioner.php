@@ -2,18 +2,18 @@
 
 namespace App\Modules\Ecosystem\Services;
 
-use App\Modules\Ecosystem\Contracts\DefaultGatewayProvisioner;
 use App\Modules\Ecosystem\Models\Plugin;
 use App\Modules\Ecosystem\Models\PluginActivation;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
+use App\Shared\Contracts\TenantProvisioningParticipant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class EcosystemDefaultGatewayProvisioner implements DefaultGatewayProvisioner
+class EcosystemDefaultGatewayProvisioner implements TenantProvisioningParticipant
 {
-    public function ensureForTenant(int $tenantId, int $activatedByUserId): void
+    public function provision(int $tenantId, int $adminUserId): void
     {
-        DB::transaction(function () use ($tenantId, $activatedByUserId): void {
+        DB::transaction(function () use ($tenantId, $adminUserId): void {
             $cashPlugin = Plugin::query()->firstOrCreate(
                 ['slug' => 'cash'],
                 [
@@ -37,7 +37,7 @@ class EcosystemDefaultGatewayProvisioner implements DefaultGatewayProvisioner
                 [
                     'status' => 'active',
                     'activated_at' => now(),
-                    'activated_by' => $activatedByUserId,
+                    'activated_by' => $adminUserId,
                 ],
             );
 

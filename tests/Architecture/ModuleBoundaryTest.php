@@ -7,7 +7,7 @@
  *  - Shared kernel: `App\Modules\Core\Models` e `App\Modules\Core\Enums`
  *    (identidade/tenancy) podem ser importados por qualquer módulo; Core,
  *    por sua vez, não importa nada de outros módulos.
- *  - Fronteiras públicas: `Events` e `Contracts` de qualquer módulo.
+ *  - Fronteiras públicas: `Events` e `Contracts` de qualquer módulo, exceto Core.
  *  - `App\Shared` e `App\Support` são livres (não são módulos).
  *
  * Dívida conhecida (relações Eloquent cross-module herdadas do código flat)
@@ -80,7 +80,7 @@ it('modules only depend on other modules via shared kernel, Events or Contracts'
                     continue;
                 }
 
-                if (in_array($firstSegment, ['Events', 'Contracts'], true)) {
+                if ($module !== 'Core' && in_array($firstSegment, ['Events', 'Contracts'], true)) {
                     continue;
                 }
 

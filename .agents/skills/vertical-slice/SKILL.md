@@ -18,20 +18,21 @@ Disciplina para implementar uma feature API REST de ponta a ponta, respeitando o
 
 ### 1. Permissões (Arquivo único de verdade)
 
-Adicione em `config/permissions.php` (formato `domain.resource.action`):
+Adicione em `config/permissions.php` (formato `domain.resource.action`; `developer` é **obrigatório**
+em `user_types`):
 
 ```php
-'assessment.questionnaires.list' => ['label' => 'Listar questionários', 'user_types' => ['instructor']],
-'assessment.questionnaires.create' => ['label' => 'Criar questionário', 'user_types' => ['instructor']],
-'assessment.questionnaires.view' => ['label' => 'Visualizar questionário', 'user_types' => ['instructor']],
-'assessment.questionnaires.update' => ['label' => 'Atualizar questionário', 'user_types' => ['instructor']],
-'assessment.questionnaires.delete' => ['label' => 'Deletar questionário', 'user_types' => ['instructor']],
+'assessment.questionnaires.list' => ['label' => 'Listar questionários', 'user_types' => ['developer', 'instructor']],
+'assessment.questionnaires.create' => ['label' => 'Criar questionário', 'user_types' => ['developer', 'instructor']],
+'assessment.questionnaires.view' => ['label' => 'Visualizar questionário', 'user_types' => ['developer', 'instructor']],
+'assessment.questionnaires.update' => ['label' => 'Atualizar questionário', 'user_types' => ['developer', 'instructor']],
+'assessment.questionnaires.delete' => ['label' => 'Deletar questionário', 'user_types' => ['developer', 'instructor']],
 ```
 
 `RolesSeeder` **deriva** as roles de `user_types` no config (nada a editar no seeder).
-`PermissionDriftTest` guarda que toda string usada em `Gate::forUser()->authorize()`, `->can()`,
-`hasPermissionTo()` etc. em `app/` está declarada no config (ou registrada via `Gate::define`
-no `AppServiceProvider`, para abilities policy-backed).
+
+> Policy, `Gate::define` no provider do módulo, teto efetivo por `UserType` e o debug de 403:
+> use a skill **`rbac-permission-wiring`** — não repita a mecânica aqui.
 
 ### 2. Feature Tests ANTES (TDD)
 
@@ -48,9 +49,15 @@ Teste **happy path + erros**:
 Use a skill **`pest-api-tests`** — helpers de `tests/Pest.php` (`actingAsUserType()`,
 `tenantHeaders()`, `assertApiErrorEnvelope()`, `assertTenantIsolation()`).
 
-### 3. Rota em `routes/api.php`
+### 3. Rota no arquivo de área do módulo
 
-Copie a pilha de middleware de grupo existente (Assessment exemplo):
+**Não existe `routes/api.php` global**: a rota vive em `app/Modules/<M>/Routes/{api,admin,mzrt}.php`,
+carregada pelo `Providers/<M>ServiceProvider`. Endpoint novo de produto nasce **área-first**
+(`v1/admin`, `v1/student`, …) com o guard exato da área — escolha da área, stacks canônicas e
+superfície pública estão na skill **`api-area-routing`**.
+
+Exemplo abaixo = prefixo **legado** domínio-first (`v1/assessment`, sem guard de área), mantido só
+como referência de estilo de grupo:
 
 ```php
 Route::prefix('v1/assessment')
@@ -156,30 +163,39 @@ renderizado centralmente em `bootstrap/app.php` via exceptions custom — nunca 
 
 ### 8. Padrões Especiais
 
-- **Dinheiro**: inteiros em centavos (`*_cents`). `MoneyNeverFloatTest` guarda.
+- **Dinheiro**: inteiros em centavos (`*_cents`). `MoneyNeverFloatTest` guarda. Se a fatia toca
+  order/payment/gateway/ledger, use a skill **`financial-money-flows`** antes de escrever a Action.
 - **Listagens**: `cursorPaginate()` (não `paginate()`), eager-load relações → N+1.
 - **Scribe**: `@unauthenticated` em PHPDoc bate com middleware real.
+- **Side effect em outro módulo**: Domain Event (+ outbox quando o efeito é financeiro), nunca
+  Eloquent cross-module.
 
 ## Anatomia da Fatia — Mapa de Arquivos
 
-Exemplo canônico **Assessment / Questionnaire**:
+Exemplo canônico **Assessment / Questionnaire** (layout modular real):
 
 ```
-routes/api.php                                                      # Rota + middleware stack
-config/permissions.php                                              # Permissions canônicas (domain.resource.action)
-app/Http/Controllers/Api/V1/Assessment/QuestionnaireController.php # Controller lean (authorize → action → resource)
-app/Http/Requests/Assessment/StoreQuestionnaireRequest.php         # Validação + bodyParameters() para Scribe
-app/Actions/Assessment/Questionnaire/StoreQuestionnaireAction.php  # Regra de negócio (handle + tenant scoping)
-app/Http/Resources/Assessment/QuestionnaireResource.php            # Eloquent API Resource (toArray)
-app/Models/Questionnaire.php                                        # Model (fillable, relations, casts)
-tests/Feature/Api/Assessment/QuestionnaireApiTest.php               # Feature tests (happy + 401/403/422)
+app/Modules/Assessment/Routes/api.php                                        # Rota + stack (área: admin.php / mzrt.php)
+app/Modules/Assessment/Providers/AssessmentServiceProvider.php               # Gate::define + registerRoutes + migrations
+config/permissions.php                                                       # Permissions canônicas (domain.resource.action)
+app/Modules/Assessment/Http/Controllers/QuestionnaireController.php          # Controller lean (authorize → action → resource)
+app/Modules/Assessment/Http/Requests/StoreQuestionnaireRequest.php           # Validação + bodyParameters() para Scribe
+app/Modules/Assessment/Actions/Questionnaire/StoreQuestionnaireAction.php    # Regra de negócio (handle + tenant scoping)
+app/Modules/Assessment/Http/Resources/QuestionnaireResource.php              # Eloquent API Resource (toArray)
+app/Modules/Assessment/Models/Questionnaire.php                              # Model (fillable, relations, casts)
+app/Modules/Assessment/Policies/QuestionnairePolicy.php                      # Regra de instância
+app/Modules/Assessment/Database/Migrations/*.php                             # Migration do módulo
+tests/Feature/Api/Assessment/QuestionnaireApiTest.php                        # Feature tests (happy + 401/403/422)
 ```
+
+Confira os nomes exatos num módulo vizinho antes de criar — a estrutura interna varia um pouco por módulo.
 
 ## Fechar
 
-1. `vendor/bin/pint --dirty --format agent` — formato canônico.
-2. Rodar Feature focado: `docker exec ead2026-laravel.test-1 php artisan test --compact --filter=QuestionnaireApiTest`.
-3. Suite Architecture (invariantes): `docker exec ead2026-laravel.test-1 php artisan test --testsuite=Architecture --compact`.
+1. `./vendor/bin/sail vendor/bin/pint --dirty --format agent` — formato canônico.
+2. Feature focado: `./vendor/bin/sail artisan test --compact --filter=QuestionnaireApiTest`.
+3. Invariantes: `./vendor/bin/sail artisan test --compact --testsuite=Architecture`.
+4. Fatia que fecha task/endpoint: E2E HTTP real (skill **`endpoint-e2e`**).
 
 ## Regras
 

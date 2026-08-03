@@ -22,6 +22,10 @@ use Throwable;
  * Cria fixtures efêmeras (tenants + users por papel + tokens Sanctum), roda os casos
  * e limpa tudo no fim (a menos de --keep). Nunca roda em produção.
  *
+ * Caso aceita `method` (GET|POST|PUT|PATCH|DELETE), `tenant` (`primary` padrão,
+ * `other` ou null para omitir X-Tenant-ID) e `capture` (closure que devolve fixtures
+ * derivadas da resposta, sem imprimi-las).
+ *
  * Segurança (auditoria 2026-07-16): só roda em local|testing|e2e; recusa DB que não
  * pareça descartável (nome sem e2e/test) salvo --force-db; canário prova servidor↔DB
  * antes de qualquer mutação; timeout por request; circuit breaker no 5xx inesperado;
@@ -79,6 +83,13 @@ class E2eRunCommand extends Command
 
         $base = rtrim((string) ($this->option('base') ?: config('app.url')), '/');
         [$method, $specPath] = $this->parseEndpoint($spec['endpoint']);
+        $method = $this->normalizeHttpMethod($method);
+
+        if ($method === null) {
+            $this->error("Método HTTP inválido no endpoint do spec: {$spec['endpoint']}");
+
+            return self::FAILURE;
+        }
 
         $this->components->info("E2E: {$spec['endpoint']}  →  {$base}");
 
@@ -131,7 +142,7 @@ class E2eRunCommand extends Command
     }
 
     /**
-     * @return array{endpoint: string, cases: array<int, array<string, mixed>>, setup?: callable, cleanup?: callable}|null
+     * @return array{endpoint: string, cases: array<int, array{name?: string, method?: string, tenant?: 'primary'|'other'|null, path?: string|callable, body?: array<string, mixed>, headers?: array<string, mixed>, expect?: array<string, mixed>, db?: callable, capture?: callable}>, setup?: callable, cleanup?: callable}|null
      */
     private function loadSpec(string $spec): ?array
     {
@@ -235,13 +246,34 @@ class E2eRunCommand extends Command
     private function runCase(string $base, string $method, string $specPath, array $case): void
     {
         $name = $case['name'] ?? 'case';
+        $caseMethod = $this->normalizeHttpMethod($case['method'] ?? $method);
 
-        $tenantKey = ($case['tenant'] ?? 'primary') === 'other' ? 'otherTenant' : 'tenant';
-        $tenant = $this->ctx[$tenantKey];
+        if ($caseMethod === null) {
+            $this->reportCase($name, [['method', false, 'GET|POST|PUT|PATCH|DELETE', $case['method'] ?? $method]]);
 
-        $path = isset($case['path']) && is_callable($case['path'])
-            ? $case['path']($this->ctx)
-            : $specPath;
+            return;
+        }
+
+        $tenantSelection = array_key_exists('tenant', $case) ? $case['tenant'] : 'primary';
+        $tenant = match ($tenantSelection) {
+            'other' => $this->ctx['otherTenant'],
+            null => null,
+            default => $this->ctx['tenant'],
+        };
+
+        try {
+            $path = $this->resolveCasePath($case, $specPath);
+        } catch (Throwable $e) {
+            $this->reportCase($name, [['path', false, 'non-empty string', $this->sanitize($e->getMessage())]]);
+
+            return;
+        }
+
+        if ($path === null) {
+            $this->reportCase($name, [['path', false, 'non-empty string', get_debug_type($case['path'] ?? null)]]);
+
+            return;
+        }
 
         $headers = ['Accept' => 'application/json'];
         if (! is_null($tenant)) {
@@ -260,7 +292,13 @@ class E2eRunCommand extends Command
         $body = $this->resolveDynamicValues($case['body'] ?? []);
 
         try {
-            $response = $request->{$method}($base.$path, $body);
+            $response = match ($caseMethod) {
+                'get' => $request->get($base.$path, $body),
+                'post' => $request->post($base.$path, $body),
+                'put' => $request->put($base.$path, $body),
+                'patch' => $request->patch($base.$path, $body),
+                'delete' => $request->delete($base.$path, $body),
+            };
         } catch (Throwable $e) {
             $this->reportCase($name, [['request', false, 'reachable app', $this->sanitize($e->getMessage())]]);
 
@@ -271,6 +309,20 @@ class E2eRunCommand extends Command
         $json = $response->json() ?? [];
 
         $checks = [];
+
+        if (isset($case['capture']) && is_callable($case['capture'])) {
+            try {
+                $captured = $case['capture']($this->ctx);
+
+                if (! is_array($captured)) {
+                    $checks[] = ['capture', false, 'array', get_debug_type($captured)];
+                } else {
+                    $this->ctx['fixtures'] = array_merge($this->ctx['fixtures'], $captured);
+                }
+            } catch (Throwable $e) {
+                $checks[] = ['capture', false, 'array', $this->sanitize($e->getMessage())];
+            }
+        }
 
         $expect = $this->resolveDynamicValues($case['expect'] ?? []);
         $expectedStatus = $expect['status'] ?? null;
@@ -302,6 +354,31 @@ class E2eRunCommand extends Command
         }
 
         $this->reportCase($name, $checks);
+    }
+
+    private function normalizeHttpMethod(mixed $method): ?string
+    {
+        if (! is_string($method)) {
+            return null;
+        }
+
+        $normalized = strtolower(trim($method));
+
+        return in_array($normalized, ['get', 'post', 'put', 'patch', 'delete'], true) ? $normalized : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $case
+     */
+    private function resolveCasePath(array $case, string $specPath): ?string
+    {
+        if (! array_key_exists('path', $case)) {
+            return $specPath;
+        }
+
+        $path = is_callable($case['path']) ? $case['path']($this->ctx) : $case['path'];
+
+        return is_string($path) && trim($path) !== '' ? $path : null;
     }
 
     private function looseEquals(mixed $expected, mixed $actual): bool
@@ -427,17 +504,49 @@ class E2eRunCommand extends Command
     private function teardownFixtures(): void
     {
         try {
-            foreach (($this->ctx['users'] ?? []) as $user) {
+            /** @var array<string, User> $users */
+            $users = $this->ctx['users'] ?? [];
+            /** @var array<int, Tenant> $tenants */
+            $tenants = array_filter([
+                $this->ctx['tenant'] ?? null,
+                $this->ctx['otherTenant'] ?? null,
+            ], fn (mixed $tenant): bool => $tenant instanceof Tenant);
+            $userIds = array_values(array_map(fn (User $user): int => $user->id, $users));
+            $tenantIds = array_map(fn (Tenant $tenant): int => $tenant->id, $tenants);
+
+            $this->deleteFixtureActivities($tenantIds, $userIds);
+
+            foreach ($users as $user) {
                 $user->tokens()->delete();
                 $user->forceDelete();
             }
-            foreach (['tenant', 'otherTenant'] as $key) {
-                ($this->ctx[$key] ?? null)?->forceDelete();
+            foreach ($tenants as $tenant) {
+                $tenant->forceDelete();
             }
+            $this->deleteFixtureActivities($tenantIds, $userIds);
         } catch (Throwable $e) {
             // Teardown incompleto deixa fixtures órfãs; sinalizar via exit code.
             $this->warn('teardown parcial: '.$this->sanitize($e->getMessage()));
             $this->failed++;
         }
+    }
+
+    /**
+     * @param  list<int>  $tenantIds
+     * @param  list<int>  $userIds
+     */
+    private function deleteFixtureActivities(array $tenantIds, array $userIds): void
+    {
+        DB::table((string) config('activitylog.table_name'))
+            ->where(function ($query) use ($tenantIds, $userIds): void {
+                $query->where(function ($query) use ($tenantIds): void {
+                    $query->where('subject_type', Tenant::class)->whereIn('subject_id', $tenantIds)
+                        ->orWhere('causer_type', Tenant::class)->whereIn('causer_id', $tenantIds);
+                })->orWhere(function ($query) use ($userIds): void {
+                    $query->where('subject_type', User::class)->whereIn('subject_id', $userIds)
+                        ->orWhere('causer_type', User::class)->whereIn('causer_id', $userIds);
+                });
+            })
+            ->delete();
     }
 }

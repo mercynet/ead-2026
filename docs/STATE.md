@@ -4,46 +4,37 @@
 
 ## Sessão
 
-- Perna de usuários do `ADMIN-OPS` entregue: `PATCH`/`DELETE /api/v1/admin/users/{id}`. Admin
-  administra instructor/student do próprio tenant; `user_type`/`email`/`cpf`/`password` são campos
-  proibidos; admin par → 403 e developer/cross-tenant → 404. `DELETE` é soft delete (`deleted_at`
-  novo em `users`) e revoga as sessões Sanctum na mesma transação.
-- Conflito de spec resolvido em `subspecs/users.md`: a coluna "quem pode editar = apenas developer"
-  vale para **mutação de `user_type`**, não para o registro inteiro.
-- Envelope corrigido: `Response::denyAsNotFound()` virava `HttpException` 404 cru, fora do envelope
-  padrão — o handler passou a cobrir qualquer 404 de API, senão o corpo denuncia que o recurso existe.
-- Evidência: AdminUserManagementApiTest 18/56; suíte completa 613/3609; Larastan sem erros; Pint e
-  `graphify update .` verdes. E2E HTTP real `core/admin-users` 11/11, com zero resíduos no
-  `ead2026_e2e`.
+Working tree acumulado foi consolidado em commits atômicos e a jornada `ADMIN-OPS` avançou três
+fatias. `main` integra `feat/foundation-area-guard` por fast-forward.
 
-- Re-slot área-first de categorias entregue: escrita saiu de `v1/learning/catalog/categories`
-  (que fica só com `GET`) para `v1/admin/categories` (tenant) e `v1/mzrt/categories` (sistema, sem
-  contexto de tenant). `is_system` virou campo **proibido** nos dois payloads — a área decide o
-  escopo. `StoreCategoryAction`/`UpdateCategoryAction`/`CategoryPolicy` aceitam tenant nulo;
-  `CategoryPolicy::create` e o gate `learning.categories.create-category` foram removidos junto com
-  o `StoreCategoryRequest` legado.
-- Evidência do re-slot: suíte completa 595/3553; Larastan sem erros; Pint, `git diff --check` e
-  `graphify update .` verdes. E2E HTTP real `learning/admin-categories` 9/9 (inclui `405` na escrita
-  legada e `404` de categoria de tenant vista pela Mzrt), zero resíduos no `ead2026_e2e`.
+Consolidação (7 commits sobre `a908827`): guarda de área com persona exata, teto de permissions por
+`UserType`, control plane Mzrt de tenants, hardening do runner E2E + lifecycle de tenant, espelho
+financeiro da concessão manual, pivô `category_course` ordenado + delete protegido de categoria.
 
-- Working tree acumulado foi consolidado em 7 commits atômicos sobre `a908827`: guarda de área com
-  persona exata, teto de permissions por `UserType`, control plane Mzrt de tenants, hardening do
-  runner E2E + lifecycle de tenant, espelho financeiro da concessão manual, pivô ordenado + delete
-  protegido de categoria, e docs.
-- Fatia `ADMIN-OPS` entregue: `PUT /api/v1/admin/courses/{id}/categories` substitui o conjunto
-  completo de categorias do curso pelo pivô dedicado — `sort_order` derivado da posição no array
-  (cliente não envia ordem, evitando colisão com `UNIQUE(course_id, sort_order)`), `is_featured` por
-  item, categoria de sistema ou do próprio tenant, e payload inválido não altera o vínculo existente.
-- Regressão corrigida no caminho: `DeleteCategoryAction` consultava `Category` sem filtro explícito
-  de tenant e derrubava `TenantScopingTest` (ADR-004). Lock agora é por chave + escopo de tenant
-  (`whereNull` para categoria de sistema).
-- Dívida removida: `Category` ganhou docblock `@property` e 11 entradas obsoletas saíram do
-  `phpstan-baseline.neon`.
-- Evidência: AdminCourseCategoriesApiTest 15/46; Learning + Authorization + Architecture 294/1856;
-  Larastan sem erros (baseline reduzido); Pint, `git diff --check` e `graphify update .` verdes.
-  E2E HTTP real `learning/admin-course-categories` 8/8 contra app `APP_ENV=e2e` no DB `ead2026_e2e`,
-  com zero resíduos verificados no banco.
-- Branch `feat/foundation-area-guard`. Nada pushed.
+Fatias novas:
+
+- `PUT /api/v1/admin/courses/{id}/categories` — substitui o conjunto completo de categorias do curso;
+  `sort_order` derivado da posição no array (cliente não envia ordem, o que torna a colisão com
+  `UNIQUE(course_id, sort_order)` inexpressável); payload inválido preserva o vínculo anterior.
+- Re-slot área-first de categorias: escrita saiu de `v1/learning/catalog/categories` (que fica só com
+  `GET`) para `v1/admin/categories` (tenant) e `v1/mzrt/categories` (sistema, sem contexto de tenant).
+  `is_system` virou campo **proibido** nos dois payloads — a área decide o escopo.
+- `PATCH`/`DELETE /api/v1/admin/users/{id}` — admin administra instructor/student do próprio tenant;
+  `user_type`/`email`/`cpf`/`password` proibidos; admin par → 403, developer/cross-tenant → 404.
+  `DELETE` é soft delete (`deleted_at` novo em `users`) + revogação das sessões Sanctum na mesma
+  transação.
+
+Correções no caminho: `DeleteCategoryAction` consultava `Category` sem filtro de tenant e derrubava
+`TenantScopingTest` (ADR-004); `Response::denyAsNotFound()` produzia 404 fora do envelope padrão, o
+que denunciava a existência do recurso pelo corpo da resposta. Dívida removida: `Category` ganhou
+docblock `@property` e 11 entradas obsoletas saíram do `phpstan-baseline.neon`;
+`CategoryPolicy::create`, o gate `learning.categories.create-category` e o `StoreCategoryRequest`
+legado foram apagados.
+
+Evidência final: suíte completa 613/3609; Larastan sem erros; Pint, `git diff --check` e
+`graphify update .` verdes. E2E HTTP real contra `APP_ENV=e2e` no DB `ead2026_e2e`, todos com zero
+resíduos conferidos no banco: `learning/admin-course-categories` 8/8, `learning/admin-categories` 9/9,
+`core/admin-users` 11/11. Evidência Foundation/MZRT anterior permanece válida (E2E real 9/9).
 
 ## Próximos passos (1-3)
 
@@ -54,9 +45,9 @@
 
 ## Decisões abertas
 
-- Nenhuma bloqueante. Billing manual `external` continua diferido até definir reconciliação e momento
-  do espelho; push aguarda pedido explícito.
+- Nenhuma bloqueante. Diferidos: billing manual `external` (aguarda reconciliação e momento do
+  espelho) e restore/reaproveitamento de e-mail de usuário excluído.
 
 ## Último commit
 
-- Branch `feat/foundation-area-guard`, HEAD em `feat(core): manage tenant users from the admin area`.
+- `main` = `feat/foundation-area-guard` por fast-forward, com as 11 fatias acima; pushed para `origin`.

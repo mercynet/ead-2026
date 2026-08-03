@@ -1,23 +1,35 @@
 # CLAUDE.md
 
-> **O contrato canônico deste repositório é o [`AGENTS.md`](AGENTS.md). Leia-o primeiro.**
-> Este arquivo é só um ponteiro fino — não duplique regras aqui.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Fontes de verdade (nesta ordem)
+> **Contrato canônico = [`AGENTS.md`](AGENTS.md). Leia-o primeiro, sempre.**
+> Lá estão stack, comandos (Sail), arquitetura, áreas de API, invariantes, testes e convenções.
+> **Este arquivo só estende** com o que é específico do Claude Code — nada aqui repete o `AGENTS.md`;
+> se algo divergir, o `AGENTS.md` (e depois o código) vence.
 
-1. **[`AGENTS.md`](AGENTS.md)** — contrato do projeto: stack, comandos, arquitetura, invariantes, padrões, testes.
-2. **`docs/specs/`** — regras de negócio por domínio. Comece em [`docs/specs/README.md`](docs/specs/README.md).
-   Cross-cutting em `00-architecture/`; cada domínio tem `spec.md` (contrato, sem status) + `tasks.md` (status) + `subspecs/`.
-3. **Código + `bootstrap/app.php` + `routes/api.php`** — quando a prosa conflitar com o código, o código vence (e a spec deve ser corrigida).
+## Específico do Claude Code
 
-`docs/ROADMAP.md` = fases cross-domain. `docs/STATE.md` = sessão atual / próximos passos.
+**Hooks ativos** (`.claude/settings.json` → `scripts/ai/`), agem sem você pedir:
 
-## Regras de operação
+- `PreToolUse` **bloqueia** (exit 2): `rm -rf`, `git reset --hard`, `git clean -f`, `composer update`,
+  e `migrate:fresh|refresh|db:wipe` sem `--env=testing`; também edit em `vendor/`, `node_modules/`,
+  `bootstrap/cache/`, `.scribe/`. `git push` **não** é bloqueado (é autorizado por chamada).
+- `PostToolUse` roda Pint `--dirty` no container após editar `.php` → não gaste turno formatando à mão,
+  mas confirme antes de fechar (o gate falha em código não-formatado).
+- `graphify hook-guard` exige orientação pelo grafo antes de varredura/leitura ampla de fonte.
 
-- Use o **Laravel Boost MCP** (`search-docs`, `tinker`, `database-schema`, etc.) para docs e inspeção do app.
-- Carregue **skills sob demanda** — só quando a tarefa entrar no domínio da skill.
-- **Não** trate `CONTEXT.md` nem specs antigas como canônicos se conflitarem com `docs/specs/` + código.
-- Os guardrails do projeto são **executáveis** (suite de invariantes em testes): rode-os para validar, não confie só em prosa.
+**Ferramentas**: Laravel Boost MCP (`search-docs`, `tinker`, `database-query`, `database-schema`,
+`list-routes`, `last-error`) para docs e inspeção do app — não chute API de pacote, não escreva script de
+verificação onde um teste cobre.
+
+**Skills**: `.claude/skills` é symlink da dir inteira `.agents/skills/` — skill nova é herdada sozinha.
+Carregue **sob demanda**, pelo `description:` do frontmatter. Critério de criação e a exceção do
+`tailwindcss-development` (inaplicável, repo API-only): ver `AGENTS.md` → *Convenções de trabalho*.
+
+**Subagentes**: modelo mais barato que serve a tarefa (varredura/inventário → Haiku; exploração com
+síntese → Sonnet; planejamento/review/verify → modelo da sessão). Barato rascunha, caro revisa.
+
+**Ruído do disco**: `app/Http/` e `app/Financial/` existem vazias e fora do git — resíduo, não use.
 
 > O bloco abaixo é gerido pelo Laravel Boost (`boost:update`) — não editar manualmente.
 

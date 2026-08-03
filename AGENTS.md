@@ -18,10 +18,16 @@ rodando os invariantes. Prefira config executável a prosa quando houver conflit
 2. `docs/specs/` — regras de negócio por domínio. Comece em `docs/specs/README.md`.
    Cross-cutting em `docs/specs/00-architecture/`; cada domínio tem `spec.md` (contrato, sem
    status) + `tasks.md` (status) + `subspecs/`.
-3. Código + `bootstrap/app.php` + `routes/api.php`. **Código vence prosa**; se conflitar, corrija a spec.
+3. Código + `bootstrap/app.php` + `bootstrap/providers.php` + `app/Modules/*/Routes/*.php`.
+   **Código vence prosa**; se conflitar, corrija a spec.
 
 `docs/ROADMAP.md` = fases cross-domain. `docs/STATE.md` = sessão atual / próximos passos.
 Idioma: specs/discussão em **PT-BR**; identificadores, permissions, código em **inglês**.
+
+Arquivos por ferramenta (`CLAUDE.md`, `GEMINI.md`, `.codex/`, `.junie/`, `opencode.json`) **apenas
+estendem** este contrato com o que é específico daquela ferramenta (hooks, MCP, atalhos) — não duplicam
+stack, comandos, arquitetura nem invariantes. `CONTEXT.md`, `PROMPT-CONTINUAR.md` e
+`CHECKLIST-VERIFICACAO.md` são histórico: **não** são canônicos.
 
 ## Stack
 
@@ -33,37 +39,98 @@ Idioma: specs/discussão em **PT-BR**; identificadores, permissions, código em 
 
 ## Execução (Docker)
 
-App roda no container `ead2026-laravel.test-1` (`/var/www/html`). Comandos via `docker exec`:
+App roda no container `ead2026-laravel.test-1` (`/var/www/html`), publicado em `http://localhost:8099`.
+**Nada de PHP/artisan/pint/phpstan no host.** Forma canônica = Sail (é o que `README.md` e `.githooks/*`
+usam); `docker exec ead2026-laravel.test-1 <cmd>` é equivalente quando o wrapper não serve.
 
 ```bash
-docker exec ead2026-laravel.test-1 php artisan test --testsuite=Feature --compact --filter=<nome>
-docker exec ead2026-laravel.test-1 php artisan test --testsuite=Architecture --compact
-docker exec ead2026-laravel.test-1 vendor/bin/pint --dirty --format agent   # antes de finalizar PHP
-docker exec ead2026-laravel.test-1 composer analyse        # phpstan/larastan
-docker exec ead2026-laravel.test-1 composer insights       # thresholds mínimos
-docker exec ead2026-laravel.test-1 composer qa:gate        # gate completo
-docker exec ead2026-laravel.test-1 php artisan scribe:generate
+./vendor/bin/sail artisan test --compact --filter=<nome>            # teste único (preferido)
+./vendor/bin/sail artisan test --compact --testsuite=Architecture   # suites: Unit|Feature|Architecture|E2E
+./vendor/bin/sail vendor/bin/pint --dirty --format agent            # antes de finalizar PHP
+./vendor/bin/sail vendor/bin/phpstan analyse --memory-limit=1G      # `composer analyse` estoura os 128M default
+./vendor/bin/sail composer insights                                 # thresholds mínimos
+./vendor/bin/sail composer qa:gate                                  # gate completo (antes de PR/merge)
+./vendor/bin/sail composer qa:deps                                  # supply chain (audit-deps + composer audit)
+./vendor/bin/sail composer docs                                     # scribe:generate
 ```
 
 `qa:gate` roda Pint **antes** de `git diff --exit-code` → código não-formatado falha o gate
-(formate antes; não re-rode às cegas). Banco de teste: `testing` / conexão `mysql` (fixado em `phpunit.xml`).
+(formate antes; não re-rode às cegas). Banco de teste: `testing` / conexão `mysql` (fixado em `phpunit.xml`);
+`RefreshDatabase` já está aplicado em `Feature`/`E2E` via `tests/Pest.php` — não repita nos arquivos.
+
+**Git hooks** (`composer git:hooks` aponta `core.hooksPath` para `.githooks/`): `pre-commit` audita
+dependências quando `composer.json|lock`/baseline mudam; `pre-push` roda `security:audit-deps --scan-vendor`
++ `composer audit`. Falha de auditoria **bloqueia** o commit/push — corrija ou justifique no baseline.
+
+**E2E HTTP real** (camada externa, complementa o Feature in-process): specs em `tests/e2e-http/<domínio>/`,
+runner `app/Console/Commands/E2eRunCommand.php`. Suba o app com `.env.e2e` (`APP_ENV=e2e`, DB `ead2026_e2e`
+— o nome precisa conter `e2e` para passar o gate do runner) e rode:
+
+```bash
+./vendor/bin/sail artisan e2e:run learning/admin-categories --base=http://localhost
+```
+
+De dentro do container use `--base=http://localhost` (a porta publicada no host não é alcançável de lá).
 
 ## Arquitetura
 
 **Modular monolith por bounded context** + **ports/adapters seletivo**. Detalhe em
 `docs/specs/00-architecture/backend-patterns.md`. Resumo:
 
-- Código por módulo em `app/Modules/{Core,Learning,Assessment,Financial,Ecosystem}`; `app/Plugins/`
-  (first-party), `app/Shared/`, `app/Support/Ports/` (+ adapters).
+- Código por módulo em `app/Modules/{Core,Learning,Assessment,Financial,Ecosystem}` + shared kernel
+  `app/Shared/` (`Http/ApiContext`, `Http/Controller`, `Contracts/`, `Exceptions/`).
 - Fluxo: `Route → Controller (fino) → Action → Model → Resource`.
 - Ports/adapters **só** em 3 costuras: `PaymentGateway`, `MediaProvider`, `Plugin`. Resto: Eloquent direto.
 
-**Estado atual:** o código vive em `app/Modules/{Core,Learning,Assessment}` + `app/Shared`;
-cada módulo registra gates e rotas no seu `Providers/<M>ServiceProvider` (não há `routes/api.php`
-global). `config/permissions.php`, `config/lgpd.php` e a suite `tests/Architecture` existem e
-rodam **sem skips** — incluindo `ModuleBoundaryTest` (fronteira + shared kernel `Core\Models|Enums`;
-dívida Eloquent cross-module congelada em allowlist) e `ControllerLeannessTest`. Ainda **alvo a
-construir**: `app/Plugins/`, `app/Support/Ports/` (+ adapters) e os módulos `Financial`/`Ecosystem`.
+**Estado atual:** os 5 módulos existem e estão registrados em `bootstrap/providers.php`. Cada módulo
+carrega suas migrations, define Gates e registra rotas no seu `Providers/<M>ServiceProvider` — **não há
+`routes/api.php` global** (`routes/web.php` só serve a welcome view). `config/permissions.php`,
+`config/lgpd.php` e a suite `tests/Architecture` rodam **sem skips** — incluindo `ModuleBoundaryTest`
+(fronteira + shared kernel `Core\Models|Enums`; dívida Eloquent cross-module congelada em allowlist),
+`ControllerLeannessTest` e `AreaRouteGuardTest`.
+
+As costuras plugáveis **existem, mas dentro dos módulos**, não em `app/Plugins/` nem `app/Support/Ports/`
+(essas pastas não existem; `app/Support/` só tem `DependencyAudit`, que serve o `security:audit-deps`):
+
+- `PaymentGateway` → `Financial/Gateways/{Contracts,Adapters,Data}` + `PaymentGatewayManager` e os
+  resolvers platform/tenant.
+- `Plugin` → módulo `Ecosystem` (`Plugin`, `PluginActivation`, `TenantPluginConfig[+Revision]`,
+  contratos `ActiveGateway`/`TenantGatewayProvider`), capability-gated conforme ADR-005.
+- `MediaProvider` → ainda **alvo a construir**.
+
+`docs/specs/00-architecture/backend-patterns.md` ainda descreve o layout antigo (`app/Plugins/`,
+`app/Support/Ports/`): **dívida de spec conhecida — o código vence.**
+
+## Áreas de API (superfícies por persona)
+
+O contrato é fatiado por **área**, não só por recurso. Cada módulo separa os arquivos de rota em
+`app/Modules/<M>/Routes/`: `api.php`, `admin.php`, `mzrt.php` — todos carregados pelo
+`Providers/<M>ServiceProvider`. Áreas (enum `Core\Enums\Area`): `mzrt` (developer), `admin`, `instructor`,
+`student`, `home` (público). Aliases de middleware em `bootstrap/app.php`.
+
+Duas stacks canônicas, conforme a área tenha ou não contexto de tenant:
+
+- **tenant-scoped** (`admin`/`instructor`/`student`): `resolve.tenant.optional`, `api.context`,
+  `auth:sanctum`, `area.guard:<área>`, `tenant.required.unless.developer`, `tenant.access`.
+- **`mzrt`** (global, recurso da plataforma, sem `X-Tenant-ID`): `auth:sanctum`, `area.guard:mzrt`,
+  `api.context`.
+
+`AreaRouteGuardTest` exige que toda rota cujo path começa em `api/v1/{mzrt|admin|instructor|student}`
+carregue **exatamente** o guard da própria área — nem faltando, nem duplicado, nem de outra. Vale tanto
+com `prefix('v1/admin')` quanto com `prefix('v1')` + segmento `/admin/...` (o teste lê a URI final).
+`EnsureAreaAccess` está em `prependToPriorityList` antes de `SubstituteBindings`: **403 de área vem antes
+do 404 de binding**.
+
+Os prefixos `v1/core`, `v1/learning` e `v1/assessment` são **legado domínio-first**: não carregam guard de
+área e o invariante não os cobre. Endpoint novo de produto não nasce lá — inventário e ordem de migração
+no `ROADMAP.md`. Semântica completa das áreas: `docs/specs/00-architecture/areas-surfaces.md`.
+
+Rota **sem** `auth:sanctum` só existe se estiver na allowlist explícita do `RouteSecuritySurfaceTest`
+(mesmo commit) e, se anônima e mutante, com rate limiter nomeado (`throttle:<nome>`).
+
+Escrita e leitura podem morar em áreas diferentes (ex.: categorias têm `GET` no catálogo e escrita em
+`v1/admin` / `v1/mzrt`). **A área decide o escopo** — não aceite campo de payload que redefina escopo
+(`is_system`, `tenant_id`, `user_type`); campo desses é proibido, não opcional.
 
 ## Invariantes não-negociáveis
 
@@ -71,7 +138,12 @@ construir**: `app/Plugins/`, `app/Support/Ports/` (+ adapters) e os módulos `Fi
    Sem query, sem `where('tenant_id')`, sem regra, sem `try/catch` morto, sem FQCN inline.
 2. **Um estilo de autz**: `Gate::forUser($ctx->requiredUser())->authorize($ability, ...)`. Nada de `Gate::check(){abort(403)}`.
 3. **Action layer**: um `handle()`; `fill()`+`$fillable`; dependências injetadas (testável); sem facade estática em regra.
-4. **API Resources sempre**; sucesso embrulha em `{data}`. Erro = `{"data":null,"errors":[{"code","message"}]}` (render central em `bootstrap/app.php`) para 401/403/404/422.
+4. **API Resources sempre**; sucesso embrulha em `{data}`. Erro = `{"data":null,"errors":[{"code","message"}]}`
+   (render central em `bootstrap/app.php`) para 401/403/404/422 — **nunca** monte JSON de erro no controller/Action.
+   Códigos em uso: `unauthenticated`, `access_denied`, `area_forbidden`, `not_found`, `validation_error`,
+   `tenant_not_resolved`, `too_many_requests`, `tenant_already_exists`, `gateway_unavailable`, `invalid_credentials`,
+   `invitation_invalid`, `password_reset_invalid`. Negar existência (404 defensivo) sai no **mesmo** envelope de um
+   404 comum — corpo diferente denuncia que o recurso existe.
 5. **Tenant scope** via `spatie/laravel-multitenancy` — nunca `where('tenant_id')` na mão.
 6. **Permissions canônicas em `config/permissions.php`** (`permission => {label, user_types}`); seeder e Gates **derivam** dele. Nome: `domain.resource.action`.
 7. **Dinheiro em cents inteiro, nunca float.**
@@ -81,15 +153,24 @@ construir**: `app/Plugins/`, `app/Support/Ports/` (+ adapters) e os módulos `Fi
 11. **Cross-module só via Domain Events ou Contracts** — um módulo não importa interno de outro.
 12. **API-first**: nenhuma rota de produto renderiza view/HTML; toda saída é JSON (Resource/envelope).
     O contrato `/api/v1` é versionado e documentado (Scribe) — frontend é externo, não vive neste repo.
+13. **Rota mora na área certa, com o guard exato**: arquivo de rota (`api|admin|mzrt`), prefixo `v1/<área>`
+    e `area.guard:<área>` batendo entre si. Sem guard emprestado de outra área, sem guard duplicado.
 
-Cada invariante tem (ou terá) um teste em `tests/Architecture` como árbitro executável.
+Cada invariante tem (ou terá) um teste em `tests/Architecture` como árbitro executável. Hoje: fronteira de
+módulo, controller enxuto, envelope de erro, tenant scoping (+ smoke), money-never-float, drift e shape de
+permissions, PII/LGPD, superfície de rotas, guard de área e Scribe vs middleware real.
 
 ## Testes (TDD)
 
 Pirâmide unit/feature/e2e + architecture — detalhe e "onde cada nível cabe" em
 `docs/specs/00-architecture/testing-strategy.md`. Teste antes da implementação; cada task ↔ ≥1 teste.
-Helpers em `tests/Pest.php` (`actingAsUserType`, `tenantHeaders`, `assertApiErrorEnvelope`,
-`assertTenantIsolation`) cortam o boilerplate. Suites: `Unit`, `Feature`, `E2E`, `Architecture`.
+Helpers em `tests/Pest.php` (`seedRbac`, `makeTenant`, `actingAsUserType`, `tenantHeaders`,
+`assertApiErrorEnvelope`, `assertTenantIsolation`) cortam o boilerplate. Suites: `Unit`, `Feature`,
+`E2E`, `Architecture`.
+
+Fora do PHPUnit existe uma quinta camada: `tests/e2e-http/` (HTTP real contra o app rodando + asserts
+de side effect no banco, via `artisan e2e:run`). É **validação externa**, não substituto de Feature test —
+fecha task/endpoint, pega o "verde por engano" do in-process.
 
 ## Convenções de trabalho
 
@@ -104,6 +185,11 @@ Helpers em `tests/Pest.php` (`actingAsUserType`, `tenantHeaders`, `assertApiErro
   Ferramenta sem auto-descoberta: escaneie `.agents/skills/*/SKILL.md` e abra o relevante pelo
   `description:`. Skill nova: só criar `.agents/skills/<nome>/SKILL.md` — os três a herdam sozinhos,
   sem passo manual de symlink.
+  Critério para **criar** skill: a tarefa recorre, atravessa ≥3 arquivos/camadas e erra silenciosamente
+  (ou só é pega por invariante depois). Se um teste de `tests/Architecture` já arbitra e a correção é
+  óbvia, **não** vira skill — vira linha de contrato aqui.
+  O bloco do Boost injeta ativação obrigatória de `tailwindcss-development`: **inaplicável neste repo**
+  (API-only, sem frontend de produto) — ignore.
 - **Economia de modelo (não gastar token à toa)**: tarefa **mecânica e bem especificada** vai para
   **subagente de modelo barato/rápido** (ex.: Haiku) — boilerplate (FormRequest, Resource, factory,
   seeder), rascunho de docs/skills, varreduras de arquivos, renomeações repetitivas. O modelo

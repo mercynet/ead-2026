@@ -4,6 +4,18 @@
 
 ## Sessão
 
+- Perna de usuários do `ADMIN-OPS` entregue: `PATCH`/`DELETE /api/v1/admin/users/{id}`. Admin
+  administra instructor/student do próprio tenant; `user_type`/`email`/`cpf`/`password` são campos
+  proibidos; admin par → 403 e developer/cross-tenant → 404. `DELETE` é soft delete (`deleted_at`
+  novo em `users`) e revoga as sessões Sanctum na mesma transação.
+- Conflito de spec resolvido em `subspecs/users.md`: a coluna "quem pode editar = apenas developer"
+  vale para **mutação de `user_type`**, não para o registro inteiro.
+- Envelope corrigido: `Response::denyAsNotFound()` virava `HttpException` 404 cru, fora do envelope
+  padrão — o handler passou a cobrir qualquer 404 de API, senão o corpo denuncia que o recurso existe.
+- Evidência: AdminUserManagementApiTest 18/56; suíte completa 613/3609; Larastan sem erros; Pint e
+  `graphify update .` verdes. E2E HTTP real `core/admin-users` 11/11, com zero resíduos no
+  `ead2026_e2e`.
+
 - Re-slot área-first de categorias entregue: escrita saiu de `v1/learning/catalog/categories`
   (que fica só com `GET`) para `v1/admin/categories` (tenant) e `v1/mzrt/categories` (sistema, sem
   contexto de tenant). `is_system` virou campo **proibido** nos dois payloads — a área decide o
@@ -35,10 +47,10 @@
 
 ## Próximos passos (1-3)
 
-1. Perna de usuários do `ADMIN-OPS`: `PATCH`/`DELETE /users/{id}` re-slotados para a área Admin
-   (`Pending` em `10-core-identity/tasks.md`).
-2. Fechar a saída objetiva da jornada: E2E Admin integrado operando o mínimo no próprio tenant
-   (catálogo + conteúdo + categorias numa única corrida).
+1. Fechar a saída objetiva do `ADMIN-OPS`: E2E Admin integrado numa única corrida — criar categoria,
+   criar/publicar curso, vincular categorias, administrar um aluno.
+2. Decidir o destino de `GET /core/users` e `/core/users/me*`: área Admin vs superfície neutra de
+   conta (`ROADMAP.md`, linha `/core/users*`).
 
 ## Decisões abertas
 
@@ -47,4 +59,4 @@
 
 ## Último commit
 
-- Branch `feat/foundation-area-guard`, HEAD em `feat(learning): move category writes to area-first surfaces`.
+- Branch `feat/foundation-area-guard`, HEAD em `feat(core): manage tenant users from the admin area`.

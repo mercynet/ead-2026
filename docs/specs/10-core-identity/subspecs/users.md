@@ -72,6 +72,25 @@ Cada usuário pertence a um tenant; a mesma pessoa em duas escolas = dois regist
 UserType é imutável exceto por developer (define o teto — ver
 [`../../00-architecture/rbac.md`](../../00-architecture/rbac.md)).
 
+**Administração pelo tenant admin (resolvido 2026-08-03).** A coluna "quem pode editar" acima trata
+de **mutação de `user_type`**, não do registro inteiro. Na prática, a área Admin
+(`PATCH`/`DELETE /api/v1/admin/users/{id}`) administra **instructor e student do próprio tenant**:
+
+- Campos editáveis: `name`, `headline`, `bio`, `avatar`, `linkedin_url`, `twitter_url`.
+- Proibidos no payload: `user_type` (é o teto de permissions), `email`, `cpf` e `password`
+  (identidade e credencial — mudam pelo próprio usuário ou por reset).
+- Outro **admin do mesmo tenant** é 403 (admin editando admin é escalada lateral) e **developer** é
+  404 (nem existência é revelada); usuário de outro tenant também é 404.
+
+### Exclusão (soft delete)
+
+- `DELETE` faz **soft delete** (`deleted_at`) e revoga todas as sessões Sanctum do alvo na mesma
+  transação — usuário excluído com token vivo continuaria autenticando.
+- Histórico (matrículas, orders, auditoria) permanece íntegro apontando para o registro.
+- O `unique` de e-mail é sobre a linha, não sobre a linha ativa: **o e-mail de um usuário excluído
+  segue reservado no tenant**. Afrouxar o índice para reaproveitar o e-mail abriria brecha de
+  colisão entre usuários ativos. Restore/reaproveitamento fica diferido.
+
 ### Convenção de query (tenant scope)
 
 Filtrar por tenant via scope/trait, não `where('tenant_id', ...)` espalhado. Ver
@@ -85,8 +104,8 @@ Filtrar por tenant via scope/trait, não `where('tenant_id', ...)` espalhado. Ve
 | POST | `/api/v1/core/invitations/accept` | Aceitar convite → cria usuário + papel | público (token) |
 | GET | `/api/v1/core/users` | Listar (tenant-scoped; developer vê todos) | `core.users.list` |
 | GET | `/api/v1/core/users/{id}` | Ver usuário | `core.users.view` |
-| PATCH | `/api/v1/core/users/{id}` | Atualizar usuário | `core.users.update` |
-| DELETE | `/api/v1/core/users/{id}` | Deletar usuário | `core.users.delete` |
+| PATCH | `/api/v1/admin/users/{id}` | Atualizar instructor/student do tenant (área Admin) | `core.users.update` |
+| DELETE | `/api/v1/admin/users/{id}` | Excluir instructor/student do tenant — soft delete (área Admin) | `core.users.delete` |
 | PATCH | `/api/v1/core/users/me` | Atualizar próprio perfil (nome, bio, avatar, cpf) | `core.users.update-self` |
 | PATCH | `/api/v1/core/users/me/password` | Alterar própria senha | `core.users.update-password` |
 

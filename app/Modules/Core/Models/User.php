@@ -8,6 +8,7 @@ use App\Modules\Core\Enums\UserType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -29,6 +30,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $avatar
  * @property string|null $linkedin_url
  * @property string|null $twitter_url
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
@@ -41,6 +43,8 @@ class User extends Authenticatable
         HasRoles::getAllPermissions as private spatieGetAllPermissions;
         HasRoles::hasPermissionTo as private spatieHasPermissionTo;
     }
+
+    use SoftDeletes;
 
     /**
      * Trilha de auditoria LGPD (invariante #9): loga alterações nos campos

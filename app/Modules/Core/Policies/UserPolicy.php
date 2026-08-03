@@ -55,6 +55,51 @@ class UserPolicy
         return false;
     }
 
+    public function update(User $authenticatedUser, ?Tenant $tenant, User $targetUser): Response|bool
+    {
+        return $this->manage($authenticatedUser, $tenant, $targetUser, 'core.users.update');
+    }
+
+    public function delete(User $authenticatedUser, ?Tenant $tenant, User $targetUser): Response|bool
+    {
+        return $this->manage($authenticatedUser, $tenant, $targetUser, 'core.users.delete');
+    }
+
+    /**
+     * Admin administra instructor e student do próprio tenant. Outro admin e
+     * developer ficam fora: admin editando admin é escalada lateral, e mutação de
+     * `user_type` — o teto de permissions — é exclusiva de developer
+     * (`subspecs/users.md`).
+     */
+    private function manage(User $authenticatedUser, ?Tenant $tenant, User $targetUser, string $permission): Response|bool
+    {
+        if ($targetUser->isDeveloper()) {
+            return Response::denyAsNotFound();
+        }
+
+        if ($authenticatedUser->is($targetUser)) {
+            return false;
+        }
+
+        if ($tenant === null || ! $authenticatedUser->belongsToTenant($tenant)) {
+            return false;
+        }
+
+        if (! $targetUser->belongsToTenant($tenant)) {
+            return Response::denyAsNotFound();
+        }
+
+        if (! $authenticatedUser->isTenantAdmin()) {
+            return false;
+        }
+
+        if (! $targetUser->isInstructor() && ! $targetUser->isStudent()) {
+            return false;
+        }
+
+        return $authenticatedUser->getAllPermissions()->contains('name', $permission);
+    }
+
     public function updateSelf(User $authenticatedUser, ?Tenant $tenant, User $targetUser): bool
     {
         if (! $authenticatedUser->is($targetUser)) {

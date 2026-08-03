@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     /*
@@ -191,7 +191,17 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 403);
         });
 
-        $exceptions->render(function (NotFoundHttpException $exception, Request $request) {
+        /*
+         * Cobre `NotFoundHttpException` e o `HttpException` 404 que o Handler
+         * produz a partir de `Response::denyAsNotFound()` — negar existência tem
+         * que sair no mesmo envelope de um 404 comum, senão o corpo da resposta
+         * denuncia que o recurso existe.
+         */
+        $exceptions->render(function (HttpException $exception, Request $request) {
+            if ($exception->getStatusCode() !== 404) {
+                return null;
+            }
+
             if (! $request->is('api/*') && ! $request->expectsJson()) {
                 return null;
             }

@@ -87,8 +87,14 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] Rate limiters nomeados e separados por rota (login/forgot/reset/invitation-accept/invitation-create) — corrige bucket `domínio|IP` compartilhado do throttle padrão (SEC-001).
 - [x] `E2eRunCommand` endurecido: gate de ambiente (local|testing|e2e), timeout por request, circuit breaker no 5xx inesperado (`--continue-on-error`), cleanup surfacing e sanitização de token no output (AUD-001, escopo proporcional).
 - [x] Isolamento E2E: gate de DB descartável (recusa dev salvo `--force-db`), canário servidor↔DB antes de mutar, `--fresh`, `.env.e2e.example` + DB `ead2026_e2e` provisionado. Fecha o gate "stack E2E dedicada" da auditoria.
-- [ ] `PATCH /api/v1/core/users/{id}` (update por admin).
-- [ ] `DELETE /api/v1/core/users/{id}`.
+- [x] `PATCH /api/v1/admin/users/{id}` — re-slotado área-first (era `/core/users/{id}`): admin
+  administra instructor/student do próprio tenant; `user_type`/`email`/`cpf`/`password` proibidos no
+  payload; admin par → 403, developer e cross-tenant → 404.
+  `Journey: ADMIN-OPS | Area: admin | Depends on: FOUNDATION-0`
+- [x] `DELETE /api/v1/admin/users/{id}` — soft delete (`deleted_at` em `users`) + revogação das
+  sessões Sanctum na mesma transação; login e token do excluído passam a falhar. E-mail permanece
+  reservado no tenant (unique é sobre a linha).
+  `Journey: ADMIN-OPS | Area: admin | Depends on: PATCH /api/v1/admin/users/{id}`
 - [ ] `GET /api/v1/core/tenant/config` (público, white-label).
 - [ ] `PATCH /api/v1/core/tenant/config` (tenant_admin).
 - [ ] Model `SystemSetting` + endpoints (developer only).

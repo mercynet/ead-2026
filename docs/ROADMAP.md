@@ -74,7 +74,7 @@ explícitas: `/api/v1/auth/*`, `/api/v1/webhooks/*`, `/api/v1/public/*`. Prefixo
 |---|---|---|---|---|---|
 | `/core/auth/*` | técnica cross-area | `/auth/*` | legado | Core / inventory | neutral substituto documentado e clientes migrados |
 | `/core/invitations` | create Admin; accept pública | split Admin + neutral/public | legado | Core / inventory | ambos contratos entregues |
-| `/core/users*`, self | Admin/Mzrt/self misto | decisão: áreas + possível account neutral | decisão-needed | Core / inventory | decisão e substitutos por caso |
+| `/core/users*`, self | Admin/Mzrt/self misto | áreas + possível account neutral | parcial | Core / inventory | ✔ update/delete de instructor/student em `v1/admin/users/{id}`; list/show e self ainda em `/core`, pendente decidir account neutral |
 | `/learning/catalog/courses*` | público | Home | legado | Learning / inventory | Home E2E público |
 | `/learning/catalog/categories*` | system/tenant | Mzrt + Admin | ~~legado~~ **migrado** | Learning / inventory | ✔ escrita split em `v1/mzrt/categories` + `v1/admin/categories`; legado mantém só `GET`; E2E de isolamento verde |
 | learning courses/modules/materials/lesson/media management | Admin/Instructor provável | decisão-needed | legado | Learning / inventory | contratos por persona decididos |

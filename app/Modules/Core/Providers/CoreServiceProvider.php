@@ -40,10 +40,18 @@ class CoreServiceProvider extends ServiceProvider
         Gate::define('core.users.list', [UserPolicy::class, 'list']);
         Gate::define('core.users.view', [UserPolicy::class, 'show']);
         Gate::define('core.users.update-self', [UserPolicy::class, 'updateSelf']);
+
+        /*
+         * Sufixo `-check`: gate com o nome exato da permission é curto-circuitado
+         * pelo `Gate::before` do Spatie e a policy nunca roda.
+         */
+        Gate::define('core.users.update-check', [UserPolicy::class, 'update']);
+        Gate::define('core.users.delete-check', [UserPolicy::class, 'delete']);
     }
 
     private function registerRoutes(): void
     {
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/api.php');
+        Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/admin.php');
     }
 }

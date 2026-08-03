@@ -71,8 +71,10 @@ class Course extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class)
-            ->withPivot('tenant_id')
-            ->withTimestamps();
+            ->withPivot('tenant_id', 'sort_order', 'is_featured')
+            ->withTimestamps()
+            ->orderByPivot('sort_order')
+            ->orderBy('categories.id');
     }
 
     public function modules(): HasMany

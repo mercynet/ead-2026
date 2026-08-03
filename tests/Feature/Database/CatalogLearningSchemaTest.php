@@ -1,6 +1,11 @@
 <?php
 
+use App\Modules\Core\Models\Tenant;
+use App\Modules\Learning\Models\Category;
+use App\Modules\Learning\Models\Course;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
@@ -133,12 +138,60 @@ it('applies hierarchical and system-aware fields to categories', function (): vo
     ]))->toBeTrue();
 });
 
-it('stores tenant context in category course pivot', function (): void {
+it('stores tenant context and catalog ordering fields in category course pivot', function (): void {
     expect(Schema::hasColumns('category_course', [
         'tenant_id',
         'category_id',
         'course_id',
+        'sort_order',
+        'is_featured',
         'created_at',
         'updated_at',
     ]))->toBeTrue();
 });
+
+it('rejects duplicate categories for a course', function (): void {
+    $tenant = Tenant::factory()->create();
+    $course = Course::factory()->for($tenant)->create();
+    $category = Category::factory()->for($tenant)->create();
+
+    insertCategoryCourse($tenant->id, $category->id, $course->id, 1);
+
+    expect(fn (): bool => insertCategoryCourse($tenant->id, $category->id, $course->id, 2))
+        ->toThrow(QueryException::class);
+});
+
+it('rejects duplicate category order within a course', function (): void {
+    $tenant = Tenant::factory()->create();
+    $course = Course::factory()->for($tenant)->create();
+    $firstCategory = Category::factory()->for($tenant)->create();
+    $secondCategory = Category::factory()->for($tenant)->create();
+
+    insertCategoryCourse($tenant->id, $firstCategory->id, $course->id, 1);
+
+    expect(fn (): bool => insertCategoryCourse($tenant->id, $secondCategory->id, $course->id, 1))
+        ->toThrow(QueryException::class);
+});
+
+it('rejects category pivots whose tenant differs from the course tenant', function (): void {
+    $courseTenant = Tenant::factory()->create();
+    $pivotTenant = Tenant::factory()->create();
+    $course = Course::factory()->for($courseTenant)->create();
+    $systemCategory = Category::factory()->system()->create();
+
+    expect(fn (): bool => insertCategoryCourse($pivotTenant->id, $systemCategory->id, $course->id, 1))
+        ->toThrow(QueryException::class);
+});
+
+function insertCategoryCourse(int $tenantId, int $categoryId, int $courseId, int $sortOrder): bool
+{
+    return DB::table('category_course')->insert([
+        'tenant_id' => $tenantId,
+        'category_id' => $categoryId,
+        'course_id' => $courseId,
+        'sort_order' => $sortOrder,
+        'is_featured' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}

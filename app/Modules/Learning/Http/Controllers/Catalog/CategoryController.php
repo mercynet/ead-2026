@@ -7,6 +7,7 @@ use App\Modules\Learning\Actions\Catalog\GetCategoryAction;
 use App\Modules\Learning\Actions\Catalog\ListCategoriesAction;
 use App\Modules\Learning\Actions\Catalog\StoreCategoryAction;
 use App\Modules\Learning\Actions\Catalog\UpdateCategoryAction;
+use App\Modules\Learning\Http\Requests\Catalog\DeleteCategoryRequest;
 use App\Modules\Learning\Http\Requests\Catalog\StoreCategoryRequest;
 use App\Modules\Learning\Http\Requests\Catalog\UpdateCategoryRequest;
 use App\Modules\Learning\Http\Resources\Catalog\CatalogCategoryResource;
@@ -120,13 +121,17 @@ class CategoryController extends Controller
      *   "errors": [{"code": "not_found", "message": "Recurso não encontrado."}]
      * }
      */
-    public function destroy(ApiContext $context, int $id): array
+    public function destroy(DeleteCategoryRequest $request, ApiContext $context, int $id): array
     {
         $category = $this->getCategoryAction->handle($context, $id);
 
         Gate::forUser($context->requiredUser())->authorize('learning.categories.tenant.delete-check', [$context->tenant, $category]);
 
-        $this->deleteCategoryAction->handle($category);
+        $this->deleteCategoryAction->handle(
+            $category,
+            (bool) ($request->validated('force') ?? false),
+            (bool) ($request->validated('confirm') ?? false),
+        );
 
         return ['message' => 'Category deleted successfully.'];
     }

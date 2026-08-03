@@ -4,9 +4,11 @@ use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
 use App\Modules\Learning\Models\Category;
+use App\Modules\Learning\Models\Course;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
@@ -383,6 +385,91 @@ it('deletes a tenant category', function (): void {
         ->assertJsonPath('message', 'Category deleted successfully.');
 
     expect(Category::query()->find($category->id))->toBeNull();
+});
+
+it('blocks developer from deleting a system category attached to courses', function (): void {
+    $tenant = Tenant::factory()->create();
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $developer = User::factory()->create(['tenant_id' => null, 'user_type' => UserType::Developer]);
+    $developer->assignRole('developer');
+    $category = Category::factory()->create(['tenant_id' => null, 'is_system' => true]);
+    $course = Course::factory()->for($tenant)->create();
+    $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
+
+    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [], [
+        'Authorization' => 'Bearer '.$developer->createToken('developer-token')->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertUnprocessable()->assertJsonPath('errors.0.code', 'validation_error');
+
+    expect(Category::query()->find($category->id))->not->toBeNull();
+    expect(DB::table('category_course')->where('category_id', $category->id)->count())->toBe(1);
+});
+
+it('blocks tenant category deletion with attached courses without force and confirm', function (): void {
+    $tenant = Tenant::factory()->create();
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::factory()->create(['tenant_id' => $tenant->id, 'user_type' => UserType::Admin]);
+    $admin->assignRole('admin');
+    $category = Category::factory()->create(['tenant_id' => $tenant->id, 'is_system' => false]);
+    $course = Course::factory()->for($tenant)->create();
+    $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
+
+    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [], [
+        'Authorization' => 'Bearer '.$admin->createToken('admin-token')->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertUnprocessable()->assertJsonPath('errors.0.code', 'validation_error');
+
+    expect(Category::query()->find($category->id))->not->toBeNull();
+    expect(DB::table('category_course')->where('category_id', $category->id)->count())->toBe(1);
+});
+
+it('requires both force and confirm to delete a tenant category attached to courses', function (array $payload): void {
+    $tenant = Tenant::factory()->create();
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::factory()->create(['tenant_id' => $tenant->id, 'user_type' => UserType::Admin]);
+    $admin->assignRole('admin');
+    $category = Category::factory()->create(['tenant_id' => $tenant->id, 'is_system' => false]);
+    $course = Course::factory()->for($tenant)->create();
+    $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
+
+    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, $payload, [
+        'Authorization' => 'Bearer '.$admin->createToken('admin-token')->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])->assertUnprocessable()->assertJsonPath('errors.0.code', 'validation_error');
+
+    expect(Category::query()->find($category->id))->not->toBeNull();
+    expect(DB::table('category_course')->where('category_id', $category->id)->count())->toBe(1);
+})->with([
+    'force without confirm' => [['force' => true]],
+    'confirm without force' => [['confirm' => true]],
+]);
+
+it('detaches courses and soft deletes a tenant category with force and confirmation', function (): void {
+    $tenant = Tenant::factory()->create();
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::factory()->create(['tenant_id' => $tenant->id, 'user_type' => UserType::Admin]);
+    $admin->assignRole('admin');
+    $category = Category::factory()->create(['tenant_id' => $tenant->id, 'is_system' => false]);
+    $course = Course::factory()->for($tenant)->create();
+    $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
+
+    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [
+        'force' => true,
+        'confirm' => true,
+    ], [
+        'Authorization' => 'Bearer '.$admin->createToken('admin-token')->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('message', 'Category deleted successfully.');
+
+    expect(Category::withTrashed()->find($category->id)?->deleted_at)->not->toBeNull();
+    expect(DB::table('category_course')->where('category_id', $category->id)->count())->toBe(0);
+    expect($course->categories()->withTrashed()->count())->toBe(0);
 });
 
 it('forbids updating system category by tenant admin', function (): void {

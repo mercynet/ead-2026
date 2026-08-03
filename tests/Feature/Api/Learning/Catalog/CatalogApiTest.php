@@ -59,8 +59,8 @@ it('lists only published tenant courses and supports filters', function (): void
         'access_days' => 90,
         'is_featured' => true,
     ]);
-    $courseFreeFeatured->categories()->attach($categoryTech->id, ['tenant_id' => $tenant->id]);
-    $courseFreeFeatured->categories()->attach($systemCategory->id, ['tenant_id' => $tenant->id]);
+    $courseFreeFeatured->categories()->attach($categoryTech->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
+    $courseFreeFeatured->categories()->attach($systemCategory->id, ['tenant_id' => $tenant->id, 'sort_order' => 2, 'is_featured' => false]);
 
     $coursePaid = Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -72,7 +72,7 @@ it('lists only published tenant courses and supports filters', function (): void
         'access_days' => 180,
         'is_featured' => false,
     ]);
-    $coursePaid->categories()->attach($categoryDesign->id, ['tenant_id' => $tenant->id]);
+    $coursePaid->categories()->attach($categoryDesign->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
 
     Course::query()->create([
         'tenant_id' => $tenant->id,
@@ -304,7 +304,7 @@ it('shows published course by slug with modules and lessons', function (): void 
         'access_days' => 365,
         'is_featured' => true,
     ]);
-    $course->categories()->attach($category->id, ['tenant_id' => $tenant->id]);
+    $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
 
     $module = CourseModule::query()->create([
         'tenant_id' => $tenant->id,

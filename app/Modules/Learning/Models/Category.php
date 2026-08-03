@@ -48,8 +48,10 @@ class Category extends Model
     public function courses(): BelongsToMany
     {
         return $this->belongsToMany(Course::class)
-            ->withPivot('tenant_id')
-            ->withTimestamps();
+            ->withPivot('tenant_id', 'sort_order', 'is_featured')
+            ->withTimestamps()
+            ->orderByPivot('sort_order')
+            ->orderBy('courses.id');
     }
 
     public function isActive(): bool

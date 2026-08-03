@@ -23,13 +23,14 @@ Route::prefix('v1/learning')
                     Route::get('/courses/{slug}', 'show');
                 });
 
+            /*
+             * Leitura de catálogo (sistema + tenant). A escrita foi re-slotada
+             * área-first: tenant em v1/admin/categories, sistema em v1/mzrt/categories.
+             */
             Route::controller(CategoryController::class)
                 ->middleware(['auth:sanctum', 'tenant.access'])
                 ->group(function (): void {
                     Route::get('/categories', 'index');
-                    Route::post('/categories', 'store');
-                    Route::put('/categories/{id}', 'update');
-                    Route::delete('/categories/{id}', 'destroy');
                 });
         });
 

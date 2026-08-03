@@ -79,7 +79,11 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Regra **parent de mesmo escopo** (system→system, tenant→mesmo tenant); proibir cross-escopo.
 - [x] Pivô `category_course`: `sort_order` + `is_featured`, FKs reais incluindo integridade tenant↔curso, unicidade de categoria/ordem por curso e relações ordenadas em `Course::categories()`/`Category::courses()`.
 - [x] Soft delete + proteção no delete: system com cursos **bloqueia**; tenant com cursos exige `force`+`confirm` no `DeleteCategoryRequest` e faz **detach** sob lock antes do soft delete (invariante: nenhum pivô aponta para categoria soft-deletada).
-- [ ] Re-slot área-first: system → Mzrt (`v1/mzrt`), tenant → Admin (`v1/admin`); `CategoryPolicy` decide por `is_system`.
+- [x] Re-slot área-first: system → Mzrt (`v1/mzrt/categories`, sem contexto de tenant), tenant →
+  Admin (`v1/admin/categories`); escrita removida de `v1/learning/catalog/categories`, que fica só
+  com o `GET`. `is_system` proibido no payload das duas superfícies — a área decide o escopo, e
+  `CategoryPolicy` segue decidindo autorização por `is_system`.
+  `Journey: ADMIN-OPS | Area: admin + mzrt | Depends on: FOUNDATION-0`
 
 ### Courses
 - [x] Attach categories to courses: `PUT /api/v1/admin/courses/{id}/categories` substitui o conjunto

@@ -104,7 +104,7 @@ it('prevents tenant from creating a category that duplicates a system category',
     $admin->assignRole('admin');
     $token = $admin->createToken('admin-token')->plainTextToken;
 
-    $this->postJson('/api/v1/learning/catalog/categories', [
+    $this->postJson('/api/v1/admin/categories', [
         'name' => 'Desenvolvimento de Software',
     ], [
         'Authorization' => 'Bearer '.$token,
@@ -112,14 +112,7 @@ it('prevents tenant from creating a category that duplicates a system category',
     ])->assertUnprocessable();
 });
 
-it('allows developer to create system category', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
+it('allows developer to create system category from the mzrt area', function (): void {
     $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
 
     $developer = User::query()->create([
@@ -132,19 +125,17 @@ it('allows developer to create system category', function (): void {
     $developer->assignRole('developer');
     $token = $developer->createToken('dev-token')->plainTextToken;
 
-    $this->postJson('/api/v1/learning/catalog/categories', [
+    $this->postJson('/api/v1/mzrt/categories', [
         'name' => 'Data Science',
-        'is_system' => true,
     ], [
         'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertCreated()
         ->assertJsonPath('data.is_system', true)
         ->assertJsonPath('data.tenant_id', null);
 });
 
-it('forbids tenant admin from creating system category', function (): void {
+it('rejects is_system on the admin category surface', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',
         'domain' => 'tenant-a.local',
@@ -164,13 +155,55 @@ it('forbids tenant admin from creating system category', function (): void {
     $admin->assignRole('admin');
     $token = $admin->createToken('admin-token')->plainTextToken;
 
-    $this->postJson('/api/v1/learning/catalog/categories', [
+    $this->postJson('/api/v1/admin/categories', [
         'name' => 'System Forbidden',
         'is_system' => true,
     ], [
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
-    ])->assertForbidden();
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'validation_error');
+
+    expect(Category::query()->where('name', 'System Forbidden')->exists())->toBeFalse();
+});
+
+it('forbids tenant admin from the mzrt category area', function (): void {
+    $tenant = Tenant::factory()->create();
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $admin = User::factory()->create(['tenant_id' => $tenant->id, 'user_type' => UserType::Admin]);
+    $admin->assignRole('admin');
+
+    $this->postJson('/api/v1/mzrt/categories', [
+        'name' => 'Tentativa Admin',
+    ], [
+        'Authorization' => 'Bearer '.$admin->createToken('admin-token')->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'area_forbidden');
+
+    expect(Category::query()->where('name', 'Tentativa Admin')->exists())->toBeFalse();
+});
+
+it('forbids developer from the admin category area', function (): void {
+    $tenant = Tenant::factory()->create();
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $developer = User::factory()->create(['tenant_id' => null, 'user_type' => UserType::Developer]);
+    $developer->assignRole('developer');
+
+    $this->postJson('/api/v1/admin/categories', [
+        'name' => 'Tentativa Developer',
+    ], [
+        'Authorization' => 'Bearer '.$developer->createToken('developer-token')->plainTextToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'area_forbidden');
+
+    expect(Category::query()->where('name', 'Tentativa Developer')->exists())->toBeFalse();
 });
 
 it('allows same tenant category name in different tenants when not system reserved', function (): void {
@@ -208,7 +241,7 @@ it('allows same tenant category name in different tenants when not system reserv
     $adminB->assignRole('admin');
     $adminBToken = $adminB->createToken('admin-b-token')->plainTextToken;
 
-    $this->postJson('/api/v1/learning/catalog/categories', [
+    $this->postJson('/api/v1/admin/categories', [
         'name' => 'Desenvolvimento de Programas',
     ], [
         'Authorization' => 'Bearer '.$adminBToken,
@@ -336,7 +369,7 @@ it('updates a tenant category', function (): void {
 
     $token = $admin->createToken('admin-token')->plainTextToken;
 
-    $this->putJson('/api/v1/learning/catalog/categories/'.$category->id, [
+    $this->putJson('/api/v1/admin/categories/'.$category->id, [
         'name' => 'Categoria Atualizada',
     ], [
         'Authorization' => 'Bearer '.$token,
@@ -377,7 +410,7 @@ it('deletes a tenant category', function (): void {
 
     $token = $admin->createToken('admin-token')->plainTextToken;
 
-    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [], [
+    $this->deleteJson('/api/v1/admin/categories/'.$category->id, [], [
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
     ])
@@ -397,9 +430,8 @@ it('blocks developer from deleting a system category attached to courses', funct
     $course = Course::factory()->for($tenant)->create();
     $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
 
-    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [], [
+    $this->deleteJson('/api/v1/mzrt/categories/'.$category->id, [], [
         'Authorization' => 'Bearer '.$developer->createToken('developer-token')->plainTextToken,
-        'X-Tenant-ID' => (string) $tenant->id,
     ])->assertUnprocessable()->assertJsonPath('errors.0.code', 'validation_error');
 
     expect(Category::query()->find($category->id))->not->toBeNull();
@@ -416,7 +448,7 @@ it('blocks tenant category deletion with attached courses without force and conf
     $course = Course::factory()->for($tenant)->create();
     $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
 
-    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [], [
+    $this->deleteJson('/api/v1/admin/categories/'.$category->id, [], [
         'Authorization' => 'Bearer '.$admin->createToken('admin-token')->plainTextToken,
         'X-Tenant-ID' => (string) $tenant->id,
     ])->assertUnprocessable()->assertJsonPath('errors.0.code', 'validation_error');
@@ -435,7 +467,7 @@ it('requires both force and confirm to delete a tenant category attached to cour
     $course = Course::factory()->for($tenant)->create();
     $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
 
-    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, $payload, [
+    $this->deleteJson('/api/v1/admin/categories/'.$category->id, $payload, [
         'Authorization' => 'Bearer '.$admin->createToken('admin-token')->plainTextToken,
         'X-Tenant-ID' => (string) $tenant->id,
     ])->assertUnprocessable()->assertJsonPath('errors.0.code', 'validation_error');
@@ -457,7 +489,7 @@ it('detaches courses and soft deletes a tenant category with force and confirmat
     $course = Course::factory()->for($tenant)->create();
     $course->categories()->attach($category->id, ['tenant_id' => $tenant->id, 'sort_order' => 1, 'is_featured' => false]);
 
-    $this->deleteJson('/api/v1/learning/catalog/categories/'.$category->id, [
+    $this->deleteJson('/api/v1/admin/categories/'.$category->id, [
         'force' => true,
         'confirm' => true,
     ], [
@@ -502,22 +534,19 @@ it('forbids updating system category by tenant admin', function (): void {
 
     $token = $admin->createToken('admin-token')->plainTextToken;
 
-    $this->putJson('/api/v1/learning/catalog/categories/'.$systemCategory->id, [
+    $this->putJson('/api/v1/admin/categories/'.$systemCategory->id, [
         'name' => 'Tentativa de Atualizar',
     ], [
         'Authorization' => 'Bearer '.$token,
         'X-Tenant-ID' => (string) $tenant->id,
-    ])->assertForbidden();
+    ])
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'access_denied');
+
+    expect($systemCategory->fresh()->name)->toBe('Sistema Categoria');
 });
 
-it('allows developer to update system category', function (): void {
-    $tenant = Tenant::query()->create([
-        'name' => 'Tenant A',
-        'domain' => 'tenant-a.local',
-        'database' => null,
-        'is_active' => true,
-    ]);
-
+it('allows developer to update system category from the mzrt area', function (): void {
     $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
 
     $developer = User::query()->create([
@@ -540,12 +569,30 @@ it('allows developer to update system category', function (): void {
 
     $token = $developer->createToken('dev-token')->plainTextToken;
 
-    $this->putJson('/api/v1/learning/catalog/categories/'.$systemCategory->id, [
+    $this->putJson('/api/v1/mzrt/categories/'.$systemCategory->id, [
         'name' => 'Sistema Atualizado',
     ], [
         'Authorization' => 'Bearer '.$token,
-        'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.name', 'Sistema Atualizado');
+});
+
+it('hides tenant categories from the mzrt area', function (): void {
+    $tenant = Tenant::factory()->create();
+    $this->seed([PermissionsSeeder::class, RolesSeeder::class]);
+
+    $developer = User::factory()->create(['tenant_id' => null, 'user_type' => UserType::Developer]);
+    $developer->assignRole('developer');
+    $tenantCategory = Category::factory()->for($tenant)->create(['is_system' => false]);
+
+    $this->putJson('/api/v1/mzrt/categories/'.$tenantCategory->id, [
+        'name' => 'Tentativa Mzrt',
+    ], [
+        'Authorization' => 'Bearer '.$developer->createToken('developer-token')->plainTextToken,
+    ])
+        ->assertNotFound()
+        ->assertJsonPath('errors.0.code', 'not_found');
+
+    expect($tenantCategory->fresh()->name)->not->toBe('Tentativa Mzrt');
 });

@@ -9,8 +9,18 @@ use Illuminate\Validation\ValidationException;
 
 class UpdateCategoryAction
 {
-    public function handle(Category $category, Tenant $tenant, array $attributes): Category
+    /**
+     * `$tenant` é obrigatório para categoria de tenant e ignorado para categoria de
+     * sistema — a área Mzrt escreve sem contexto de tenant.
+     */
+    public function handle(Category $category, ?Tenant $tenant, array $attributes): Category
     {
+        if (! $category->is_system && $tenant === null) {
+            throw ValidationException::withMessages([
+                'tenant' => 'Tenant categories require a tenant context.',
+            ]);
+        }
+
         $parentId = isset($attributes['parent_id']) ? (int) $attributes['parent_id'] : null;
         $name = isset($attributes['name']) ? trim((string) $attributes['name']) : $category->name;
 
@@ -40,7 +50,7 @@ class UpdateCategoryAction
             if ($category->is_system) {
                 $scopedQuery->whereNull('tenant_id');
             } else {
-                $scopedQuery->where('tenant_id', $tenant->id);
+                $scopedQuery->where('tenant_id', $tenant?->id);
             }
 
             if ($scopedQuery->exists()) {
@@ -73,7 +83,7 @@ class UpdateCategoryAction
                 if (
                     ! $category->is_system
                     && $parentCategory->tenant_id !== null
-                    && (int) $parentCategory->tenant_id !== (int) $tenant->id
+                    && (int) $parentCategory->tenant_id !== (int) $tenant?->id
                 ) {
                     throw ValidationException::withMessages([
                         'parent_id' => 'Parent category belongs to a different tenant.',

@@ -4,7 +4,11 @@ namespace App\Modules\Learning\Http\Requests\Catalog;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCategoryRequest extends FormRequest
+/**
+ * Criação de categoria de sistema (área Mzrt). `is_system` é implícito na área e
+ * proibido no payload.
+ */
+class StoreSystemCategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,7 +20,7 @@ class StoreCategoryRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
-            'is_system' => ['nullable', 'boolean'],
+            'is_system' => ['prohibited'],
         ];
     }
 
@@ -28,27 +32,20 @@ class StoreCategoryRequest extends FormRequest
             'name.max' => 'Category name must not exceed 120 characters.',
             'parent_id.integer' => 'Parent category must be a valid identifier.',
             'parent_id.exists' => 'Parent category was not found.',
-            'is_system.boolean' => 'The is_system flag must be true or false.',
+            'is_system.prohibited' => 'System categories are implicit in the mzrt area.',
         ];
     }
 
-    /**
-     * Body parameters for Scribe documentation.
-     */
     public function bodyParameters(): array
     {
         return [
             'name' => [
-                'description' => 'Nome da categoria',
-                'example' => 'Desenvolvimento Web',
+                'description' => 'Nome da categoria global de sistema.',
+                'example' => 'Tecnologia',
             ],
             'parent_id' => [
-                'description' => 'ID da categoria pai (opcional)',
+                'description' => 'ID da categoria pai, que também precisa ser de sistema.',
                 'example' => null,
-            ],
-            'is_system' => [
-                'description' => 'Se true, cria como categoria de sistema (global). Requer permissão de developer.',
-                'example' => false,
             ],
         ];
     }

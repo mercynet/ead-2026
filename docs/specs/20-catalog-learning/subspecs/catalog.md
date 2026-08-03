@@ -114,20 +114,28 @@ category_course (pivô dedicado, tenant-aware)
 
 ## Endpoints
 
-> **Namespace atual = legado pré area-first.** Re-slot incremental (decisão D de
-> [`../../00-architecture/areas-surfaces.md`](../../00-architecture/areas-surfaces.md)): gestão de
-> categorias de **sistema** vai para a área **Mzrt** (`v1/mzrt/...`, só developer), a de **tenant**
-> para **Admin** (`v1/admin/...`). A listagem (sistema + tenant) é leitura de catálogo.
+> **Escrita de categoria é área-first** (decisão D de
+> [`../../00-architecture/areas-surfaces.md`](../../00-architecture/areas-surfaces.md)): categoria de
+> **sistema** vive na área **Mzrt** (`v1/mzrt/categories`, só developer, sem contexto de tenant), a
+> de **tenant** na área **Admin** (`v1/admin/categories`). A área decide o escopo — `is_system` é
+> **proibido** no payload das duas superfícies. A listagem (sistema + tenant) permanece leitura de
+> catálogo em `v1/learning/catalog`.
 
-| Método | Path (atual) | Descrição | Permission |
-|--------|------|-----------|------------|
-| GET | `/api/v1/learning/catalog/courses` | Lista cursos publicados (filtros + `sort=top_rated`) | público/auth |
-| GET | `/api/v1/learning/catalog/courses/{slug}` | Curso completo p/ landing page | público/auth |
-| GET | `/api/v1/learning/catalog/categories` | Listar categorias (sistema + tenant) | `learning.categories.list` |
-| POST | `/api/v1/learning/catalog/categories` | Criar categoria (tenant→Admin / system→Mzrt) | `learning.categories.create` / `...system.manage` |
-| PUT | `/api/v1/learning/catalog/categories/{id}` | Atualizar categoria | `learning.categories.update` / `...system.manage` |
-| DELETE | `/api/v1/learning/catalog/categories/{id}` | Deletar categoria (com proteção) | `learning.categories.delete` / `...system.manage` |
-| PUT | `/api/v1/admin/courses/{id}/categories` | Sincronizar categorias do curso (área Admin) | `learning.courses.update` |
+| Método | Path | Área | Descrição | Permission |
+|--------|------|------|-----------|------------|
+| GET | `/api/v1/learning/catalog/courses` | neutra | Lista cursos publicados (filtros + `sort=top_rated`) | público/auth |
+| GET | `/api/v1/learning/catalog/courses/{slug}` | neutra | Curso completo p/ landing page | público/auth |
+| GET | `/api/v1/learning/catalog/categories` | neutra | Listar categorias (sistema + tenant) | `learning.categories.list` |
+| POST | `/api/v1/admin/categories` | Admin | Criar categoria do tenant | `learning.categories.create` |
+| PUT | `/api/v1/admin/categories/{id}` | Admin | Atualizar categoria do tenant | `learning.categories.update` |
+| DELETE | `/api/v1/admin/categories/{id}` | Admin | Excluir categoria do tenant (com proteção) | `learning.categories.delete` |
+| POST | `/api/v1/mzrt/categories` | Mzrt | Criar categoria de sistema | `learning.categories.system.manage` |
+| PUT | `/api/v1/mzrt/categories/{id}` | Mzrt | Atualizar categoria de sistema | `learning.categories.system.manage` |
+| DELETE | `/api/v1/mzrt/categories/{id}` | Mzrt | Excluir categoria de sistema (bloqueia com cursos) | `learning.categories.system.manage` |
+| PUT | `/api/v1/admin/courses/{id}/categories` | Admin | Sincronizar categorias do curso | `learning.courses.update` |
+
+`GetCategoryAction` sem tenant resolve apenas categorias de sistema, então a superfície Mzrt nunca
+alcança categoria de tenant (404) e não precisa de `if` de escopo no controller.
 
 ## Permissions
 

@@ -9,9 +9,19 @@ use Illuminate\Validation\ValidationException;
 
 class StoreCategoryAction
 {
-    public function handle(Tenant $tenant, array $attributes): Category
+    /**
+     * `$tenant` é obrigatório para categoria de tenant e ignorado para categoria de
+     * sistema — a área Mzrt escreve sem contexto de tenant.
+     */
+    public function handle(?Tenant $tenant, array $attributes): Category
     {
         $isSystem = (bool) ($attributes['is_system'] ?? false);
+
+        if (! $isSystem && $tenant === null) {
+            throw ValidationException::withMessages([
+                'tenant' => 'Tenant categories require a tenant context.',
+            ]);
+        }
         $parentId = (int) ($attributes['parent_id'] ?? 0);
         $name = trim((string) $attributes['name']);
         $normalizedName = (string) Str::of($name)->ascii()->lower()->squish();

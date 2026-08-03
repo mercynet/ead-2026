@@ -22,15 +22,6 @@ class CategoryPolicy
             && $user->getAllPermissions()->contains('name', 'learning.categories.list');
     }
 
-    public function create(User $user, ?Tenant $tenant = null, bool $isSystem = false): bool
-    {
-        if ($isSystem) {
-            return $user->isDeveloper();
-        }
-
-        return $this->createTenant($user, $tenant);
-    }
-
     public function createTenant(User $user, ?Tenant $tenant = null): bool
     {
         if ($user->isDeveloper()) {
@@ -51,7 +42,7 @@ class CategoryPolicy
             && $user->getAllPermissions()->contains('name', 'learning.categories.system.manage');
     }
 
-    public function update(User $user, Tenant $tenant, Category $category): bool
+    public function update(User $user, ?Tenant $tenant, Category $category): bool
     {
         if ($user->isDeveloper()) {
             if ($category->is_system) {
@@ -61,7 +52,7 @@ class CategoryPolicy
             return $user->getAllPermissions()->contains('name', 'learning.categories.update');
         }
 
-        if (! $user->belongsToTenant($tenant)) {
+        if ($tenant === null || ! $user->belongsToTenant($tenant)) {
             return false;
         }
 
@@ -72,7 +63,7 @@ class CategoryPolicy
         return $user->getAllPermissions()->contains('name', 'learning.categories.update');
     }
 
-    public function delete(User $user, Tenant $tenant, Category $category): bool
+    public function delete(User $user, ?Tenant $tenant, Category $category): bool
     {
         if ($user->isDeveloper()) {
             if ($category->is_system) {
@@ -82,7 +73,7 @@ class CategoryPolicy
             return $user->getAllPermissions()->contains('name', 'learning.categories.delete');
         }
 
-        if (! $user->belongsToTenant($tenant)) {
+        if ($tenant === null || ! $user->belongsToTenant($tenant)) {
             return false;
         }
 

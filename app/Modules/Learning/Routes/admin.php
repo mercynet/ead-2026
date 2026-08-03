@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Learning\Http\Controllers\Admin\CategoryController;
 use App\Modules\Learning\Http\Controllers\Admin\CourseController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,5 +25,12 @@ Route::prefix('v1/admin')
                 Route::post('/courses/{id}/publish', 'publish');
                 Route::post('/courses/{id}/unpublish', 'unpublish');
                 Route::put('/courses/{id}/categories', 'syncCategories');
+            });
+
+        Route::controller(CategoryController::class)
+            ->group(function (): void {
+                Route::post('/categories', 'store');
+                Route::put('/categories/{id}', 'update');
+                Route::delete('/categories/{id}', 'destroy');
             });
     });

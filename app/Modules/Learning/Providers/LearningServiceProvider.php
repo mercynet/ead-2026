@@ -49,12 +49,6 @@ class LearningServiceProvider extends ServiceProvider
 
         Gate::define('learning.categories.list', [CategoryPolicy::class, 'list']);
 
-        Gate::define('learning.categories.create-category', function (User $user, ?Tenant $tenant = null, bool $isSystem = false): bool {
-            $policy = app(CategoryPolicy::class);
-
-            return $policy->create($user, $tenant, $isSystem);
-        });
-
         Gate::define('learning.categories.tenant.create', [CategoryPolicy::class, 'createTenant']);
         Gate::define('learning.categories.system.manage', [CategoryPolicy::class, 'manageSystem']);
 
@@ -142,6 +136,7 @@ class LearningServiceProvider extends ServiceProvider
     {
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/api.php');
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/admin.php');
+        Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/mzrt.php');
     }
 
     private function registerListeners(): void

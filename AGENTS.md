@@ -177,14 +177,16 @@ fecha task/endpoint, pega o "verde por engano" do in-process.
 - **Laravel Boost MCP** (`search-docs`, `tinker`, `database-schema`, …) para docs e inspeção; não chute API de pacote.
 - `php artisan make:` para gerar arquivos; `--no-interaction`.
 - FormRequest para validação **e** filtros de listagem (com `queryParameters()` p/ Scribe).
-- **Skills sob demanda** (planejar / construir / testar / auditar) — não sempre-ligadas.
-  Home canônico **tool-agnóstico**: `.agents/skills/<nome>/SKILL.md` (fonte única; o `description:`
-  do frontmatter é o catálogo — **não** mantenha lista de skills aqui, evita drift). Cada ferramenta
-  resolve a mesma dir via symlink: Claude Code (`.claude/skills/`), Codex (`.codex/skills/`),
-  OpenCode (`.opencode/skills/`) → `.agents/skills/` (symlink **da dir inteira**, não por-skill).
-  Ferramenta sem auto-descoberta: escaneie `.agents/skills/*/SKILL.md` e abra o relevante pelo
-  `description:`. Skill nova: só criar `.agents/skills/<nome>/SKILL.md` — os três a herdam sozinhos,
-  sem passo manual de symlink.
+- **Skills são roteadas automaticamente, não opcionais.** Home canônico tool-agnóstico:
+  `.agents/skills/<nome>/SKILL.md` (fonte única; o `description:` do frontmatter é o catálogo —
+  **não** mantenha lista de skills aqui, evita drift). Cada ferramenta resolve a mesma dir via symlink:
+  Claude Code (`.claude/skills/`), Codex (`.codex/skills/`), OpenCode (`.opencode/skills/`) →
+  `.agents/skills/`. Skill nova é herdada pelos três sem passo manual.
+
+  **Roteamento** (ver seção *Roteamento de skills* abaixo): mapa em `.agents/skills/routing.json`,
+  árbitro executável em `scripts/ai/skill-router.sh`. Skill que o router aponta é **obrigatória** para
+  aquele trabalho — leia o `SKILL.md` antes de escrever ou decidir, e repasse a exigência a subagentes.
+
   Critério para **criar** skill: a tarefa recorre, atravessa ≥3 arquivos/camadas e erra silenciosamente
   (ou só é pega por invariante depois). Se um teste de `tests/Architecture` já arbitra e a correção é
   óbvia, **não** vira skill — vira linha de contrato aqui.
@@ -199,6 +201,31 @@ fecha task/endpoint, pega o "verde por engano" do in-process.
 - **Ao fim de cada task**: rode a skill `context-checkpoint` — atualiza `docs/STATE.md` (handoff de retomada) e recomenda `continue | clear | waiting_for_user`. Após um `clear`, reconstrua o contexto lendo `AGENTS.md` + `docs/STATE.md`.
 - `env()` só em arquivos de config; no código use `config(...)`.
 - Commits: Conventional Commits, atômicos; branch antes de mexer; commit/push só quando pedido.
+
+## Roteamento de skills (vale para qualquer agente/LLM)
+
+Skill não é sugestão: é regra de domínio que já custou bug. O acoplamento "tarefa → skill" é
+**declarativo e executável**, não confiado à memória do agente:
+
+- **Mapa**: `.agents/skills/routing.json` — cada regra tem `skill`, `why`, `paths` (regex contra o
+  caminho editado / comando) e `prompt` (regex contra o texto do pedido). `manual` lista as skills
+  deliberadamente sem gatilho.
+- **Árbitro**: `scripts/ai/skill-router.sh` — modos `tool` (stdin = payload de hook PreToolUse),
+  `prompt` (stdin = payload de UserPromptSubmit) e `list` (tabela inteira). Informa, nunca bloqueia.
+- **Ferramenta com hooks** (Claude Code via `.claude/settings.json`, Codex via `.codex/hooks.json`):
+  o router roda sozinho antes de cada edit/comando e no envio do pedido, injetando as skills obrigatórias.
+- **Ferramenta sem hooks** (Gemini, Junie, OpenCode, qualquer LLM avulso): rode
+  `bash scripts/ai/skill-router.sh list` no início da sessão e case você mesmo o caminho que vai tocar.
+  Não há desculpa de "não sabia": a tabela é uma chamada de comando.
+- **Anti-drift**: `scripts/ai/validate-harness.py` **falha** se uma skill não estiver roteada nem em
+  `manual`, se um regex não compilar ou se o router não for executável. O `pre-commit` roda o validador
+  quando `.agents/skills/`, `scripts/ai/` ou config de ferramenta mudam.
+- **Invariantes no fim do turno**: `scripts/ai/verify-changes.sh` mapeia os arquivos sujos para os testes
+  de `tests/Architecture` que os arbitram e roda só esses (~1-3s, contra ~17s da suite). Ferramenta com
+  hook de fim de turno (Claude Code: `Stop`) o executa sozinha e **não deixa encerrar com invariante
+  vermelho**; sem esse hook, rode você mesmo antes de reportar trabalho pronto.
+
+Skill nova = `SKILL.md` + regra em `routing.json` (ou entrada em `manual`), no mesmo commit.
 
 ## Reporte de status (disciplina)
 

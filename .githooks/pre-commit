@@ -4,8 +4,13 @@ set -euo pipefail
 
 changed_files="$(git diff --cached --name-only --diff-filter=ACMR)"
 
-if ! printf '%s
-' "$changed_files" | grep -Eq '^(composer\.json|composer\.lock|config/dependency_audit\.php|security/dependency-audit-baseline\.json)$'; then
+# Harness de agentes: skill nova sem regra de roteamento, symlink quebrado ou
+# config inválida falha aqui — não em produção nem no próximo agente.
+if printf '%s\n' "$changed_files" | grep -Eq '^(\.agents/skills/|scripts/ai/|\.claude/settings\.json|\.codex/|\.mcp\.json|opencode\.json)'; then
+    python3 scripts/ai/validate-harness.py
+fi
+
+if ! printf '%s\n' "$changed_files" | grep -Eq '^(composer\.json|composer\.lock|config/dependency_audit\.php|security/dependency-audit-baseline\.json)$'; then
     exit 0
 fi
 

@@ -1,0 +1,236 @@
+{
+  "$comment": "Roteamento automático de skills. Fonte única para hooks (scripts/ai/skill-router.sh) e para agentes sem hook (`scripts/ai/skill-router.sh list`). `paths` = regex ERE contra o caminho editado / comando; `prompt` = regex ERE contra o texto do pedido. Skill nova: adicione uma regra aqui OU liste em `manual` — validate-harness.py falha se ficar de fora.",
+  "rules": [
+    {
+      "skill": "financial-money-flows",
+      "why": "dinheiro: cents, dois ledgers, itemable, idempotência 409, charge state, gateway seam, outbox",
+      "paths": [
+        "app/Modules/Financial/",
+        "app/Modules/Ecosystem/(Services|Contracts)/.*Gateway",
+        "tests/(Feature|Unit)/Financial",
+        "_cents"
+      ],
+      "prompt": [
+        "checkout",
+        "pagamento",
+        "pagament",
+        "cobran",
+        "gateway",
+        "psp",
+        "stripe",
+        "reembolso",
+        "refund",
+        "reconcilia",
+        "ledger",
+        "order_?item",
+        "cents",
+        "outbox",
+        "fatura",
+        "assinatura",
+        "idempot"
+      ]
+    },
+    {
+      "skill": "api-area-routing",
+      "why": "área/guard/stack de middleware, prefixo v1, superfície pública e throttle",
+      "paths": [
+        "app/Modules/[A-Za-z]+/Routes/",
+        "app/Modules/Core/Http/Middleware/",
+        "app/Modules/Core/Enums/Area\\.php",
+        "bootstrap/app\\.php",
+        "tests/Architecture/(AreaRouteGuard|RouteSecuritySurface|ScribeAuthAnnotationMatchesMiddleware)Test\\.php"
+      ],
+      "prompt": [
+        "\\barea\\b",
+        "área",
+        "area\\.guard",
+        "middleware",
+        "rota nova",
+        "novo endpoint",
+        "endpoint novo",
+        "mzrt",
+        "prefixo",
+        "v1/(admin|student|instructor|mzrt|home)",
+        "rota p[úu]blica",
+        "throttle",
+        "rate limit"
+      ]
+    },
+    {
+      "skill": "rbac-permission-wiring",
+      "why": "permission canônica, Policy, Gate::define, authorize e o teto efetivo por UserType",
+      "paths": [
+        "config/permissions\\.php",
+        "app/Modules/[A-Za-z]+/Policies/",
+        "app/Modules/[A-Za-z]+/Providers/",
+        "app/Modules/Core/Models/User\\.php",
+        "database/seeders/(Permissions|Roles)Seeder\\.php",
+        "tests/Architecture/Permission.*Test\\.php"
+      ],
+      "prompt": [
+        "permission",
+        "permiss",
+        "policy",
+        "gate",
+        "authorize",
+        "autoriza",
+        "\\brole\\b",
+        "rbac",
+        "403",
+        "user_?type"
+      ]
+    },
+    {
+      "skill": "vertical-slice",
+      "why": "fatia vertical completa: FormRequest, Action, Resource, Controller fino, testes",
+      "paths": [
+        "app/Modules/[A-Za-z]+/Actions/",
+        "app/Modules/[A-Za-z]+/Http/(Controllers|Requests|Resources)/"
+      ],
+      "prompt": [
+        "fatia",
+        "vertical slice",
+        "crud",
+        "novo recurso",
+        "novo dom[íi]nio",
+        "implementar (o |a )?endpoint"
+      ]
+    },
+    {
+      "skill": "pest-api-tests",
+      "why": "harness local de teste: helpers de tests/Pest.php, envelope de erro, isolamento de tenant",
+      "paths": [
+        "tests/(Feature|Unit|E2E)",
+        "tests/Pest\\.php"
+      ],
+      "prompt": [
+        "teste",
+        "test\\b",
+        "tdd",
+        "assert",
+        "cobertura"
+      ]
+    },
+    {
+      "skill": "endpoint-e2e",
+      "why": "validação externa HTTP real + asserts de side effect no banco",
+      "paths": [
+        "tests/e2e-http",
+        "app/Console/Commands/E2eRunCommand\\.php",
+        "\\.env\\.e2e"
+      ],
+      "prompt": [
+        "e2e",
+        "end.to.end",
+        "app rodando",
+        "side effect",
+        "valida(r)? (o )?endpoint"
+      ]
+    },
+    {
+      "skill": "logging-security",
+      "why": "PII/LGPD em log e trilha de auditoria; falha silenciosa em catch",
+      "paths": [
+        "config/lgpd\\.php",
+        "tests/Architecture/PiiAuditTest\\.php"
+      ],
+      "prompt": [
+        "\\blog\\b",
+        "logging",
+        "pii",
+        "lgpd",
+        "auditoria",
+        "activitylog",
+        "catch\\b",
+        "exce(p|ç)"
+      ]
+    },
+    {
+      "skill": "security-audit",
+      "why": "auditoria source-to-sink: auth, IDOR, isolamento de tenant, upload, exposição de dado",
+      "paths": [
+        "app/Modules/Core/Http/Controllers/AuthController\\.php",
+        "security/"
+      ],
+      "prompt": [
+        "seguran",
+        "security",
+        "idor",
+        "vazamento",
+        "sanctum",
+        "token",
+        "upload",
+        "auditoria de seguran"
+      ]
+    },
+    {
+      "skill": "spec-task-planning",
+      "why": "status fino em docs/specs/*/tasks.md e alinhamento com o roadmap",
+      "paths": [
+        "docs/specs/[0-9]+-[a-z-]+/tasks\\.md",
+        "docs/ROADMAP\\.md"
+      ],
+      "prompt": [
+        "pr[óo]xima task",
+        "planejar",
+        "roadmap",
+        "tasks\\.md",
+        "backlog"
+      ]
+    },
+    {
+      "skill": "create-adr",
+      "why": "decisão arquitetural registrada como ADR imutável",
+      "paths": [
+        "docs/specs/00-architecture/decisions/"
+      ],
+      "prompt": [
+        "\\badr\\b",
+        "decis[ãa]o arquitetural",
+        "registrar (a )?decis"
+      ]
+    },
+    {
+      "skill": "coupling-analysis",
+      "why": "auditoria pontual de acoplamento entre módulos (allowlist do ModuleBoundaryTest)",
+      "paths": [
+        "tests/Architecture/ModuleBoundaryTest\\.php"
+      ],
+      "prompt": [
+        "acoplamento",
+        "coupling",
+        "allowlist",
+        "fronteira de m[óo]dulo"
+      ]
+    },
+    {
+      "skill": "context-checkpoint",
+      "why": "handoff de sessão em docs/STATE.md e decisão continue|clear",
+      "paths": [
+        "docs/STATE\\.md"
+      ],
+      "prompt": [
+        "checkpoint",
+        "devo continuar",
+        "limpar (o )?contexto",
+        "handoff"
+      ]
+    },
+    {
+      "skill": "validate-ai-work",
+      "why": "revisão independente de diff/commit/PR feito por outro agente",
+      "paths": [],
+      "prompt": [
+        "revis(a|e|ar)",
+        "valida(r)? (o )?(diff|commit|pr|trabalho)",
+        "auditar? (o )?(diff|commit|pr)",
+        "code review"
+      ]
+    }
+  ],
+  "manual": [
+    "graphify",
+    "pest-testing",
+    "tailwindcss-development"
+  ]
+}

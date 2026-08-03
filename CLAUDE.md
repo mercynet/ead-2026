@@ -11,19 +11,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Hooks ativos** (`.claude/settings.json` → `scripts/ai/`), agem sem você pedir:
 
-- `PreToolUse` **bloqueia** (exit 2): `rm -rf`, `git reset --hard`, `git clean -f`, `composer update`,
-  e `migrate:fresh|refresh|db:wipe` sem `--env=testing`; também edit em `vendor/`, `node_modules/`,
-  `bootstrap/cache/`, `.scribe/`. `git push` **não** é bloqueado (é autorizado por chamada).
-- `PostToolUse` roda Pint `--dirty` no container após editar `.php` → não gaste turno formatando à mão,
-  mas confirme antes de fechar (o gate falha em código não-formatado).
-- `graphify hook-guard` exige orientação pelo grafo antes de varredura/leitura ampla de fonte.
+| Evento | Script | Efeito |
+|--------|--------|--------|
+| `SessionStart` | `session-start.sh` | injeta branch, sujeira do working tree, HEAD, próximos passos do `docs/STATE.md` e a tabela de skills roteadas |
+| `UserPromptSubmit` | `skill-router.sh prompt` | lista as skills obrigatórias para o pedido |
+| `PreToolUse` | `pre-tool-use.sh` | **bloqueia** footguns (lista abaixo) |
+| `PreToolUse` | `skill-router.sh tool` | skills obrigatórias para o arquivo/comando em questão |
+| `PreToolUse` | `graphify hook-guard` | exige orientação pelo grafo antes de varredura/leitura ampla |
+| `PostToolUse` | `post-tool-use.sh` | Pint `--dirty` no container após editar `.php` |
+| `Stop` | `verify-changes.sh` | roda os invariantes que o **diff** toca; vermelho ⇒ turno não encerra |
+| `PreCompact` | `pre-compact.sh` | exige handoff em `docs/STATE.md` antes de comprimir contexto |
+
+O que o `PreToolUse` **bloqueia** (exit 2 — não insista, ajuste):
+
+- `rm -rf`, `git reset --hard`, `git clean -f`, `composer update`, `--no-verify` em commit/push.
+- `migrate:fresh|refresh|db:wipe` sem `--env=testing`; `phpstan --generate-baseline`.
+- Toolchain PHP no host: `php`, `composer`, `vendor/bin/{pint,phpstan,pest,phpinsights}` sem
+  `sail`/`docker exec` (o binário do host tem versão e DB diferentes). `git push` **não** é bloqueado.
+- Edit em `vendor/`, `node_modules/`, `bootstrap/cache/`, `.scribe/`; em `.env`/`.env.e2e` (mexa no
+  `.example`); e no layout legado `app/{Http,Models,Actions,Policies,Financial}/` ou `routes/api.php`
+  — código de produto vive em `app/Modules/<M>/...`.
+
+O `Stop` hook é o fecho do contrato "guardrails são executáveis": ele mapeia arquivo → invariante
+(rota → `AreaRouteGuard`+`RouteSecuritySurface`+`ScribeAuth`; `config/permissions.php`/Policy/Provider →
+`PermissionDrift`+`PermissionMetadataShape`; migration → `MoneyNeverFloat`+`TenantScoping`; controller →
+`ControllerLeanness`+`ErrorEnvelopeShape`; model → `TenantScoping`+`PiiAudit`; qualquer PHP de módulo →
+`ModuleBoundary`) e roda **só esses** (~1-3s, contra ~17s da suite inteira). Também dispara
+`graphify update .` em background quando PHP mudou. Não pule para o commit sem ele verde.
+
+O que o router listar é **obrigatório**, não sugestão — leia o `SKILL.md` antes de editar e repasse a
+exigência ao subagente. Contrato e anti-drift: `AGENTS.md` → *Roteamento de skills*.
 
 **Ferramentas**: Laravel Boost MCP (`search-docs`, `tinker`, `database-query`, `database-schema`,
 `list-routes`, `last-error`) para docs e inspeção do app — não chute API de pacote, não escreva script de
 verificação onde um teste cobre.
 
-**Skills**: `.claude/skills` é symlink da dir inteira `.agents/skills/` — skill nova é herdada sozinha.
-Carregue **sob demanda**, pelo `description:` do frontmatter. Critério de criação e a exceção do
+**Skills**: `.claude/skills` é symlink da dir inteira `.agents/skills/` — skill nova é herdada sozinha,
+mas exige regra em `.agents/skills/routing.json` no mesmo commit (o `pre-commit` valida). Fora do que o
+router aponta, carregue pelo `description:`. Critério de criação e a exceção do
 `tailwindcss-development` (inaplicável, repo API-only): ver `AGENTS.md` → *Convenções de trabalho*.
 
 **Subagentes**: modelo mais barato que serve a tarefa (varredura/inventário → Haiku; exploração com

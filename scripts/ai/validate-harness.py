@@ -20,6 +20,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 SKILLS_DIR = ROOT / ".agents" / "skills"
+ROUTING_MAP = SKILLS_DIR / "routing.json"
+ROUTER_SCRIPT = ROOT / "scripts" / "ai" / "skill-router.sh"
 REQUIRED_JSON_CONFIGS = (Path(".mcp.json"), Path(".claude/settings.json"), Path("opencode.json"))
 OPTIONAL_JSON_CONFIGS = (Path(".codex/hooks.json"), Path(".opencode/opencode.json"))
 TOML_CONFIG = Path(".codex/config.toml")
@@ -189,6 +191,80 @@ def validate_skill_links(reporter: Reporter) -> None:
         reporter.pass_(f"{relative(link)} resolves to .agents/skills")
 
 
+def validate_skill_routing(reporter: Reporter) -> None:
+    """Every skill must be auto-routed or explicitly opted out, and every rule must compile."""
+    if not ROUTING_MAP.is_file():
+        reporter.fail(f"{relative(ROUTING_MAP)} is missing (skill auto-routing map)")
+        return
+    content = read_text(ROUTING_MAP, reporter)
+    if content is None:
+        return
+    try:
+        routing = json.loads(content)
+    except json.JSONDecodeError as error:
+        reporter.fail(f"{relative(ROUTING_MAP)} invalid JSON at line {error.lineno}, column {error.colno}")
+        return
+    if not isinstance(routing, dict):
+        reporter.fail(f"{relative(ROUTING_MAP)} must be a JSON object")
+        return
+
+    rules = routing.get("rules")
+    manual = routing.get("manual", [])
+    if not isinstance(rules, list) or not isinstance(manual, list):
+        reporter.fail(f"{relative(ROUTING_MAP)} requires a rules list and a manual list")
+        return
+
+    routed: set[str] = set()
+    for index, rule in enumerate(rules):
+        if not isinstance(rule, dict):
+            reporter.fail(f"{relative(ROUTING_MAP)} rule #{index} is not an object")
+            continue
+        skill = rule.get("skill")
+        if not isinstance(skill, str) or not skill:
+            reporter.fail(f"{relative(ROUTING_MAP)} rule #{index} is missing skill")
+            continue
+        if not (SKILLS_DIR / skill / "SKILL.md").is_file():
+            reporter.fail(f"{relative(ROUTING_MAP)} routes unknown skill '{skill}'")
+            continue
+        if not isinstance(rule.get("why"), str) or not rule["why"]:
+            reporter.fail(f"{relative(ROUTING_MAP)} rule for '{skill}' is missing why")
+            continue
+        triggers = 0
+        for field in ("paths", "prompt"):
+            patterns = rule.get(field, [])
+            if not isinstance(patterns, list):
+                reporter.fail(f"{relative(ROUTING_MAP)} '{skill}' field {field} must be a list")
+                continue
+            triggers += len(patterns)
+            for pattern in patterns:
+                try:
+                    re.compile(pattern)
+                except re.error as error:
+                    reporter.fail(f"{relative(ROUTING_MAP)} '{skill}' {field} pattern does not compile: {error}")
+        if triggers == 0:
+            reporter.fail(f"{relative(ROUTING_MAP)} '{skill}' has no paths/prompt trigger")
+            continue
+        routed.add(skill)
+
+    for skill in manual:
+        if not isinstance(skill, str) or not (SKILLS_DIR / skill / "SKILL.md").is_file():
+            reporter.fail(f"{relative(ROUTING_MAP)} manual list references unknown skill '{skill}'")
+
+    available = {path.name for path in SKILLS_DIR.iterdir() if path.is_dir()} if SKILLS_DIR.is_dir() else set()
+    unrouted = sorted(available - routed - {skill for skill in manual if isinstance(skill, str)})
+    if unrouted:
+        reporter.fail(
+            f"{relative(ROUTING_MAP)} does not cover: {', '.join(unrouted)} (add a rule or list under manual)"
+        )
+        return
+
+    if not ROUTER_SCRIPT.is_file() or not os.access(ROUTER_SCRIPT, os.X_OK):
+        reporter.fail(f"{relative(ROUTER_SCRIPT)} is missing or not executable")
+        return
+
+    reporter.pass_(f"{relative(ROUTING_MAP)} routes every skill ({len(routed)} auto, {len(manual)} manual)")
+
+
 def validate_configs(reporter: Reporter) -> dict[Path, tuple[Any, str]]:
     configs: dict[Path, tuple[Any, str]] = {}
     for config in REQUIRED_JSON_CONFIGS:
@@ -350,6 +426,7 @@ def main() -> int:
     reporter = Reporter()
     validate_skills(reporter)
     validate_skill_links(reporter)
+    validate_skill_routing(reporter)
     configs = validate_configs(reporter)
     validate_executables(reporter)
     validate_sensitive_values(configs, reporter)

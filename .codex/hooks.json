@@ -9,6 +9,15 @@
             "command": "graphify hook-check"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/ai/skill-router.sh tool"
+          }
+        ]
       }
     ]
   }

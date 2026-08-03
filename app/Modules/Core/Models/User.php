@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -36,7 +37,10 @@ class User extends Authenticatable
     protected static string $factory = \Database\Factories\UserFactory::class;
 
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, LogsActivity, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, LogsActivity, Notifiable {
+        HasRoles::getAllPermissions as private spatieGetAllPermissions;
+        HasRoles::hasPermissionTo as private spatieHasPermissionTo;
+    }
 
     /**
      * Trilha de auditoria LGPD (invariante #9): loga alterações nos campos
@@ -110,6 +114,22 @@ class User extends Authenticatable
         return $this->hasRole('admin');
     }
 
+    public function hasPermissionTo($permission, ?string $guardName = null): bool
+    {
+        if (! $this->spatieHasPermissionTo($permission, $guardName)) {
+            return false;
+        }
+
+        return $this->isPermissionEligible($this->filterPermission($permission, $guardName)->name);
+    }
+
+    public function getAllPermissions(): Collection
+    {
+        return $this->spatieGetAllPermissions()
+            ->filter(fn ($permission): bool => $this->isPermissionEligible($permission->name))
+            ->values();
+    }
+
     public function canAccessAllTenants(): bool
     {
         return $this->isDeveloper();
@@ -161,5 +181,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    private function isPermissionEligible(string $permissionName): bool
+    {
+        $permissions = config('permissions');
+
+        if (! is_array($permissions) || ! array_key_exists($permissionName, $permissions)) {
+            return false;
+        }
+
+        $metadata = $permissions[$permissionName];
+
+        return is_array($metadata)
+            && isset($metadata['user_types'])
+            && is_array($metadata['user_types'])
+            && in_array($this->user_type->value, $metadata['user_types'], true);
     }
 }

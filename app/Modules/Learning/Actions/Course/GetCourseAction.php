@@ -7,10 +7,15 @@ use App\Shared\Http\ApiContext;
 
 class GetCourseAction
 {
-    public function handle(ApiContext $context, int $courseId): Course
+    /**
+     * @param  list<string>  $with
+     */
+    public function handle(ApiContext $context, int $courseId, array $with = []): Course
     {
-        return Course::query()
+        $query = Course::query()
             ->where('tenant_id', $context->tenant?->id)
-            ->findOrFail($courseId);
+            ->with($with);
+
+        return $query->findOrFail($courseId);
     }
 }

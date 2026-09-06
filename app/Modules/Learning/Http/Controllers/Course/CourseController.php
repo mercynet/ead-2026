@@ -62,7 +62,7 @@ class CourseController extends Controller
     {
         Gate::forUser($context->requiredUser())->authorize('learning.courses.create-check', [$context->tenant]);
 
-        $course = $this->storeCourseAction->handle($context, $request->validated());
+        $course = $this->storeCourseAction->handle($context, $request->validated(), $context->requiredUser()->id);
 
         return CourseDetailResource::make($course)
             ->response()

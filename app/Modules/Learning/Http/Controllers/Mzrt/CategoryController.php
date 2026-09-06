@@ -37,7 +37,7 @@ class CategoryController extends Controller
      *
      * @response 201 scenario="Categoria de sistema criada"
      * {
-     *   "data": {"id": 3, "name": "Tecnologia", "is_system": true, "tenant_id": null}
+     *   "data": {"id": 3, "name": "Tecnologia", "type": "system", "tenant_id": null}
      * }
      * @response 403 scenario="Fora da área ou sem permissão"
      * {

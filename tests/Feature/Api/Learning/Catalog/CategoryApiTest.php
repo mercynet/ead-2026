@@ -131,7 +131,7 @@ it('allows developer to create system category from the mzrt area', function ():
         'Authorization' => 'Bearer '.$token,
     ])
         ->assertCreated()
-        ->assertJsonPath('data.is_system', true)
+        ->assertJsonPath('data.type', 'system')
         ->assertJsonPath('data.tenant_id', null);
 });
 

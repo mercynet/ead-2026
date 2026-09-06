@@ -17,6 +17,27 @@ class CourseModulePolicy
         return false;
     }
 
+    public function list(User $user, ?Tenant $tenant = null, ?Course $course = null): bool
+    {
+        if ($user->isDeveloper()) {
+            return true;
+        }
+
+        if ($tenant === null || $course === null || ! $user->belongsToTenant($tenant)) {
+            return false;
+        }
+
+        if ((int) $course->tenant_id !== (int) $tenant->id) {
+            return false;
+        }
+
+        if ($user->isInstructor() && (int) $course->instructor_id !== (int) $user->id) {
+            return false;
+        }
+
+        return $user->getAllPermissions()->contains('name', 'learning.modules.list');
+    }
+
     /**
      * Determine whether the user can view the model.
      */

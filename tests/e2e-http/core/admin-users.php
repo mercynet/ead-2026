@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Core\Enums\UserType;
+use App\Modules\Core\Models\Invitation;
 use App\Modules\Core\Models\User;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -40,6 +41,74 @@ return [
     },
 
     'cases' => [
+        [
+            'name' => 'admin lista usuários do próprio tenant',
+            'as' => 'admin',
+            'method' => 'GET',
+            'path' => '/api/v1/admin/users',
+            'expect' => ['status' => 200],
+            'capture' => function (array $ctx): array {
+                $emails = array_column($ctx['response']->json('data') ?? [], 'email');
+
+                if (! in_array('aluno-admin-users-e2e@tenant.local', $emails, true)) {
+                    throw new RuntimeException('O usuário do tenant ativo não apareceu na listagem Admin.');
+                }
+
+                if (in_array('aluno-outro-tenant-e2e@tenant.local', $emails, true)) {
+                    throw new RuntimeException('A listagem Admin vazou usuário de outro tenant.');
+                }
+
+                return [];
+            },
+        ],
+        [
+            'name' => 'admin consulta usuário do próprio tenant',
+            'as' => 'admin',
+            'method' => 'GET',
+            'path' => fn (array $ctx): string => '/api/v1/admin/users/'.$ctx['fixtures']['student']->id,
+            'expect' => [
+                'status' => 200,
+                'json' => ['data.email' => 'aluno-admin-users-e2e@tenant.local'],
+            ],
+        ],
+        [
+            'name' => 'admin não consulta usuário de outro tenant',
+            'as' => 'admin',
+            'method' => 'GET',
+            'tenant' => 'primary',
+            'path' => fn (array $ctx): string => '/api/v1/admin/users/'.$ctx['fixtures']['otherTenantStudent']->id,
+            'expect' => ['status' => 404, 'json' => ['errors.0.code' => 'not_found']],
+        ],
+        [
+            'name' => 'instructor é barrado pela área Admin na listagem',
+            'as' => 'instructor',
+            'method' => 'GET',
+            'path' => '/api/v1/admin/users',
+            'expect' => ['status' => 403, 'json' => ['errors.0.code' => 'area_forbidden']],
+        ],
+        [
+            'name' => 'admin emite convite pela superfície canônica',
+            'as' => 'admin',
+            'method' => 'POST',
+            'path' => '/api/v1/admin/invitations',
+            'body' => [
+                'email' => 'convite-admin-users-e2e@tenant.local',
+                'role' => 'student',
+            ],
+            'expect' => [
+                'status' => 201,
+                'json' => [
+                    'data.email' => 'convite-admin-users-e2e@tenant.local',
+                    'data.role' => 'student',
+                ],
+            ],
+            'db' => fn (array $ctx): array => [
+                'convite no tenant ativo' => [
+                    $ctx['tenant']->id,
+                    Invitation::query()->where('email', 'convite-admin-users-e2e@tenant.local')->value('tenant_id'),
+                ],
+            ],
+        ],
         [
             'name' => 'admin atualiza perfil de student do tenant',
             'as' => 'admin',
@@ -103,7 +172,7 @@ return [
             'as' => 'admin',
             'method' => 'DELETE',
             'path' => fn (array $ctx): string => '/api/v1/admin/users/'.$ctx['fixtures']['student']->id,
-            'expect' => ['status' => 200, 'json' => ['message' => 'User deleted successfully.']],
+            'expect' => ['status' => 200, 'json' => ['data.message' => 'User deleted successfully.']],
             'db' => function (array $ctx): array {
                 $student = $ctx['fixtures']['student'];
 
@@ -151,6 +220,10 @@ return [
             'admin-par-admin-users-e2e@tenant.local',
             'aluno-outro-tenant-e2e@tenant.local',
         ];
+
+        Invitation::query()
+            ->where('email', 'convite-admin-users-e2e@tenant.local')
+            ->delete();
 
         $userIds = User::withTrashed()->whereIn('email', $emails)->pluck('id');
 

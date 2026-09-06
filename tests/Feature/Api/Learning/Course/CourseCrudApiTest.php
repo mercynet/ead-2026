@@ -4,6 +4,8 @@ use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
 use App\Modules\Learning\Models\Course;
+use App\Modules\Learning\Models\CourseModule;
+use App\Modules\Learning\Models\Lesson;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -806,6 +808,25 @@ it('publishes and unpublishes a course as admin', function (): void {
         'price_cents' => 0,
         'is_featured' => false,
         'is_active' => true,
+    ]);
+
+    $module = CourseModule::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_id' => $course->id,
+        'title' => 'Módulo para publicação',
+        'sort_order' => 1,
+    ]);
+
+    Lesson::query()->create([
+        'tenant_id' => $tenant->id,
+        'course_module_id' => $module->id,
+        'title' => 'Aula publicada',
+        'slug' => 'aula-publicada-curso-crud',
+        'status' => 'published',
+        'sort_order' => 1,
+        'is_free' => true,
+        'is_active' => true,
+        'published_at' => now(),
     ]);
 
     $token = $admin->createToken('admin-token')->plainTextToken;

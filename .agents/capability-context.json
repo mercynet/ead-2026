@@ -1,0 +1,388 @@
+{
+  "version": 1,
+  "description": "Contexto de negócio advisory para tasks de capability. Specs continuam sendo a fonte canônica; este arquivo só seleciona o conjunto mínimo que deve ser lido.",
+  "bundles": [
+    {
+      "id": "categories",
+      "domain": "Learning / Catalog",
+      "summary": "Categorias e vínculo curso-categoria; System/Custom é a nomenclatura canônica atual.",
+      "match": {
+        "prompt": [
+          "\\bcategor(?:ia|ias)\\b",
+          "\\bcategory(?:ies)?\\b",
+          "catalog.*categor",
+          "category.*course",
+          "admin.*categor",
+          "categor.*admin"
+        ],
+        "paths": [
+          "(Learning|learning).*(Category|Categor|catalog)",
+          "(category|categories|catalog)",
+          "docs/specs/20-catalog-learning/.*(catalog|categor)"
+        ]
+      },
+      "personas": ["mzrt", "admin", "instructor", "student"],
+      "specs": [
+        "docs/specs/20-catalog-learning/spec.md",
+        "docs/specs/20-catalog-learning/subspecs/catalog.md",
+        "docs/specs/00-architecture/decisions/002-categorias-tabela-unica-pivot-dedicado.md",
+        "docs/specs/00-architecture/areas-surfaces.md",
+        "docs/specs/00-architecture/rbac.md"
+      ],
+      "skills": [
+        "api-area-routing",
+        "rbac-permission-wiring",
+        "vertical-slice",
+        "pest-api-tests"
+      ],
+      "rules": [
+        "SYSTEM/DEFAULT e TENANT_CUSTOM são aliases de leitura; o contrato canônico atual é System/Custom.",
+        "System é global e pertence à plataforma/Mzrt; Admin pode usá-la e Instructor pode lê-la/selecioná-la conforme a superfície, enquanto Custom pertence ao tenant e é operada pelo Admin.",
+        "A área decide o escopo: is_system, tenant_id e parent arbitrários não são payload de criação/atualização.",
+        "Nome normalizado não duplica no mesmo escopo, não colide com System e pode repetir entre tenants distintos.",
+        "Hierarquia usa parent de mesmo escopo, materialized path, prevenção de ciclo e proteção de soft delete.",
+        "category_course é pivô dedicado, tenant-aware, com curso e categoria compatíveis; sort_order deriva da posição do array."
+      ],
+      "invariants": [
+        "Tenant scope e ownership devem vir da área/contexto, nunca do payload.",
+        "System com cursos não pode ser removida; categoria tenant com cursos exige confirmação e detach sem pivô para soft-deleted.",
+        "Controller permanece fino; decisão System/Custom vive na Policy/Action."
+      ],
+      "tests": [
+        "tests/Feature/Api/Learning/Catalog/CategoryApiTest.php",
+        "tests/Feature/Authorization/CategoryAuthorizationTest.php",
+        "tests/Feature/Database/CatalogLearningSchemaTest.php",
+        "tests/Architecture/AreaRouteGuardTest.php",
+        "tests/Architecture/TenantScopingTest.php"
+      ],
+      "classification": {
+        "layer": "core",
+        "core": "categorias System/Custom e catálogo",
+        "plugin": "não aplicável"
+      },
+      "decision_gates": []
+    },
+    {
+      "id": "learning-course-content",
+      "domain": "Learning / Course Content",
+      "summary": "Conteúdo operacional e pedagógico: Course → Module → Lesson, materiais, mídia e lifecycle.",
+      "match": {
+        "prompt": [
+          "\\b(course|curso|module|m[oó]dulo|lesson|aula|material|m[ií]dia|media)\\b",
+          "instrutor.*curso",
+          "admin.*course",
+          "course.*admin",
+          "admin.*categor",
+          "categor.*admin",
+          "publish.*course",
+          "course.*publish",
+          "readiness.*course",
+          "publication.*course",
+          "publica.*curso",
+          "enrollment|matr[ií]cula"
+        ],
+        "paths": [
+          "app/Modules/Learning/",
+          "(Course|CourseModule|Lesson|LessonMedia|CourseMaterial|Enrollment)",
+          "tests/(Feature|E2E).*(Learning|Enrollment)",
+          "docs/specs/20-catalog-learning/.*(course|lesson|publish|readiness|tasks)"
+        ]
+      },
+      "personas": ["admin", "instructor", "student", "mzrt"],
+      "specs": [
+        "docs/specs/20-catalog-learning/spec.md",
+        "docs/specs/20-catalog-learning/subspecs/courses-modules-lessons.md",
+        "docs/specs/20-catalog-learning/subspecs/media-ratings.md",
+        "docs/specs/20-catalog-learning/subspecs/enrollment-progress.md",
+        "docs/specs/00-architecture/areas-surfaces.md",
+        "docs/specs/00-architecture/api-conventions.md",
+        "docs/specs/00-architecture/rbac.md"
+      ],
+      "skills": [
+        "api-area-routing",
+        "rbac-permission-wiring",
+        "vertical-slice",
+        "pest-api-tests",
+        "endpoint-e2e",
+        "security-audit"
+      ],
+      "rules": [
+        "Admin tem ownership operacional do conteúdo do tenant; isso não transforma Admin em owner pedagógico/Instructor.",
+        "Curso criado na superfície Admin pode existir sem instructor_id; não aceitar owner/instructor_id arbitrário no payload.",
+        "A estrutura é Course → Module → Lesson; Lesson requer Module e módulos/aulas respeitam o Course pai.",
+        "CourseMaterial é material extra do curso; LessonMedia é mídia da aula e pode ter múltiplos registros.",
+        "Lifecycle draft/published/archived e publish/unpublish são transições explícitas; publicação Admin exige curso ativo, não archived, módulo e lesson publicada/ativa.",
+        "Readiness mínimo não exige Instructor, quiz, mídia ou preço; archived é terminal no MVP e lesson publish é uma transição separada ainda pendente.",
+        "tenant_id, owner, parent e vínculo de pai não redefinem escopo via payload; derivar e validar pelo contexto.",
+        "Matrícula, acesso, progresso e consumo não são equivalentes ao CRUD administrativo de conteúdo."
+      ],
+      "invariants": [
+        "Tenant scoping explícito nas Actions/Services e isolamento entre tenants.",
+        "Curso draft não é consumo Student; publicação não acontece como efeito colateral de CRUD genérico.",
+        "Mídia é provider-aware, múltipla e não deve virar proxy binário/file_url singular sem decisão.",
+        "Preço é inteiro em cents; matrícula gera espelho Financial conforme a spec."
+      ],
+      "tests": [
+        "tests/Feature/Api/Learning/AdminContentOperationsApiTest.php",
+        "tests/Feature/Api/Learning/Course/CourseCrudApiTest.php",
+        "tests/Feature/Api/Learning/Course/CourseModulesApiTest.php",
+        "tests/Feature/Api/Learning/Lesson/LessonApiTest.php",
+        "tests/Feature/Api/Learning/Lesson/LessonMediaApiTest.php",
+        "tests/Feature/Api/Learning/Rbac/InstructorOwnershipTest.php",
+        "tests/Feature/Api/Learning/Enrollment/EnrollmentApiTest.php",
+        "tests/Architecture/TenantIsolationSmokeTest.php"
+      ],
+      "classification": {
+        "layer": "core",
+        "core": "course content, enrollment e consumo base",
+        "plugin": "MediaProvider é costura futura; não implementar por inferência"
+      },
+      "decision_gates": [
+        {
+          "id": "media-provider",
+          "status": "HUMAN_DECISION_REQUIRED",
+          "summary": "MediaProvider ainda é alvo aberto; não escolher adapter, upload/proxy ou contrato de URL por conta própria.",
+          "match": {
+            "prompt": ["m[ií]dia|media|provider|upload|presigned|lessonmedia"],
+            "paths": ["(MediaProvider|LessonMedia|media|Upload)"]
+          }
+        },
+        {
+          "id": "external-enrollment",
+          "status": "HUMAN_DECISION_REQUIRED",
+          "summary": "Matrícula externa permanece aberta; não inventar integração ou transição de estado.",
+          "match": {
+            "prompt": ["matr[ií]cula.*extern|external.*enroll|enrollment.*external"],
+            "paths": ["(ExternalEnrollment|Enrollment).*(External|Adapter|Provider)"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "assessment",
+      "domain": "Assessment",
+      "summary": "Quiz/assessment com core simples explícito e advanced como capability plugin/future.",
+      "match": {
+        "prompt": [
+          "\\b(assessment|quiz|questionnaire|question|attempt|scoring|score|certificat)\\b",
+          "avançad[oa].*quiz",
+          "quiz.*avançad[oa]"
+        ],
+        "paths": [
+          "app/Modules/Assessment/",
+          "(Quiz|Questionnaire|Question|Attempt|Scoring|Certificate)",
+          "tests/(Feature|Unit).*(Assessment|Quiz)"
+        ]
+      },
+      "personas": ["admin", "instructor", "student", "mzrt"],
+      "specs": [
+        "docs/specs/30-assessment/spec.md",
+        "docs/specs/30-assessment/subspecs/questionnaires-questions.md",
+        "docs/specs/30-assessment/subspecs/attempts-scoring.md",
+        "docs/specs/30-assessment/subspecs/certificates.md",
+        "docs/specs/00-architecture/areas-surfaces.md",
+        "docs/specs/00-architecture/rbac.md",
+        "docs/specs/00-architecture/decisions/005-plugins-capability-gated-gateway-como-plugin.md"
+      ],
+      "skills": [
+        "api-area-routing",
+        "rbac-permission-wiring",
+        "vertical-slice",
+        "pest-api-tests",
+        "security-audit"
+      ],
+      "rules": [
+        "Quiz simples pertence ao core; quiz avançado é plugin/future e não deve ser absorvido pelo CRUD core automaticamente.",
+        "Admin é operador tenant-wide do Assessment básico do próprio tenant; Instructor é owner pedagógico e opera somente seu escopo pedagógico.",
+        "Criação de Assessment por Admin usa instructor_id = null; Admin não vira Instructor e alteração administrativa não transfere ownership.",
+        "Assign/transfer futuro deve ser uma operação explícita, autorizada e auditável; não inferir ownership pelo ator autenticado.",
+        "Snapshot de tentativa e scoring são server-side; cliente não envia gabarito nem score autoritativo.",
+        "Questão usada por tentativa não é editada de modo a alterar o histórico; mudanças exigem regra de snapshot/versionamento.",
+        "Questionnaire pode ser lesson/course/standalone via morph; standalone, tenant scope e associação ainda têm gaps conhecidos.",
+        "Não avançar em comportamento ambíguo sem decisão humana e sem separar core simple de advanced plugin/future."
+      ],
+      "invariants": [
+        "Tentativa, respostas, snapshot e scoring devem permanecer tenant-scoped.",
+        "O servidor calcula resultado; payload do consumidor não define acerto, score ou aprovação.",
+        "A capability advanced deve passar por activation/entitlement/config de plugin, não por config.enabled isolado."
+      ],
+      "tests": [
+        "tests/Feature/Api/Assessment/QuestionApiTest.php",
+        "tests/Feature/Api/Assessment/QuestionnaireApiTest.php",
+        "tests/Feature/Api/Assessment/AttemptApiTest.php",
+        "tests/Feature/Api/Assessment/CertificateApiTest.php",
+        "tests/Architecture/TenantScopingTest.php",
+        "tests/Architecture/RouteSecuritySurfaceTest.php"
+      ],
+      "classification": {
+        "layer": "mixed",
+        "core": "quiz simples, questionário básico, snapshot e scoring server-side",
+        "plugin": "quiz avançado / capabilities avançadas são future/plugin gated"
+      },
+      "decision_gates": [
+        {
+          "id": "quiz-core-advanced-boundary",
+          "status": "HUMAN_DECISION_REQUIRED",
+          "summary": "A fronteira exata core simple versus quiz advanced/plugin ainda requer decisão humana.",
+          "match": {
+            "prompt": ["avançad[oa]|advanced|plugin|capability|future|core.*quiz|quiz.*core"],
+            "paths": ["(Advanced|Plugin|Capability|Quiz)"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ecosystem-plugins",
+      "domain": "Ecosystem / Plugins",
+      "summary": "Plugins first-party, capability-gated e com activation, entitlement, config e gateways distintos.",
+      "match": {
+        "prompt": [
+          "\\b(plugin|plugins|activation|activate|entitlement|capability|first.party)\\b",
+          "avançad[oa].*quiz",
+          "quiz.*avançad[oa]",
+          "quiz.*(avançad[oa]|advanced).*plugin",
+          "gateway.*tenant",
+          "tenant.*gateway",
+          "assessment.*advanced"
+        ],
+        "paths": [
+          "app/Modules/Ecosystem/",
+          "(Plugin|Activation|Entitlement|TenantPluginConfig|GatewayProvider)",
+          "(plugin|gateway).*(Config|Activation|Entitlement)"
+        ]
+      },
+      "personas": ["mzrt", "admin", "student"],
+      "specs": [
+        "docs/specs/50-ecosystem-plugins/spec.md",
+        "docs/specs/50-ecosystem-plugins/subspecs/marketplace.md",
+        "docs/specs/50-ecosystem-plugins/subspecs/subscriptions-billing.md",
+        "docs/specs/00-architecture/decisions/005-plugins-capability-gated-gateway-como-plugin.md",
+        "docs/specs/00-architecture/areas-surfaces.md",
+        "docs/specs/00-architecture/rbac.md"
+      ],
+      "skills": [
+        "financial-money-flows",
+        "api-area-routing",
+        "rbac-permission-wiring",
+        "vertical-slice",
+        "pest-api-tests",
+        "security-audit"
+      ],
+      "rules": [
+        "Plugins são first-party e capability-gated; Mzrt cria/disponibiliza o catálogo, Admin só opera o range liberado.",
+        "Activation, entitlement e tenant config são conceitos/stores distintos; não colapsar tudo em config.enabled.",
+        "Admin configura o que foi liberado, mas entitlement não nasce da configuração administrativa.",
+        "Tenant gateway e platform gateway têm ownership/resolução diferentes; não reutilizar o gateway da plataforma por default.",
+        "Plugin indisponível é estado de catálogo/activation/entitlement/config combinado, não apenas enabled=false.",
+        "CORE SIMPLE + PLUGIN ADVANCED é uma fronteira explícita; capability avançada não vira core por conveniência."
+      ],
+      "invariants": [
+        "Nenhum código de plugin é carregado dinamicamente; a capability deve ser conhecida e gated.",
+        "Tenant não cria plugin nem edita permissions canônicas; activation/entitlement/config seguem seus donos.",
+        "Secrets de gateway são write-only/encrypted e o resolver valida disponibilidade efetiva."
+      ],
+      "tests": [
+        "tests/Feature/Ecosystem/PluginCatalogTest.php",
+        "tests/Feature/Ecosystem/PluginActivationTest.php",
+        "tests/Feature/Ecosystem/TenantPluginConfigTest.php",
+        "tests/Feature/Ecosystem/TenantPluginConfigRevisionTest.php",
+        "tests/Feature/Api/Ecosystem/Mzrt/TenantEntitlementApiTest.php",
+        "tests/Feature/Ecosystem/AdminPaymentGatewayApiTest.php",
+        "tests/Architecture/ModuleBoundaryTest.php"
+      ],
+      "classification": {
+        "layer": "core-with-plugin-extension",
+        "core": "registry, activation e capability gating first-party",
+        "plugin": "advanced capability e gateway tenant como plugin ativável"
+      },
+      "decision_gates": [
+        {
+          "id": "plugin-lifecycle",
+          "status": "HUMAN_DECISION_REQUIRED",
+          "summary": "Lifecycle completo de plugin ainda está aberto; não inventar estados, transições ou efeitos de desativação.",
+          "match": {
+            "prompt": ["plugin|activation|activate|desativ|lifecycle|ciclo de vida"],
+            "paths": ["(Plugin|Activation|Entitlement|Lifecycle)"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "financial",
+      "domain": "Financial",
+      "summary": "Fluxos monetários, dois ledgers, gateways por ownership e ponte Financial ↔ Learning.",
+      "match": {
+        "prompt": [
+          "\\b(financial|financeir|pagament|checkout|gateway|ledger|order|charge|refund|reembolso|cobran|matr[ií]cula)\\b",
+          "tenant.*gateway",
+          "platform.*gateway",
+          "cash|manual payment|pagamento manual"
+        ],
+        "paths": [
+          "app/Modules/Financial/",
+          "(PaymentGateway|Order|OrderItem|Charge|Checkout|Ledger|Payment)",
+          "tests/(Feature|Unit)/Financial",
+          "(Enrollment|Checkout).*(Financial|Payment)"
+        ]
+      },
+      "personas": ["mzrt", "admin", "student"],
+      "specs": [
+        "docs/specs/40-financial/spec.md",
+        "docs/specs/40-financial/subspecs/orders-payments.md",
+        "docs/specs/40-financial/subspecs/webhooks-events.md",
+        "docs/specs/20-catalog-learning/subspecs/enrollment-progress.md",
+        "docs/specs/00-architecture/decisions/003-billing-dois-ledgers-itemable-seam.md",
+        "docs/specs/00-architecture/decisions/005-plugins-capability-gated-gateway-como-plugin.md",
+        "docs/specs/00-architecture/areas-surfaces.md"
+      ],
+      "skills": [
+        "financial-money-flows",
+        "api-area-routing",
+        "rbac-permission-wiring",
+        "pest-api-tests",
+        "endpoint-e2e",
+        "security-audit"
+      ],
+      "rules": [
+        "Student → tenant ledger é diferente de platform/Mzrt → tenant ledger; não misturar os dois Order ledgers.",
+        "Gateway do tenant é diferente do gateway da plataforma e sua resolução depende do contexto/entitlement correto.",
+        "Cash/manual Admin é fluxo distinto de pagamento automático; não usar o happy path do PSP como substituto.",
+        "Dinheiro é cents inteiro; charge state, idempotência, snapshot, claim e outbox são parte do contrato.",
+        "Matrícula/pagamento deve carregar bundle Financial + Learning; OrderPaid não é um detalhe isolado do módulo financeiro.",
+        "Enrollment mirror, external/manual enrollment e eventos de matrícula obedecem as specs dos dois domínios."
+      ],
+      "invariants": [
+        "Não usar float/decimal para dinheiro e não aceitar valor monetário autoritativo do cliente.",
+        "Gateway deve ser resolvido no âmbito correto (platform ou tenant) e falha de disponibilidade é explícita.",
+        "Checkout é idempotente e efeitos de matrícula/outbox só ocorrem em transições financeiras válidas."
+      ],
+      "tests": [
+        "tests/Unit/Financial/PaymentGatewayManagerTest.php",
+        "tests/Unit/Financial/GatewayOwnershipIdentityTest.php",
+        "tests/Feature/Financial/StudentCheckoutApiTest.php",
+        "tests/Feature/Financial/TenantGatewayResolutionTest.php",
+        "tests/Feature/Financial/PlatformGatewayResolutionTest.php",
+        "tests/Feature/Financial/EnrollmentFinancialMirrorTest.php",
+        "tests/Feature/Financial/OrderPaidOutboxTest.php",
+        "tests/Architecture/MoneyNeverFloatTest.php",
+        "tests/Architecture/TenantScopingTest.php"
+      ],
+      "classification": {
+        "layer": "core-with-plugin-gateway",
+        "core": "orders, charges, ledgers, idempotência e outbox",
+        "plugin": "adapters/gateways tenant e capabilities avançadas resolvidos por Ecosystem"
+      },
+      "decision_gates": [
+        {
+          "id": "external-enrollment",
+          "status": "HUMAN_DECISION_REQUIRED",
+          "summary": "Matrícula externa ainda requer decisão humana; não definir adapter, confirmação ou ownership financeiro por analogia.",
+          "match": {
+            "prompt": ["matr[ií]cula.*extern|external.*enroll|enrollment.*external"],
+            "paths": ["(ExternalEnrollment|Enrollment).*(External|Adapter|Provider)"]
+          }
+        }
+      ]
+    }
+  ]
+}

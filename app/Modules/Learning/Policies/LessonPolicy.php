@@ -19,6 +19,17 @@ class LessonPolicy
             || ! $this->deniedByInstructorModuleOwnership($user, $tenant, $courseModuleId);
     }
 
+    public function list(User $user, ?Tenant $tenant = null, ?CourseModule $courseModule = null): bool
+    {
+        if (! $this->allows($user, $tenant, 'learning.lessons.list')) {
+            return false;
+        }
+
+        return $user->isDeveloper()
+            || ($courseModule !== null
+                && ! $this->deniedByInstructorModuleOwnership($user, $tenant, $courseModule->id));
+    }
+
     public function view(User $user, ?Tenant $tenant = null): bool
     {
         return $this->allows($user, $tenant, 'learning.lessons.view');
@@ -30,6 +41,11 @@ class LessonPolicy
     }
 
     public function update(User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool
+    {
+        return $this->allowsForOwnedLesson($user, $tenant, $lesson, 'learning.lessons.update');
+    }
+
+    public function publish(User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool
     {
         return $this->allowsForOwnedLesson($user, $tenant, $lesson, 'learning.lessons.update');
     }

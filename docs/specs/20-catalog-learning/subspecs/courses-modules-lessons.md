@@ -2,7 +2,7 @@
 domain: catalog-learning
 parent: ../spec.md
 resource: courses-modules-lessons
-last-reviewed: 2026-07-29
+last-reviewed: 2026-09-06
 ---
 
 # Courses, Modules & Lessons
@@ -13,7 +13,7 @@ last-reviewed: 2026-07-29
 courses
 - id
 - tenant_id              // FK
-- instructor_id          // FK (criador)
+- instructor_id          // FK (ownership pedagógico; nullable em curso operado pelo Admin)
 - title, slug, description, thumbnail
 - status                 // published | draft | archived
 - is_published, is_active
@@ -57,8 +57,12 @@ lessons
 - **CourseModule** pertence a um único curso e é reordenável. Ao criar módulo, o filtro de
   categorias exibe apenas categorias onde o instrutor já tem cursos.
 - **Lesson** organizada dentro de módulo; reordenável; pode ser degustação (`is_free`).
-- **Fluxo de publicação:** instrutor cria draft → adiciona módulos/aulas → configura certificado
-  → publica (`is_published=true`) → alunos veem e matriculam.
+- **Fluxo de publicação Admin:** curso ativo e não arquivado → pelo menos um módulo → pelo menos uma
+  aula do curso, publicada e ativa → `publish`. Curso sem `instructor_id` é válido e administrável
+  pelo tenant; Admin não vira Instructor.
+- **Readiness mínimo:** quiz, mídia e preço não são pré-condições. A aula deve ser publicada em
+  transição própria; publicar o curso não publica aulas por efeito colateral. Falha de readiness não
+  altera estado. `archived` é terminal no MVP para publish/unpublish.
 - **Drafts** não acessíveis por alunos; rota de preview restrita a instrutor dono / tenant_admin / developer.
 - **Histórico de preço:** `course_price_histories` é append-only e específico de `Course`; não há
   histórico polimórfico/genérico no Financial. Registrar somente atualização real de
@@ -68,6 +72,10 @@ lessons
   lote deve preservar mesma cadeia de auditoria por curso.
 - **Preço contratado:** Financial é dono do `price_cents` e `item_snapshot` imutáveis em
   `OrderItem`; histórico Learning não altera orders já criadas.
+- **Fronteira Admin ↔ Instructor:** Admin opera o conteúdo do próprio tenant; Instructor mantém a
+  autoria/ownership do curso próprio nas rotas legacy de authoring. Um curso criado na superfície
+  Admin nasce sem `instructor_id`; este slice não cria uma operação de atribuição de autor nem
+  transforma Admin em Instructor.
 
 ### Decisão — modelo de acesso/conteúdo (resolvido 2026-06-10)
 
@@ -106,6 +114,33 @@ Verificado contra o schema atual **e** o legado `eadIA`: o "conflito" não exist
 | PATCH | `/api/v1/learning/lessons/{id}` | Atualizar aula | `learning.lessons.update` |
 | DELETE | `/api/v1/learning/lessons/{id}` | Deletar aula | `learning.lessons.delete` |
 
+### Gestão de conteúdo — Admin (superfície canônica)
+
+Admin controla o conteúdo do próprio tenant por esta superfície area-first. Todas as rotas abaixo
+usam `area.guard:admin`, `tenant.required.unless.developer` e `tenant.access`; o payload não pode
+redefinir `tenant_id`, ownership, parent ou status quando esses valores são derivados do contexto,
+da URL ou de uma transição dedicada.
+
+| Método | Path | Descrição | Permission |
+|--------|------|-----------|------------|
+| GET/POST/PATCH/DELETE | `/api/v1/admin/courses[/{id}]` | Listar, criar, atualizar e remover curso | `learning.courses.{list,create,update,delete}` |
+| GET | `/api/v1/admin/courses/{id}` | Ver curso administrativo com módulos/aulas | `learning.courses.view` |
+| GET | `/api/v1/admin/courses/{courseId}/modules` | Listar módulos do curso | `learning.modules.list` |
+| POST | `/api/v1/admin/modules` | Criar módulo | `learning.modules.create` |
+| GET/PATCH/DELETE | `/api/v1/admin/modules/{id}` | Ver, atualizar e remover módulo | `learning.modules.{view,update,delete}` |
+| PATCH | `/api/v1/admin/modules/reorder` | Reordenar módulos | `learning.modules.reorder` |
+| GET | `/api/v1/admin/modules/{moduleId}/lessons` | Listar aulas do módulo | `learning.lessons.list` |
+| POST | `/api/v1/admin/lessons` | Criar aula | `learning.lessons.create` |
+| GET/PATCH/DELETE | `/api/v1/admin/lessons/{id}` | Ver, atualizar e remover aula administrativa | `learning.lessons.{view,update,delete}` |
+| POST | `/api/v1/admin/lessons/{id}/publish` | Publicar aula explicitamente | `learning.lessons.update` |
+| POST | `/api/v1/admin/lessons/{id}/unpublish` | Despublicar aula explicitamente | `learning.lessons.update` |
+| PATCH | `/api/v1/admin/lessons/reorder` | Reordenar aulas | `learning.lessons.reorder` |
+
+As rotas equivalentes em `/api/v1/learning` continuam como compatibilidade legacy e preservam a
+matriz `own` do Instructor. A superfície Admin não expõe consumo, progresso, download ou tracking
+de aluno; uma atribuição explícita de ownership para cursos criados pelo Admin permanece um delta
+futuro fora do ADM-02.
+
 ## Permissions
 
 ```
@@ -122,6 +157,10 @@ Matriz por UserType em [`../../00-architecture/rbac.md`](../../00-architecture/r
   domínio Assessment (`30-assessment/subspecs/certificates.md`).
 - `POST/PATCH /api/v1/learning/courses` não publicam nem arquivam curso; a transição de status fica
   concentrada na superfície Admin via `publish/unpublish`.
+- O contrato de `publish` exige curso ativo, não archived, um módulo e uma lesson publicada/ativa
+  pertencente a esse curso. A operação Admin de Lesson usa transições explícitas
+  `publish/unpublish`, sob o teto da permission `learning.lessons.update`; CRUD genérico não altera
+  status.
 - Acesso à aula resolve pre-signed URL (sem proxy binário) — ver
   [`media-ratings.md`](media-ratings.md) e
   [`../../00-architecture/performance-scalability.md`](../../00-architecture/performance-scalability.md).

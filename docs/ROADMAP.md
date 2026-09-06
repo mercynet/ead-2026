@@ -89,8 +89,8 @@ explícitas: `/api/v1/auth/*`, `/api/v1/webhooks/*`, `/api/v1/public/*`. Prefixo
 | Legacy route/group | Classificação | Target | Status | Owner/source | Condição remoção/depreciação |
 |---|---|---|---|---|---|
 | `/core/auth/*` | técnica cross-area | `/auth/*` | `CURRENT_IMPLEMENTED` + `LEGACY_COMPATIBILITY` | Core / inventory | WS1 aplicado; remoção futura só após inventário de consumidores e decisão explícita |
-| `/core/invitations` | create Admin; accept pública | split Admin + neutral/public | legado | Core / inventory | ambos contratos entregues |
-| `/core/users*`, self | Admin/Mzrt/self misto | áreas + possível account neutral | parcial | Core / inventory | ✔ update/delete de instructor/student em `v1/admin/users/{id}`; list/show e self ainda em `/core`, pendente decidir account neutral |
+| `/core/invitations` | create Admin; accept pública | split Admin + neutral/public | legado | Core / inventory | ✔ create canônico em `v1/admin/invitations`; `/core/invitations` mantido por compatibilidade; accept permanece público |
+| `/core/users*`, self | Admin/Mzrt/self misto | áreas + possível account neutral | parcial | Core / inventory | ✔ list/show canônicos em `v1/admin/users*`; ✔ update/delete de instructor/student em `v1/admin/users/{id}`; self permanece em `/core` até decisão de account neutral |
 | `/learning/catalog/courses*` | público | Home | legado | Learning / inventory | Home E2E público |
 | `/learning/catalog/categories*` | system/tenant | Mzrt + Admin | ~~legado~~ **migrado** | Learning / inventory | ✔ escrita split em `v1/mzrt/categories` + `v1/admin/categories`; legado mantém só `GET`; E2E de isolamento verde |
 | learning courses/modules/materials/lesson/media management | Admin/Instructor provável | decisão-needed | legado | Learning / inventory | contratos por persona decididos |

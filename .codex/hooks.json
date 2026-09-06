@@ -19,6 +19,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/ai/skill-router.sh prompt"
+          }
+        ]
+      }
     ]
   }
 }

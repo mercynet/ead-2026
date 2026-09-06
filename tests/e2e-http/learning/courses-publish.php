@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Modules\Learning\Models\Course;
+use App\Modules\Learning\Models\CourseModule;
+use App\Modules\Learning\Models\Lesson;
 
 return [
     'endpoint' => 'POST /api/v1/admin/courses/{id}/publish',
@@ -17,6 +19,25 @@ return [
             'price_cents' => 0,
             'is_featured' => false,
             'is_active' => true,
+        ]);
+
+        $draftModule = CourseModule::query()->create([
+            'tenant_id' => $ctx['tenant']->id,
+            'course_id' => $draftCourse->id,
+            'title' => 'Módulo Publish E2E',
+            'sort_order' => 1,
+        ]);
+
+        Lesson::query()->create([
+            'tenant_id' => $ctx['tenant']->id,
+            'course_module_id' => $draftModule->id,
+            'title' => 'Aula Publish E2E',
+            'slug' => 'aula-publish-e2e',
+            'status' => 'published',
+            'sort_order' => 1,
+            'is_free' => true,
+            'is_active' => true,
+            'published_at' => now(),
         ]);
 
         $archivedCourse = Course::query()->create([

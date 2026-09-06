@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Http\Controllers\Admin;
 
 use App\Modules\Core\Actions\Users\DeleteUserAction;
+use App\Modules\Core\Actions\Users\ListUsersAction;
 use App\Modules\Core\Actions\Users\UpdateProfileAction;
 use App\Modules\Core\Http\Requests\Users\AdminUpdateUserRequest;
 use App\Modules\Core\Http\Resources\UserResource;
@@ -10,6 +11,7 @@ use App\Modules\Core\Models\User;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -21,9 +23,36 @@ use Illuminate\Support\Facades\Gate;
 class UserController extends Controller
 {
     public function __construct(
+        private readonly ListUsersAction $listUsersAction,
         private readonly UpdateProfileAction $updateProfileAction,
         private readonly DeleteUserAction $deleteUserAction,
     ) {}
+
+    /**
+     * Listar Usuários (Admin)
+     *
+     * Retorna uma lista paginada de usuários do tenant atual.
+     */
+    public function index(ApiContext $context): AnonymousResourceCollection
+    {
+        Gate::forUser($context->requiredUser())->authorize('core.users.list', [$context->tenant]);
+
+        return UserResource::collection($this->listUsersAction->handle($context));
+    }
+
+    /**
+     * Mostrar Usuário (Admin)
+     *
+     * Retorna os dados de um usuário visível no tenant atual.
+     *
+     * @urlParam user int required ID do usuário
+     */
+    public function show(ApiContext $context, User $user): UserResource
+    {
+        Gate::forUser($context->requiredUser())->authorize('core.users.view-check', [$context->tenant, $user]);
+
+        return UserResource::make($user);
+    }
 
     /**
      * Atualizar Usuário (Admin)

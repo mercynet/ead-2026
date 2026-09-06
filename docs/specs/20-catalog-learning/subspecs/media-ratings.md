@@ -2,7 +2,7 @@
 domain: catalog-learning
 parent: ../spec.md
 resource: media-ratings
-last-reviewed: 2026-07-09
+last-reviewed: 2026-09-06
 ---
 
 # Media, Materials & Ratings
@@ -77,6 +77,9 @@ rating_stats             // cache agregado por curso (média, total, distribuiç
 
 - Cada `CourseMaterial` (≤50MB, pasta do tenant) tem tracking granular de downloads
   (`MaterialDownload`), alimentando `MaterialStats`.
+- Admin pode criar, listar, atualizar e remover o registro administrativo de material pela
+  superfície `/api/v1/admin/courses/{courseId}/materials`; a criação não atribui `instructor_id`.
+  Upload real/media library continuam fora deste slice.
 - O registro de download devolve uma **URL temporária** do arquivo (local/S3) para o cliente baixar
   direto do storage, sem proxy binário pelo backend.
 
@@ -99,6 +102,10 @@ rating_stats             // cache agregado por curso (média, total, distribuiç
 - `PATCH /api/v1/learning/lessons/{lessonId}/media/{mediaId}` atualiza payload da mídia no tenant
   atual.
 - `DELETE /api/v1/learning/lessons/{lessonId}/media/{mediaId}` remove a mídia da aula no tenant atual.
+- `GET/POST/PATCH/DELETE /api/v1/admin/courses/{courseId}/materials[/{materialId}]` administra o
+  registro de material no tenant atual, sem iniciar download.
+- `GET/POST/PATCH/DELETE /api/v1/admin/lessons/{lessonId}/media[/{mediaId}]` administra metadados
+  de mídia no tenant atual, sem resolver URL para consumo ou gravar `lesson_views`.
 - `POST /api/v1/learning/courses/{courseId}/materials` cria o registro base de material extra do
   curso no tenant atual. **Hardening de `file_path`** (mesmo padrão do `storage_path` de lesson
   media): obrigatório prefixo `tenants/{tenant_id}/` do tenant atual, sem `..` nem `\` (422).

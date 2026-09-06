@@ -8,11 +8,11 @@ use App\Shared\Http\ApiContext;
 
 class StoreCourseMaterialAction
 {
-    public function handle(ApiContext $context, Course $course, array $attributes): CourseMaterial
+    public function handle(ApiContext $context, Course $course, array $attributes, ?int $instructorId = null): CourseMaterial
     {
         $attributes['tenant_id'] = $context->requiredTenant()->id;
         $attributes['course_id'] = $course->id;
-        $attributes['instructor_id'] = $context->requiredUser()->id;
+        $attributes['instructor_id'] = $instructorId;
 
         return CourseMaterial::query()->create($attributes);
     }

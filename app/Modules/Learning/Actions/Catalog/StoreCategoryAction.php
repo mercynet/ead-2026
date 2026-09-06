@@ -4,11 +4,20 @@ namespace App\Modules\Learning\Actions\Catalog;
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Learning\Models\Category;
+use App\Modules\Learning\Support\CategoryHierarchy;
+use App\Modules\Learning\Support\CategoryNameNormalizer;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class StoreCategoryAction
 {
+    public function __construct(
+        private readonly CategoryNameNormalizer $normalizer,
+        private readonly CategoryHierarchy $hierarchy,
+        private readonly DatabaseManager $database,
+    ) {}
+
     /**
      * `$tenant` é obrigatório para categoria de tenant e ignorado para categoria de
      * sistema — a área Mzrt escreve sem contexto de tenant.
@@ -24,7 +33,7 @@ class StoreCategoryAction
         }
         $parentId = (int) ($attributes['parent_id'] ?? 0);
         $name = trim((string) $attributes['name']);
-        $normalizedName = (string) Str::of($name)->ascii()->lower()->squish();
+        $normalizedName = $this->normalizer->normalize($name);
 
         $parentCategory = null;
         if ($parentId > 0) {
@@ -36,7 +45,7 @@ class StoreCategoryAction
                 ]);
             }
 
-            if ($isSystem && ! $parentCategory->is_system) {
+            if ($isSystem && (! $parentCategory->is_system || $parentCategory->tenant_id !== null)) {
                 throw ValidationException::withMessages([
                     'parent_id' => 'System category parent must be a system category.',
                 ]);
@@ -44,8 +53,7 @@ class StoreCategoryAction
 
             if (
                 ! $isSystem
-                && $parentCategory->tenant_id !== null
-                && (int) $parentCategory->tenant_id !== (int) $tenant->id
+                && ($parentCategory->is_system || (int) $parentCategory->tenant_id !== (int) $tenant->id)
             ) {
                 throw ValidationException::withMessages([
                     'parent_id' => 'Parent category belongs to a different tenant.',
@@ -63,8 +71,7 @@ class StoreCategoryAction
         }
 
         $scopedQuery = Category::query()
-            ->where('normalized_name', $normalizedName)
-            ->where('parent_id', $parentCategory?->id);
+            ->where('normalized_name', $normalizedName);
 
         if ($isSystem) {
             $scopedQuery->whereNull('tenant_id');
@@ -78,13 +85,20 @@ class StoreCategoryAction
             ]);
         }
 
-        return Category::query()->create([
-            'tenant_id' => $isSystem ? null : $tenant->id,
-            'parent_id' => $parentCategory?->id,
-            'name' => $name,
-            'slug' => Str::slug($name),
-            'normalized_name' => $normalizedName,
-            'is_system' => $isSystem,
-        ]);
+        return $this->database->transaction(function () use ($tenant, $parentCategory, $name, $normalizedName, $isSystem): Category {
+            $category = Category::query()->create([
+                'tenant_id' => $isSystem ? null : $tenant->id,
+                'parent_id' => $parentCategory?->id,
+                'name' => $name,
+                'slug' => Str::slug($name),
+                'normalized_name' => $normalizedName,
+                'is_system' => $isSystem,
+                'depth' => 0,
+            ]);
+
+            $this->hierarchy->sync($category);
+
+            return $category;
+        });
     }
 }

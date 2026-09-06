@@ -5,14 +5,18 @@ namespace App\Modules\Learning\Providers;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
 use App\Modules\Financial\Events\OrderPaidEvent;
+use App\Modules\Learning\Contracts\AssessmentCatalog;
 use App\Modules\Learning\Contracts\CourseCheckoutCatalog;
 use App\Modules\Learning\Listeners\EnrollStudentFromOrderPaidListener;
 use App\Modules\Learning\Models\Course;
+use App\Modules\Learning\Models\CourseModule;
+use App\Modules\Learning\Models\Lesson;
 use App\Modules\Learning\Policies\CategoryPolicy;
 use App\Modules\Learning\Policies\CourseModulePolicy;
 use App\Modules\Learning\Policies\CoursePolicy;
 use App\Modules\Learning\Policies\EnrollmentPolicy;
 use App\Modules\Learning\Policies\LessonPolicy;
+use App\Modules\Learning\Services\AssessmentCatalogResolver;
 use App\Modules\Learning\Services\CourseCheckoutCatalogResolver;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
@@ -25,6 +29,7 @@ class LearningServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(CourseCheckoutCatalog::class, CourseCheckoutCatalogResolver::class);
+        $this->app->bind(AssessmentCatalog::class, AssessmentCatalogResolver::class);
     }
 
     public function boot(): void
@@ -59,15 +64,21 @@ class LearningServiceProvider extends ServiceProvider
             return app(CourseModulePolicy::class)->create($user, $tenant, $courseId);
         });
 
-        Gate::define('learning.modules.view-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+        Gate::define('learning.courses.list', [CoursePolicy::class, 'list']);
+
+        Gate::define('learning.modules.list-check', function (User $user, ?Tenant $tenant = null, ?Course $course = null): bool {
+            return app(CourseModulePolicy::class)->list($user, $tenant, $course);
+        });
+
+        Gate::define('learning.modules.view-check', function (User $user, ?Tenant $tenant = null, ?CourseModule $courseModule = null): bool {
             return app(CourseModulePolicy::class)->view($user, $tenant, $courseModule);
         });
 
-        Gate::define('learning.modules.update-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+        Gate::define('learning.modules.update-check', function (User $user, ?Tenant $tenant = null, ?CourseModule $courseModule = null): bool {
             return app(CourseModulePolicy::class)->update($user, $tenant, $courseModule);
         });
 
-        Gate::define('learning.modules.delete-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\CourseModule $courseModule = null): bool {
+        Gate::define('learning.modules.delete-check', function (User $user, ?Tenant $tenant = null, ?CourseModule $courseModule = null): bool {
             return app(CourseModulePolicy::class)->delete($user, $tenant, $courseModule);
         });
 
@@ -79,6 +90,10 @@ class LearningServiceProvider extends ServiceProvider
             return app(LessonPolicy::class)->view($user, $tenant);
         });
 
+        Gate::define('learning.lessons.list-check', function (User $user, ?Tenant $tenant = null, ?CourseModule $courseModule = null): bool {
+            return app(LessonPolicy::class)->list($user, $tenant, $courseModule);
+        });
+
         Gate::define('learning.lessons.create-check', function (User $user, ?Tenant $tenant = null, ?int $courseModuleId = null): bool {
             return app(LessonPolicy::class)->create($user, $tenant, $courseModuleId);
         });
@@ -87,11 +102,15 @@ class LearningServiceProvider extends ServiceProvider
             return app(LessonPolicy::class)->progress($user, $tenant);
         });
 
-        Gate::define('learning.lessons.update-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+        Gate::define('learning.lessons.update-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
             return app(LessonPolicy::class)->update($user, $tenant, $lesson);
         });
 
-        Gate::define('learning.lessons.delete-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+        Gate::define('learning.lessons.publish-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
+            return app(LessonPolicy::class)->publish($user, $tenant, $lesson);
+        });
+
+        Gate::define('learning.lessons.delete-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
             return app(LessonPolicy::class)->delete($user, $tenant, $lesson);
         });
 
@@ -99,15 +118,15 @@ class LearningServiceProvider extends ServiceProvider
             return app(LessonPolicy::class)->reorder($user, $tenant, $courseModuleId);
         });
 
-        Gate::define('learning.lessons.media.store-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+        Gate::define('learning.lessons.media.store-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
             return app(LessonPolicy::class)->storeMedia($user, $tenant, $lesson);
         });
 
-        Gate::define('learning.lessons.media.update-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+        Gate::define('learning.lessons.media.update-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
             return app(LessonPolicy::class)->updateMedia($user, $tenant, $lesson);
         });
 
-        Gate::define('learning.lessons.media.delete-check', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Lesson $lesson = null): bool {
+        Gate::define('learning.lessons.media.delete-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
             return app(LessonPolicy::class)->deleteMedia($user, $tenant, $lesson);
         });
 

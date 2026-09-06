@@ -100,10 +100,13 @@ Filtrar por tenant via scope/trait, não `where('tenant_id', ...)` espalhado. Ve
 
 | Método | Path | Descrição | Permission |
 |--------|------|-----------|------------|
-| POST | `/api/v1/core/invitations` | Emitir convite (`student`\|`instructor`); token 1x | `core.invitations.create` |
+| POST | `/api/v1/admin/invitations` | Emitir convite (`student`\|`instructor`) pela superfície Admin; token 1x | `core.invitations.create` |
+| POST | `/api/v1/core/invitations` | Compatibilidade legacy para emissão de convite | `core.invitations.create` |
 | POST | `/api/v1/core/invitations/accept` | Aceitar convite → cria usuário + papel | público (token) |
-| GET | `/api/v1/core/users` | Listar (tenant-scoped; developer vê todos) | `core.users.list` |
-| GET | `/api/v1/core/users/{id}` | Ver usuário | `core.users.view` |
+| GET | `/api/v1/admin/users` | Admin lista usuários do próprio tenant | `core.users.list` |
+| GET | `/api/v1/admin/users/{id}` | Admin vê usuário do próprio tenant | `core.users.view` |
+| GET | `/api/v1/core/users` | Compatibilidade legacy; tenant-scoped, developer vê todos | `core.users.list` |
+| GET | `/api/v1/core/users/{id}` | Compatibilidade legacy para consulta de usuário | `core.users.view` |
 | PATCH | `/api/v1/admin/users/{id}` | Atualizar instructor/student do tenant (área Admin) | `core.users.update` |
 | DELETE | `/api/v1/admin/users/{id}` | Excluir instructor/student do tenant — soft delete (área Admin) | `core.users.delete` |
 | PATCH | `/api/v1/core/users/me` | Atualizar próprio perfil (nome, bio, avatar, cpf) | `core.users.update-self` |
@@ -120,7 +123,8 @@ Matriz por UserType em [`../../00-architecture/rbac.md`](../../00-architecture/r
 
 ## Notes
 
-- Fluxo de acesso: convite (`POST /invitations` por um admin) → aceite (`POST /invitations/accept`
+- Fluxo de acesso: convite (`POST /api/v1/admin/invitations` por um admin; `/core/invitations` permanece
+  compatibility legacy) → aceite (`POST /invitations/accept`
   com token+nome+senha) → login (`POST /auth/login` com email+senha+tenant via header) → uso com
   `Authorization: Bearer {token}` + `X-Tenant-ID` (exceto developer).
 - `GET /users/{id}`: a permission canônica é `core.users.view` (o documento legado usava

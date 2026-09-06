@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property-read Course|null $course
+ * @property string $title
  */
 class CourseModule extends Model
 {

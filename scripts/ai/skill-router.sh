@@ -22,6 +22,10 @@ if [ "$mode" = "list" ]; then
     echo "Skills roteadas automaticamente (.agents/skills/routing.json):"
     jq -r '.rules[] | "- \(.skill) — \(.why)"' "$map"
     echo "Sob demanda (sem gatilho automático): $(jq -r '.manual | join(", ")' "$map")"
+    if [ -x "$script_dir/capability-context.sh" ]; then
+        echo
+        bash "$script_dir/capability-context.sh" list
+    fi
     exit 0
 fi
 
@@ -39,6 +43,10 @@ prompt)
 esac
 
 [ -z "${haystack//[[:space:]]/}" ] && exit 0
+
+if [ -x "$script_dir/capability-context.sh" ]; then
+    bash "$script_dir/capability-context.sh" "$mode" <<<"$input"
+fi
 
 rules=$(jq -r --arg field "$field" '
     .rules[]

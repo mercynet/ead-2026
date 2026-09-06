@@ -1,5 +1,10 @@
 {
-  "$comment": "Roteamento automático de skills. Fonte única para hooks (scripts/ai/skill-router.sh) e para agentes sem hook (`scripts/ai/skill-router.sh list`). `paths` = regex ERE contra o caminho editado / comando; `prompt` = regex ERE contra o texto do pedido. Skill nova: adicione uma regra aqui OU liste em `manual` — validate-harness.py falha se ficar de fora.",
+  "$comment": "Roteamento automático de skills e ponte para contexto de capability. Fonte única para hooks (scripts/ai/skill-router.sh) e para agentes sem hook (`scripts/ai/skill-router.sh list`). `paths` = regex ERE contra o caminho editado / comando; `prompt` = regex ERE contra o texto do pedido. Skill nova: adicione uma regra aqui OU liste em `manual` — validate-harness.py falha se ficar de fora.",
+  "context_manifest": {
+    "path": ".agents/capability-context.json",
+    "resolver": "scripts/ai/capability-context.sh",
+    "mode": "advisory"
+  },
   "rules": [
     {
       "skill": "financial-money-flows",

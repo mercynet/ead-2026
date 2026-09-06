@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Core\Http\Controllers\Admin\UserController;
+use App\Modules\Core\Http\Controllers\InvitationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,7 +21,15 @@ Route::prefix('v1/admin')
     ->group(function (): void {
         Route::controller(UserController::class)
             ->group(function (): void {
+                Route::get('/users', 'index');
+                Route::get('/users/{user}', 'show');
                 Route::patch('/users/{user}', 'update');
                 Route::delete('/users/{user}', 'destroy');
+            });
+
+        Route::prefix('invitations')
+            ->controller(InvitationController::class)
+            ->group(function (): void {
+                Route::post('/', 'store')->middleware('throttle:invitation-create');
             });
     });

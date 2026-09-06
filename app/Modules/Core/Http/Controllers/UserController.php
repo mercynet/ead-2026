@@ -51,7 +51,7 @@ class UserController extends Controller
      */
     public function show(ApiContext $context, User $user): UserResource
     {
-        Gate::forUser($context->user)->authorize('core.users.view', [$context->tenant, $user]);
+        Gate::forUser($context->requiredUser())->authorize('core.users.view-check', [$context->tenant, $user]);
 
         return UserResource::make($user);
     }

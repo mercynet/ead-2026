@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property int|null $tenant_id
  * @property int|null $parent_id
+ * @property int $depth
+ * @property string|null $path
  * @property string $name
  * @property string $slug
  * @property string $normalized_name
@@ -36,6 +38,8 @@ class Category extends Model
     protected $fillable = [
         'tenant_id',
         'parent_id',
+        'path',
+        'depth',
         'name',
         'slug',
         'normalized_name',
@@ -81,6 +85,7 @@ class Category extends Model
         return [
             'tenant_id' => 'integer',
             'parent_id' => 'integer',
+            'depth' => 'integer',
             'is_system' => 'boolean',
             'is_featured' => 'boolean',
         ];

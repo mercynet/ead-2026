@@ -1,6 +1,6 @@
 ---
 domain: assessment
-last-updated: 2026-07-11
+last-updated: 2026-09-06
 ---
 
 # Tasks — Assessment
@@ -31,6 +31,10 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   → `IssueCertificateAction` honrando `certificate_enabled` / `certificate_min_progress` /
   `certificate_requires_quiz` / `certificate_min_score`, idempotente por enrollment
   (testes em `CertificateIssuanceTest` + `CourseCompletedEventTest`).
+- [x] **Assessment Admin básico (2026-09-06):** superfícies area-first em
+  `/api/v1/admin/questionnaires` e `/api/v1/admin/questions`, com criação Admin sem
+  `instructor_id`, edição preservando ownership pedagógico, tenant isolation e Contract de
+  Learning para parents/categories.
 
 ## In Progress
 
@@ -38,6 +42,9 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Pending
 
+- [ ] **Assign/transfer pedagógico:** se necessário ao produto, implementar operação explícita,
+  autorizada e auditável para atribuir/transferir `instructor_id`; não fazer como efeito colateral do
+  CRUD administrativo.
 - [ ] `DELETE /questions/{id}`.
 - [ ] `GET /questionnaires/{id}/questions` (listar questões do questionário).
 - [ ] `POST /questionnaires/{id}/questions` (anexar questões).
@@ -48,6 +55,9 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Revoke de certificado (`assessment.certificates.revoke`).
 - [ ] Alinhar permissions de Assessment às roles (admin/instructor/student) conforme a matriz em [`../00-architecture/rbac.md`](../00-architecture/rbac.md).
 - [ ] Teste E2E do fluxo do aluno (start → answer → finish → resultado).
+
+> A decisão Admin tenant-wide / Instructor owner pedagógico está fechada documentalmente. O slice
+> básico Admin foi entregue; as linhas restantes são deltas independentes.
 
 ## Needs Review
 

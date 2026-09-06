@@ -146,6 +146,36 @@ it('forbids an admin from issuing invitations into another tenant (IDOR)', funct
     expect(Invitation::query()->where('tenant_id', $tenantB->id)->count())->toBe(0);
 });
 
+it('lets a tenant admin issue an invitation through the canonical admin surface', function (): void {
+    [$admin, $headers] = actingAsUserType(UserType::Admin);
+
+    $response = $this->postJson('/api/v1/admin/invitations', [
+        'email' => 'canonical-invite@example.com',
+        'role' => 'student',
+    ], $headers);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('data.email', 'canonical-invite@example.com')
+        ->assertJsonPath('data.role', 'student')
+        ->assertJsonStructure(['data' => ['id', 'email', 'role', 'token', 'expires_at']]);
+
+    expect(Invitation::query()->firstOrFail()->tenant_id)->toBe($admin->tenant_id);
+});
+
+it('denies canonical admin invitations by area before invitation authorization', function (): void {
+    [, $headers] = actingAsUserType(UserType::Instructor);
+
+    assertApiErrorEnvelope(
+        $this->postJson('/api/v1/admin/invitations', [
+            'email' => 'area-denied@example.com',
+            'role' => 'student',
+        ], $headers),
+        403,
+        'area_forbidden',
+    );
+});
+
 /*
 |--------------------------------------------------------------------------
 | Aceite de convite (POST /api/v1/core/invitations/accept)

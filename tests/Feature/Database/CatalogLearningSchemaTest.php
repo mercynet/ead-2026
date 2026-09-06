@@ -130,6 +130,9 @@ it('applies hierarchical and system-aware fields to categories', function (): vo
     expect(Schema::hasColumns('categories', [
         'tenant_id',
         'parent_id',
+        'tenant_key',
+        'path',
+        'depth',
         'name',
         'slug',
         'normalized_name',

@@ -35,7 +35,7 @@ return [
             'as' => 'admin',
             'path' => '/api/v1/admin/categories',
             'body' => ['name' => 'Categoria Nova Reslot E2E'],
-            'expect' => ['status' => 201, 'json' => ['data.is_system' => false]],
+            'expect' => ['status' => 201, 'json' => ['data.type' => 'custom']],
             'db' => function (array $ctx): array {
                 $created = Category::query()->where('slug', 'categoria-nova-reslot-e2e')->first();
 

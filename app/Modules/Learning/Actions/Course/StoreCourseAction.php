@@ -8,10 +8,10 @@ use Illuminate\Support\Str;
 
 class StoreCourseAction
 {
-    public function handle(ApiContext $context, array $attributes): Course
+    public function handle(ApiContext $context, array $attributes, ?int $instructorId = null): Course
     {
         $attributes['tenant_id'] = $context->requiredTenant()->id;
-        $attributes['instructor_id'] = $context->requiredUser()->id;
+        $attributes['instructor_id'] = $instructorId;
         $attributes['slug'] = Str::slug($attributes['title']);
         $attributes['status'] = 'draft';
         $attributes['price_cents'] ??= 0;

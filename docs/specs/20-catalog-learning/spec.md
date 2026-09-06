@@ -1,7 +1,7 @@
 ---
 domain: catalog-learning
 maturity: stable
-last-reviewed: 2026-07-29
+last-reviewed: 2026-09-06
 owners: [paulo]
 related:
   - ../00-architecture/api-conventions.md
@@ -64,6 +64,13 @@ Recursos detalhados nas subspecs:
   tenants, nunca colide com sistema); delete com proteção (system com cursos bloqueia; tenant com
   cursos exige confirm + detach). Desenho em ADR-002; detalhe em
   [`subspecs/catalog.md`](subspecs/catalog.md).
+- **Vocabulário de categorias:** o contrato público usa somente **System** (global/platform/Mzrt) e
+  **Custom** (tenant-owned/Admin). `SYSTEM`, `DEFAULT` e `TENANT_CUSTOM` são apenas aliases
+  históricos/ internos, não nomes de payload ou documentação nova.
+- **Publicação Admin:** um curso só pode transicionar para `published` quando estiver ativo, não
+  arquivado, tiver pelo menos um módulo e tiver pelo menos uma aula pertencente a módulo do curso,
+  publicada e ativa. Curso sem Instructor continua válido; quiz, mídia e preço não são requisitos.
+  `archived` é terminal no MVP e a publicação da aula é transição separada.
 - **Catálogo esconde cursos já comprados** pelo aluno logado.
 - **Access control na lição:** acesso à mídia se o curso for gratuito, ou a aula for degustação
   (`is_free`), ou houver `Enrollment` `active` não expirado. Matrícula `expired` ainda vê a vitrine

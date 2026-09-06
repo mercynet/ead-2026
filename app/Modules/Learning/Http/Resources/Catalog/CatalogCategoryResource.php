@@ -15,7 +15,9 @@ class CatalogCategoryResource extends JsonResource
             'parent_id' => $this->parent_id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'is_system' => $this->is_system,
+            'type' => $this->is_system ? 'system' : 'custom',
+            'path' => $this->path,
+            'depth' => $this->depth,
         ];
     }
 }

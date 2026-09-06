@@ -1,7 +1,7 @@
 ---
 domain: assessment
 maturity: stable
-last-reviewed: 2026-06-10
+last-reviewed: 2026-09-06
 owners: [paulo]
 related:
   - ../00-architecture/rbac.md
@@ -56,6 +56,20 @@ Recursos detalhados nas subspecs:
 - **Certificado automático:** emitido quando progresso ≥ `certificate_min_progress` e, se
   `certificate_requires_quiz`, quiz aprovado com ≥ `certificate_min_score` (config em `courses`).
 - **Verificação pública** de certificado por número, sem autenticação.
+
+### Ownership operacional e pedagógico
+
+- **Admin** é operador tenant-wide do Assessment básico do próprio tenant: pode listar, consultar e
+  gerir o recurso sem assumir autoria pedagógica.
+- **Instructor** é o owner pedagógico: `instructor_id` representa o autor/responsável e o Instructor
+  só opera Assessment dentro do próprio ownership pedagógico e dos parents que lhe pertencem.
+- Criação de `Questionnaire` ou `QuizQuestion` pela superfície Admin usa `instructor_id = null`.
+  Admin não vira Instructor por executar a operação; `null` representa recurso operado pelo tenant
+  ainda sem autor pedagógico atribuído.
+- Atualização administrativa não transfere ownership. Um futuro `assign/transfer` deverá ser ação
+  explícita, autorizada e auditável; não é comportamento implícito nem parte desta implementação.
+- A decisão de ownership está fechada para o contexto Admin, mas sua superfície area-first e suas
+  transições ainda são deltas de implementação em `tasks.md`.
 
 ## Domain Boundaries
 

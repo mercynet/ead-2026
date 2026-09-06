@@ -39,6 +39,7 @@ class CoreServiceProvider extends ServiceProvider
     {
         Gate::define('core.users.list', [UserPolicy::class, 'list']);
         Gate::define('core.users.view', [UserPolicy::class, 'show']);
+        Gate::define('core.users.view-check', [UserPolicy::class, 'show']);
         Gate::define('core.users.update-self', [UserPolicy::class, 'updateSelf']);
 
         /*

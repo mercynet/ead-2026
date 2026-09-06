@@ -38,7 +38,7 @@ class CourseMaterialController extends Controller
             $course,
         ]);
 
-        $courseMaterial = $this->storeCourseMaterialAction->handle($context, $course, $request->validated());
+        $courseMaterial = $this->storeCourseMaterialAction->handle($context, $course, $request->validated(), $context->requiredUser()->id);
 
         return CourseMaterialResource::make($courseMaterial)
             ->response()

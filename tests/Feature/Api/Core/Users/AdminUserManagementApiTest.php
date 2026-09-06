@@ -235,3 +235,58 @@ it('forbids deleting another tenant admin', function (): void {
 
     expect(User::query()->find($otherAdmin->id))->not->toBeNull();
 });
+
+it('lists users through the canonical admin surface within the active tenant', function (): void {
+    [$tenant, , $headers] = adminUserManagementContext();
+    $otherTenant = Tenant::factory()->create();
+
+    $ownStudent = User::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Student,
+        'email' => 'own-student@tenant-a.local',
+    ]);
+    $foreignStudent = User::factory()->create([
+        'tenant_id' => $otherTenant->id,
+        'user_type' => UserType::Student,
+        'email' => 'foreign-student@tenant-b.local',
+    ]);
+
+    $this->getJson('/api/v1/admin/users', $headers)
+        ->assertSuccessful()
+        ->assertJsonFragment(['email' => $ownStudent->email])
+        ->assertJsonMissing(['email' => $foreignStudent->email]);
+});
+
+it('shows a user through the canonical admin surface and hides another tenant', function (): void {
+    [$tenant, , $headers] = adminUserManagementContext();
+    $otherTenant = Tenant::factory()->create();
+
+    $ownStudent = User::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_type' => UserType::Student,
+    ]);
+    $foreignStudent = User::factory()->create([
+        'tenant_id' => $otherTenant->id,
+        'user_type' => UserType::Student,
+    ]);
+
+    $this->getJson('/api/v1/admin/users/'.$ownStudent->id, $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $ownStudent->id);
+
+    assertApiErrorEnvelope(
+        $this->getJson('/api/v1/admin/users/'.$foreignStudent->id, $headers),
+        404,
+        'not_found',
+    );
+});
+
+it('denies the canonical admin user list by area before permission checks', function (): void {
+    [, $headers] = actingAsUserType(UserType::Instructor);
+
+    assertApiErrorEnvelope(
+        $this->getJson('/api/v1/admin/users', $headers),
+        403,
+        'area_forbidden',
+    );
+});

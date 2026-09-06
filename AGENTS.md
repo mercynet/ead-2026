@@ -240,6 +240,10 @@ Skill não é sugestão: é regra de domínio que já custou bug. O acoplamento 
   deliberadamente sem gatilho.
 - **Árbitro**: `scripts/ai/skill-router.sh` — modos `tool` (stdin = payload de hook PreToolUse),
   `prompt` (stdin = payload de UserPromptSubmit) e `list` (tabela inteira). Informa, nunca bloqueia.
+- **Contexto de capability**: antes de alterar uma capability de domínio, carregue o bundle
+  selecionado em `.agents/capability-context.json` (o router o sugere automaticamente). Leia as
+  specs, invariantes e testes listados; `HUMAN_DECISION_REQUIRED` é um gate advisory explícito e
+  não autoriza transformar ausência de decisão em implementação.
 - **Baseline first-class:** Codex é a ferramenta prioritária deste projeto. O objetivo do harness é
   hardening específico do Codex, com guards, provas, lifecycle e enforcement necessários — não copiar
   hooks de Claude mecanicamente nem prometer parity.

@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-09-05
+last-updated: 2026-09-06
 ---
 
 # Tasks — Catalog & Learning
@@ -83,6 +83,20 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] **Lesson media avançado**: subtypes YouTube/Vimeo/AWS (`provider=s3`), `progress_strategy` e contratos normalizados de configuração; upload real/`MediaEmbedService` permanecem fora deste slice.
 - [x] **Matrícula manual por instrutor (`billing_type=external`)**: curso pago cria matrícula `pending` e preserva `created_by_instructor_id`; curso grátis retorna `422`.
 - [x] Alinhar `Enrollment` ao contrato revisado: status `pending|active|cancelled|expired`, rematrícula de `cancelled/expired` e progresso fora do status.
+- [x] **ADM-02 — superfície Admin canônica de conteúdo (2026-09-06):** CRUD e reorder de cursos,
+  módulos e aulas, materiais e mídia administrativa em `/api/v1/admin`, com isolamento tenant,
+  guard de área e payloads de escopo proibidos. A criação Admin não atribui ownership pedagógico;
+  as rotas legacy `/api/v1/learning` permanecem compatíveis para autoria do Instructor.
+- [x] **Publication readiness Admin (2026-09-06):** `POST /api/v1/admin/lessons/{id}/publish` e
+  `unpublish` são transições explícitas, sem mutação de status pelo CRUD; `publish` de curso exige
+  curso ativo, não arquivado, módulo e Lesson publicada/ativa, preservando estado em falha.
+- [x] **Categorias System/Custom Admin (2026-09-06):** `tenant_key`/unicidade semântica,
+  normalização compartilhada, parent de mesmo escopo, materialized path com move/cycle guard e
+  Resource público `type: system|custom` foram convergidos nas superfícies Admin/Mzrt.
+- [x] **ADM-03 — matrícula Admin cash/manual (2026-09-06):** CRUD tenant-scoped em
+  `/api/v1/admin/enrollments`, payloads de escopo/ownership proibidos, concessão manual com espelho
+  financeiro idempotente e confirmação cash via outbox validada por E2E HTTP real. Matrícula externa,
+  webhooks e automação de gateway permanecem fora deste slice.
 
 ## In Progress
 
@@ -93,12 +107,10 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 > Somente deltas ainda abertos permanecem aqui. Histórico entregue não é repetido nesta seção.
 
 ### Categorias (redesign — ADR-002)
-> Impl atual já tem `is_system` + `parent_id` + antiduplicação em `StoreCategoryAction`. Delta até o
-> alvo do [ADR-002](../00-architecture/decisions/002-categorias-tabela-unica-pivot-dedicado.md):
-- [ ] `normalized_name` **persistida** + helper de normalização compartilhado (lower, sem acento, trim, espaços colapsados).
-- [ ] Coluna gerada `tenant_key = COALESCE(tenant_id,0)` + `UNIQUE(tenant_key, normalized_name)`.
-- [ ] Materialized path: colunas `path`/`depth` + manutenção na escrita (create/move) + prevenção de ciclo.
-- [ ] Regra **parent de mesmo escopo** (system→system, tenant→mesmo tenant); proibir cross-escopo.
+> Entregue em 2026-09-06: `normalized_name` é persistida por helper compartilhado; o banco mantém
+> `tenant_key = COALESCE(tenant_id,0)` e a unicidade canônica; `path`/`depth` são mantidos em
+> create/move com prevenção de ciclo; parents são do mesmo escopo; Resources expõem apenas
+> `type: system|custom` (`is_system` permanece interno e proibido nos payloads).
 
 ### Reuso eadIA (a importar — ver ADR-001)
 > **Curso-core revisado (2026-06-13):** ead2026 já é mais rico que o eadIA em `courses`/`lessons`

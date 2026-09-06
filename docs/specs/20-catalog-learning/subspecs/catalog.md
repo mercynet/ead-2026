@@ -2,7 +2,7 @@
 domain: catalog-learning
 parent: ../spec.md
 resource: catalog
-last-reviewed: 2026-06-13
+last-reviewed: 2026-09-06
 ---
 
 # Catalog (Categories & Course Discovery)
@@ -46,6 +46,10 @@ category_course (pivô dedicado, tenant-aware)
 
 ### Tipos de categoria
 
+O vocabulário canônico é **System** e **Custom**. Os aliases históricos `SYSTEM`, `DEFAULT` e
+`TENANT_CUSTOM` não devem aparecer como nomes alternativos em payloads, Resources, permissions ou
+documentação nova.
+
 | Tipo | Escopo | Dono / quem cria-edita | Área |
 |------|--------|------------------------|------|
 | System (`tenant_id=null, is_system=true`) | Global (todos os tenants) | Apenas developer | Mzrt |
@@ -53,6 +57,9 @@ category_course (pivô dedicado, tenant-aware)
 
 - O tenant **vê** todas as de sistema, mas só **seleciona** (não cria/edita/exclui). Funcionam como
   um **banco de categorias** — o tenant usa só as que fazem sentido para ele.
+- Admin pode selecionar System e Custom ao categorizar curso do próprio tenant, mas só faz CRUD de
+  Custom. Instructor pode ler/selecionar conforme a superfície autorizada, sem administrar a
+  taxonomia; System não é CRUD do tenant.
 - Decisão por `is_system` vive na `CategoryPolicy`, nunca em `if` de controller.
 
 ### Antiduplicação (normalização)
@@ -66,6 +73,8 @@ category_course (pivô dedicado, tenant-aware)
   → nenhum tenant cria outra com esse nome). Essa regra cruza escopos, não cabe em índice → validada
   no app (`StoreCategoryAction`).
 - **Entre tenants diferentes o mesmo nome é livre** (dois tenants podem ter "Exercícios Aeróbicos").
+- Dentro do mesmo tenant não pode haver duplicação semântica de Custom; Custom equivalente a System
+  também é recusada. Tenants diferentes podem ter Custom semanticamente equivalente.
 - Fonte de verdade da unicidade = app, escopada a `whereNull('deleted_at')`; o `UNIQUE` de banco é
   rede secundária.
 

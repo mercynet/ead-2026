@@ -58,6 +58,14 @@ não fato operacional atual (ver `performance-scalability.md`).
 
 ## Módulos de domínio e áreas API
 
+O layout executável atual e canônico é o monólito modular de cinco módulos:
+`Core`, `Learning`, `Assessment`, `Financial` e `Ecosystem`, com o shared kernel em `app/Shared`.
+Costuras plugáveis pertencem aos módulos que as possuem: gateways em `Financial`, contratos e
+configuração de plugins em `Ecosystem`, e o futuro `MediaProvider` não cria um namespace legado.
+`app/Plugins` e `app/Support/Ports` são paths históricos/superseded e não são alternativas para
+trabalho novo. A dívida Eloquent cross-module existente, congelada em allowlist, permanece dívida;
+esta decisão não autoriza refactor nem a apresenta como resolvida.
+
 Domínios limitados organizam ownership de código; não definem prefixo público de URL. Rotas de
 produto seguem `/api/v1/{area}/{resource}`. Mapa de personas, contratos de área e migração dos
 endpoints legado: [Áreas & Superfícies](areas-surfaces.md). Roadmap de jornadas:

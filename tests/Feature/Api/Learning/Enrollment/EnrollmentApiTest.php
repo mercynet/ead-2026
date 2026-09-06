@@ -1041,7 +1041,8 @@ it('cancels enrollment logically', function (): void {
 
     $this->withHeaders($headers)->deleteJson("/api/v1/learning/enrollments/{$enrollment->id}")
         ->assertOk()
-        ->assertJsonPath('message', 'Enrollment cancelled successfully.');
+        ->assertJsonPath('data.message', 'Enrollment cancelled successfully.')
+        ->assertJsonMissingPath('message');
 
     $enrollment->refresh();
     expect($enrollment->status)->toBe('cancelled');

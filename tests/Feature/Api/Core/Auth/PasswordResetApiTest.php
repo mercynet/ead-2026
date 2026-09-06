@@ -31,6 +31,20 @@ it('issues a reset request and notifies the user when the email exists in the te
         ->and($reset->getRawOriginal('token_hash'))->toHaveLength(64);
 });
 
+it('supports the canonical password forgot URL', function (): void {
+    Notification::fake();
+    $tenant = makeTenant();
+    $user = User::factory()->forTenant($tenant)->create(['email' => 'canonical@example.com']);
+
+    $this->postJson('/api/v1/auth/password/forgot', [
+        'email' => 'canonical@example.com',
+    ], tenantHeaders($tenant))
+        ->assertOk()
+        ->assertJsonPath('data.message', 'Se o email existir, enviaremos instruções de redefinição.');
+
+    Notification::assertSentTo($user, PasswordResetNotification::class);
+});
+
 it('responds generically and sends nothing when the email does not exist (no enumeration)', function (): void {
     Notification::fake();
     $tenant = makeTenant();

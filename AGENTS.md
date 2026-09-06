@@ -24,6 +24,32 @@ rodando os invariantes. Prefira config executável a prosa quando houver conflit
 `docs/ROADMAP.md` = fases cross-domain. `docs/STATE.md` = sessão atual / próximos passos.
 Idioma: specs/discussão em **PT-BR**; identificadores, permissions, código em **inglês**.
 
+## Decisões canônicas de reconciliação (2026-09-05)
+
+- **Status:** `Done` representa um slice entregue; `Pending` contém somente delta aberto. Um
+  `[x]` em `tasks.md` é status declarativo do slice, não `RUNTIME_VERIFIED`.
+- **Arquitetura:** o layout atual e canônico para trabalho novo é `app/Modules/{Core,Learning,Assessment,Financial,Ecosystem}`
+  com `app/Shared`. `app/Plugins` e `app/Support/Ports` são paths históricos/superseded e não devem
+  receber implementação nova. A dívida Eloquent de fronteiras existente permanece explícita e não
+  é considerada resolvida por esta decisão.
+- **Autenticação:** `/api/v1/auth/*` é `TARGET_CANONICAL` e está implementado; `/api/v1/core/auth/*` é
+  `CURRENT_IMPLEMENTED` + `LEGACY_COMPATIBILITY` durante a v1, compartilhando comportamento,
+  middleware e throttling. Qualquer remoção futura exige inventário de consumidores e decisão
+  explícita.
+- **Evidência:** sem execução atual contra app/banco adequados, nenhuma capability é
+  `RUNTIME_VERIFIED`. Use `RUNTIME_VERIFIED`, `TEST_VERIFIED`, `STATIC_EVIDENCE_ONLY`,
+  `DOCUMENTATION_ONLY` ou `UNVERIFIED` conforme a evidência disponível.
+- **Harness:** Codex é first-class. O próximo objetivo é **Codex Harness Hardening**, com guards,
+  provas, lifecycle e enforcement necessários ao projeto; não há requisito de parity mecânica com
+  Claude ou OpenCode. OpenCode é opcional/best-effort; `opencode.json` na raiz é sua configuração
+  canônica, `.opencode/opencode.json` não é requerido e sua ausência não é finding do harness
+  principal.
+
+Workstreams canônicos seguintes: **WS1 — API Contract Convergence** (D3, M-01, M-02, M-03 e
+Scribe/documentação relacionada), **WS2 — Codex Harness Hardening** (M-05, M-06, enforcement e
+probes; M-04 será avaliado separadamente) e **WS3 — Legacy Surface & Module Boundary Debt** (M-07,
+M-09 e limpeza documental arquitetural). Nenhum deles é implementado nesta reconciliação.
+
 Arquivos por ferramenta (`CLAUDE.md`, `GEMINI.md`, `.codex/`, `.junie/`, `opencode.json`) **apenas
 estendem** este contrato com o que é específico daquela ferramenta (hooks, MCP, atalhos) — não duplicam
 stack, comandos, arquitetura nem invariantes. `CONTEXT.md`, `PROMPT-CONTINUAR.md` e
@@ -82,7 +108,7 @@ De dentro do container use `--base=http://localhost` (a porta publicada no host 
 - Fluxo: `Route → Controller (fino) → Action → Model → Resource`.
 - Ports/adapters **só** em 3 costuras: `PaymentGateway`, `MediaProvider`, `Plugin`. Resto: Eloquent direto.
 
-**Estado atual:** os 5 módulos existem e estão registrados em `bootstrap/providers.php`. Cada módulo
+**Estado atual/canônico:** os 5 módulos existem e estão registrados em `bootstrap/providers.php`. Cada módulo
 carrega suas migrations, define Gates e registra rotas no seu `Providers/<M>ServiceProvider` — **não há
 `routes/api.php` global** (`routes/web.php` só serve a welcome view). `config/permissions.php`,
 `config/lgpd.php` e a suite `tests/Architecture` rodam **sem skips** — incluindo `ModuleBoundaryTest`
@@ -98,8 +124,8 @@ As costuras plugáveis **existem, mas dentro dos módulos**, não em `app/Plugin
   contratos `ActiveGateway`/`TenantGatewayProvider`), capability-gated conforme ADR-005.
 - `MediaProvider` → ainda **alvo a construir**.
 
-`docs/specs/00-architecture/backend-patterns.md` ainda descreve o layout antigo (`app/Plugins/`,
-`app/Support/Ports/`): **dívida de spec conhecida — o código vence.**
+`docs/specs/00-architecture/backend-patterns.md` registra os paths antigos apenas como
+históricos/superseded; **o código e o layout de cinco módulos vencem.**
 
 ## Áreas de API (superfícies por persona)
 
@@ -144,7 +170,9 @@ Escrita e leitura podem morar em áreas diferentes (ex.: categorias têm `GET` n
    `tenant_not_resolved`, `too_many_requests`, `tenant_already_exists`, `gateway_unavailable`, `invalid_credentials`,
    `invitation_invalid`, `password_reset_invalid`. Negar existência (404 defensivo) sai no **mesmo** envelope de um
    404 comum — corpo diferente denuncia que o recurso existe.
-5. **Tenant scope** via `spatie/laravel-multitenancy` — nunca `where('tenant_id')` na mão.
+5. **Tenant scope**: resolução/contexto via `spatie/laravel-multitenancy`; no estado atual, queries
+   em Actions/Services usam `where('tenant_id')` explícito conforme ADR-004 e `TenantScopingTest`.
+   Controller continua sem query/scoping manual; não invente um global scope fora da decisão registrada.
 6. **Permissions canônicas em `config/permissions.php`** (`permission => {label, user_types}`); seeder e Gates **derivam** dele. Nome: `domain.resource.action`.
 7. **Dinheiro em cents inteiro, nunca float.**
 8. **Listagens usam `cursorPaginate`**; eager-load contra N+1.
@@ -212,11 +240,18 @@ Skill não é sugestão: é regra de domínio que já custou bug. O acoplamento 
   deliberadamente sem gatilho.
 - **Árbitro**: `scripts/ai/skill-router.sh` — modos `tool` (stdin = payload de hook PreToolUse),
   `prompt` (stdin = payload de UserPromptSubmit) e `list` (tabela inteira). Informa, nunca bloqueia.
-- **Ferramenta com hooks** (Claude Code via `.claude/settings.json`, Codex via `.codex/hooks.json`):
-  o router roda sozinho antes de cada edit/comando e no envio do pedido, injetando as skills obrigatórias.
+- **Baseline first-class:** Codex é a ferramenta prioritária deste projeto. O objetivo do harness é
+  hardening específico do Codex, com guards, provas, lifecycle e enforcement necessários — não copiar
+  hooks de Claude mecanicamente nem prometer parity.
+- **Ferramenta com hooks** (Codex via `.codex/hooks.json`; Claude Code via `.claude/settings.json`):
+  o router roda nos pontos configurados por cada ferramenta, injetando as skills obrigatórias. As
+  capacidades de Claude não definem o conjunto obrigatório do Codex.
 - **Ferramenta sem hooks** (Gemini, Junie, OpenCode, qualquer LLM avulso): rode
   `bash scripts/ai/skill-router.sh list` no início da sessão e case você mesmo o caminho que vai tocar.
   Não há desculpa de "não sabia": a tabela é uma chamada de comando.
+- **OpenCode opcional/best-effort:** quando utilizado, `opencode.json` na raiz é a configuração
+  canônica. `.opencode/opencode.json` não é requerido; sua ausência não representa degradação do
+  harness principal nem deve ser tratada como finding relevante.
 - **Anti-drift**: `scripts/ai/validate-harness.py` **falha** se uma skill não estiver roteada nem em
   `manual`, se um regex não compilar ou se o router não for executável. O `pre-commit` roda o validador
   quando `.agents/skills/`, `scripts/ai/` ou config de ferramenta mudam.

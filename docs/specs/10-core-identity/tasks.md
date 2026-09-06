@@ -1,6 +1,6 @@
 ---
 domain: core-identity
-last-updated: 2026-07-29
+last-updated: 2026-09-05
 ---
 
 # Tasks — Core & Identity (inclui RBAC)
@@ -8,6 +8,9 @@ last-updated: 2026-07-29
 Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de aceite = teste.
 
 ## Done
+
+> `[x]` registra slice entregue; não é promoção automática para `RUNTIME_VERIFIED`. O delta aberto
+> fica exclusivamente em `Pending`.
 
 ### Infraestrutura
 - [x] `ApiContext` Value Object + injeção via middleware (`api.context`).
@@ -32,6 +35,9 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   `Journey: FOUNDATION-0 | Area: neutral | Depends on: none`
 
 ### Core endpoints
+- **Superfície canônica WS1:** os endpoints de autenticação pública usam `/api/v1/auth/*`.
+  `/api/v1/core/auth/*` permanece como compatibilidade legacy durante a v1, com comportamento,
+  middleware e throttling equivalentes.
 - [x] `POST /api/v1/core/auth/login` (rate limit 5/min, token com device type).
 - [x] `POST /api/v1/core/auth/logout`.
 - [x] `GET /api/v1/core/auth/me` (usuário + roles + permissions).
@@ -66,14 +72,29 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] **`MZRT-SKELETON-E2E`** E2E HTTP real completo: create → `cash`/entitlements → admin login
   → suspend → login/token negados → reactivate → login/token restaurados. Runner suporta método/path
   por caso, captura segura e requests sem header automático; teardown remove fixtures e auditoria
-  sem tocar registros alheios. Evidência: 9/9 casos e zero resíduos no DB `ead2026_e2e`.
+  sem tocar registros alheios. Evidência histórica: 9/9 casos e zero resíduos no DB `ead2026_e2e`.
+  Evidência runtime atual (2026-09-05): receipt `docs/reports/MZRT-CLOSURE-SLICE-2-2026-09-05.md`,
+  9/9 casos contra app viva em ambiente `e2e`, com auth canônica `/api/v1/auth/*`, side effects,
+  redaction, auditoria de status e zero resíduos confirmados.
   `Journey: MZRT-SKELETON | Area: mzrt | Depends on: MZRT-SKELETON-ENTITLEMENTS`
 
+### Slices entregues posteriormente
+
+- [x] Migration: trocar `unique` global de `cpf`/`email` por compostos `(tenant_id, cpf)` e `(tenant_id, email)` — alinha ao modelo tenant-scoped. Login agora é tenant-scoped (fallback developer global); usuário de tenant sem `X-Tenant-ID` → 401 genérico.
+- [x] Padronizar permission de `GET /users/{id}` para `core.users.view` (canônico); `core.users.show` removido do gate/controller (nunca existiu em `config/permissions.php`).
+- [x] `PATCH /api/v1/core/users/me/password`: revoga as **outras** sessões na troca, preservando a atual (reset por token revoga todas).
+- [x] Rate limiters nomeados e separados por rota (login/forgot/reset/invitation-accept/invitation-create) — corrige bucket `domínio|IP` compartilhado do throttle padrão (SEC-001).
+- [x] `E2eRunCommand` endurecido: gate de ambiente (local|testing|e2e), timeout por request, circuit breaker no 5xx inesperado (`--continue-on-error`), cleanup surfacing e sanitização de token no output (AUD-001, escopo proporcional).
+- [x] Isolamento E2E: gate de DB descartável (recusa dev salvo `--force-db`), canário servidor↔DB antes de mutar, `--fresh`, `.env.e2e.example` + DB `ead2026_e2e` provisionado. Fecha o gate "stack E2E dedicada" da auditoria.
+- [x] `PATCH /api/v1/admin/users/{id}` — re-slotado área-first (era `/core/users/{id}`): admin administra instructor/student do próprio tenant; `user_type`/`email`/`cpf`/`password` proibidos no payload; admin par → 403, developer e cross-tenant → 404. `Journey: ADMIN-OPS | Area: admin | Depends on: FOUNDATION-0`
+- [x] `DELETE /api/v1/admin/users/{id}` — soft delete (`deleted_at` em `users`) + revogação das sessões Sanctum na mesma transação; login e token do excluído passam a falhar. E-mail permanece reservado no tenant (unique é sobre a linha). `Journey: ADMIN-OPS | Area: admin | Depends on: PATCH /api/v1/admin/users/{id}`
 ## In Progress
 
 - _(nenhuma)_
 
 ## Pending
+
+> Somente deltas ainda abertos permanecem aqui. Histórico entregue não é repetido nesta seção.
 
 ### RBAC
 - [ ] Verificação de plugin permissions em runtime (`hasActivePluginPermission`).
@@ -81,20 +102,6 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Remover código Spatie não utilizado.
 
 ### Core
-- [x] Migration: trocar `unique` global de `cpf`/`email` por compostos `(tenant_id, cpf)` e `(tenant_id, email)` — alinha ao modelo tenant-scoped. Login agora é tenant-scoped (fallback developer global); usuário de tenant sem `X-Tenant-ID` → 401 genérico.
-- [x] Padronizar permission de `GET /users/{id}` para `core.users.view` (canônico); `core.users.show` removido do gate/controller (nunca existiu em `config/permissions.php`).
-- [x] `PATCH /api/v1/core/users/me/password`: revoga as **outras** sessões na troca, preservando a atual (reset por token revoga todas).
-- [x] Rate limiters nomeados e separados por rota (login/forgot/reset/invitation-accept/invitation-create) — corrige bucket `domínio|IP` compartilhado do throttle padrão (SEC-001).
-- [x] `E2eRunCommand` endurecido: gate de ambiente (local|testing|e2e), timeout por request, circuit breaker no 5xx inesperado (`--continue-on-error`), cleanup surfacing e sanitização de token no output (AUD-001, escopo proporcional).
-- [x] Isolamento E2E: gate de DB descartável (recusa dev salvo `--force-db`), canário servidor↔DB antes de mutar, `--fresh`, `.env.e2e.example` + DB `ead2026_e2e` provisionado. Fecha o gate "stack E2E dedicada" da auditoria.
-- [x] `PATCH /api/v1/admin/users/{id}` — re-slotado área-first (era `/core/users/{id}`): admin
-  administra instructor/student do próprio tenant; `user_type`/`email`/`cpf`/`password` proibidos no
-  payload; admin par → 403, developer e cross-tenant → 404.
-  `Journey: ADMIN-OPS | Area: admin | Depends on: FOUNDATION-0`
-- [x] `DELETE /api/v1/admin/users/{id}` — soft delete (`deleted_at` em `users`) + revogação das
-  sessões Sanctum na mesma transação; login e token do excluído passam a falhar. E-mail permanece
-  reservado no tenant (unique é sobre a linha).
-  `Journey: ADMIN-OPS | Area: admin | Depends on: PATCH /api/v1/admin/users/{id}`
 - [ ] `GET /api/v1/core/tenant/config` (público, white-label).
 - [ ] `PATCH /api/v1/core/tenant/config` (tenant_admin).
 - [ ] Model `SystemSetting` + endpoints (developer only).
@@ -103,7 +110,8 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 
 ## Needs Review
 
-- _(nenhuma)_ — padronização de `GET /users/{id}` para `core.users.view` virou task em *Pending*.
+- _(nenhuma)_ — slices históricos entregues foram movidos para *Done*; não há revisão pendente
+  derivada desta reconciliação.
 
 ## Open Questions
 

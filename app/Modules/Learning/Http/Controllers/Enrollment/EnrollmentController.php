@@ -123,6 +123,10 @@ class EnrollmentController extends Controller
 
         $this->deleteEnrollmentAction->handle($enrollment);
 
-        return response()->json(['message' => 'Enrollment cancelled successfully.']);
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Enrollment cancelled successfully.',
+            ],
+        ]);
     }
 }

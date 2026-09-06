@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Route;
  */
 it('requires auth:sanctum on every api/v1 route not deliberately public', function (): void {
     $publicAllowlist = [
+        'POST api/v1/auth/login',
+        'POST api/v1/auth/password/forgot',
+        'POST api/v1/auth/password/reset',
         'POST api/v1/core/auth/login',
         'POST api/v1/core/auth/password/forgot',
         'POST api/v1/core/auth/password/reset',
@@ -59,6 +62,9 @@ it('requires auth:sanctum on every api/v1 route not deliberately public', functi
 
 it('keeps the public allowlist free of stale entries', function (): void {
     $publicAllowlist = [
+        'POST api/v1/auth/login',
+        'POST api/v1/auth/password/forgot',
+        'POST api/v1/auth/password/reset',
         'POST api/v1/core/auth/login',
         'POST api/v1/core/auth/password/forgot',
         'POST api/v1/core/auth/password/reset',
@@ -101,4 +107,37 @@ it('uses the named rate limiters on invitation routes (no shared anonymous bucke
         ->toContain('throttle:invitation-accept')
         ->and($middlewareFor('POST', 'api/v1/core/invitations'))
         ->toContain('throttle:invitation-create');
+});
+
+it('keeps canonical and legacy auth routes on identical middleware and throttling', function (): void {
+    $middlewareFor = function (string $method, string $uri): array {
+        /** @var RoutingRoute $route */
+        foreach (Route::getRoutes() as $route) {
+            if ($route->uri() === $uri && in_array($method, $route->methods(), true)) {
+                return $route->gatherMiddleware();
+            }
+        }
+
+        return [];
+    };
+
+    foreach (['login', 'password/forgot', 'password/reset'] as $path) {
+        $canonical = $middlewareFor('POST', "api/v1/auth/{$path}");
+        $legacy = $middlewareFor('POST', "api/v1/core/auth/{$path}");
+
+        sort($canonical);
+        sort($legacy);
+
+        expect($canonical)->toBe($legacy);
+    }
+
+    foreach ([['POST', 'logout'], ['GET', 'me']] as [$method, $path]) {
+        $canonical = $middlewareFor($method, "api/v1/auth/{$path}");
+        $legacy = $middlewareFor($method, "api/v1/core/auth/{$path}");
+
+        sort($canonical);
+        sort($legacy);
+
+        expect($canonical)->toBe($legacy);
+    }
 });

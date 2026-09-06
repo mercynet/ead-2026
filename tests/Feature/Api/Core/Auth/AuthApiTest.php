@@ -11,6 +11,43 @@ use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
+it('supports canonical auth URLs while keeping legacy behavior equivalent', function (): void {
+    $tenant = makeTenant();
+    $user = User::factory()->forTenant($tenant)->create([
+        'email' => 'canonical@example.com',
+        'password' => Hash::make('password123'),
+    ]);
+    $payload = ['email' => 'canonical@example.com', 'password' => 'password123'];
+    $headers = ['X-Tenant-ID' => (string) $tenant->id];
+
+    $canonical = $this->postJson('/api/v1/auth/login', $payload, $headers);
+    $legacy = $this->postJson('/api/v1/core/auth/login', $payload, $headers);
+
+    $canonical->assertSuccessful()->assertJsonStructure(['data' => ['token', 'user']]);
+    $legacy->assertSuccessful()->assertJsonStructure(['data' => ['token', 'user']]);
+
+    expect($canonical->json('data.user'))->toBe($legacy->json('data.user'))
+        ->and($canonical->json('data.user.id'))->toBe($user->id)
+        ->and($canonical->json('data.token'))->toBeString()
+        ->and($legacy->json('data.token'))->toBeString();
+
+    $canonicalToken = $canonical->json('data.token');
+
+    $this->getJson('/api/v1/auth/me', [
+        'Authorization' => 'Bearer '.$canonicalToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $user->id);
+
+    $this->postJson('/api/v1/auth/logout', [], [
+        'Authorization' => 'Bearer '.$canonicalToken,
+        'X-Tenant-ID' => (string) $tenant->id,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.logged_out', true);
+});
+
 it('logs in with valid tenant context and credentials', function (): void {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant A',

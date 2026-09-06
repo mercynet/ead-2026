@@ -1677,7 +1677,8 @@ it('allows an instructor to delete a lesson in the current tenant', function ():
 
     $this->deleteJson('/api/v1/learning/lessons/'.$lesson->id, [], $headers)
         ->assertOk()
-        ->assertJsonPath('message', 'Lesson deleted successfully.');
+        ->assertJsonPath('data.message', 'Lesson deleted successfully.')
+        ->assertJsonMissingPath('message');
 
     $this->assertSoftDeleted('lessons', ['id' => $lesson->id]);
 });

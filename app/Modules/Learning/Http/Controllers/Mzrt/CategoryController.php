@@ -12,6 +12,7 @@ use App\Modules\Learning\Http\Requests\Catalog\UpdateCategoryRequest;
 use App\Modules\Learning\Http\Resources\Catalog\CatalogCategoryResource;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -92,7 +93,7 @@ class CategoryController extends Controller
      *   "errors": [{"code": "validation_error", "message": "System categories with attached courses cannot be deleted."}]
      * }
      */
-    public function destroy(DeleteCategoryRequest $request, ApiContext $context, int $id): array
+    public function destroy(DeleteCategoryRequest $request, ApiContext $context, int $id): JsonResponse
     {
         $category = $this->getCategoryAction->handle($context, $id);
 
@@ -104,6 +105,10 @@ class CategoryController extends Controller
             (bool) ($request->validated('confirm') ?? false),
         );
 
-        return ['message' => 'Category deleted successfully.'];
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Category deleted successfully.',
+            ],
+        ]);
     }
 }

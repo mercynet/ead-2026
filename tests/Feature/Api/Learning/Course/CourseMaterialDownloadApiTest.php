@@ -171,7 +171,7 @@ it('fails safe when a persisted material file path points outside the tenant fol
 
     $response = $this->postJson("/api/v1/learning/courses/{$course->id}/materials/{$material->id}/downloads", [], $headers);
 
-    $response->assertStatus(422);
+    assertApiErrorEnvelope($response, 422, 'validation_error');
 
     expect(MaterialDownload::query()->where('course_material_id', $material->id)->exists())->toBeFalse();
 })->with([

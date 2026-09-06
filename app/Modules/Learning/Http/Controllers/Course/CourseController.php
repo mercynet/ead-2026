@@ -148,7 +148,7 @@ class CourseController extends Controller
      *
      * @response 200 scenario="Curso deletado com sucesso"
      * {
-     *   "message": "Course deleted successfully."
+     *   "data": {"message": "Course deleted successfully."}
      * }
      * @response 403 scenario="Sem permissão"
      * {
@@ -161,7 +161,7 @@ class CourseController extends Controller
      *   "errors": [{"code": "not_found", "message": "Recurso não encontrado."}]
      * }
      */
-    public function destroy(ApiContext $context, int $id): array
+    public function destroy(ApiContext $context, int $id): JsonResponse
     {
         $course = $this->getCourseAction->handle($context, $id);
 
@@ -169,6 +169,10 @@ class CourseController extends Controller
 
         $this->deleteCourseAction->handle($course);
 
-        return ['message' => 'Course deleted successfully.'];
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Course deleted successfully.',
+            ],
+        ]);
     }
 }

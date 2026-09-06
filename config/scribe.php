@@ -50,7 +50,14 @@ return [
 
             // Exclude these routes even if they matched the rules above.
             'exclude' => [
-                // 'GET /health', 'admin.*'
+                // Legacy auth remains executable for v1 consumers, but the
+                // canonical neutral surface is the only auth surface shown
+                // as primary documentation.
+                'POST api/v1/core/auth/login',
+                'POST api/v1/core/auth/password/forgot',
+                'POST api/v1/core/auth/password/reset',
+                'POST api/v1/core/auth/logout',
+                'GET api/v1/core/auth/me',
             ],
         ],
     ],

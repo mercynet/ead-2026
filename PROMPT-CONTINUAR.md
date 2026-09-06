@@ -1,5 +1,9 @@
 # Prompt de Contexto - EAD 2026
 
+> **HISTÓRICO / SUPERSEDED (2026-09-05):** prompt de retomada antigo, anterior à arquitetura modular,
+> às áreas de API e ao contrato atual de tenant/RBAC. Não use como fonte de estado ou regra; leia
+> `AGENTS.md`, `docs/specs/README.md`, `docs/ROADMAP.md` e `docs/STATE.md`.
+
 ## Visão Geral do Projeto
 
 Plataforma EAD multi-tenant API-first, reconstrução do sistema eadIA com arquitetura RESTful pura em Laravel 12.

@@ -7,6 +7,7 @@ use App\Modules\Assessment\Models\QuizAttempt;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
 use App\Shared\Http\ApiContext;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Start a new attempt for a questionnaire.
@@ -25,13 +26,17 @@ class StartAttemptAction
             ->findOrFail($questionnaireId);
 
         if (! $questionnaire->is_active) {
-            abort(422, 'This questionnaire is not active.');
+            throw ValidationException::withMessages([
+                'questionnaire' => ['This questionnaire is not active.'],
+            ]);
         }
 
         $questionsSnapshot = $this->freezeQuestions($questionnaire);
 
         if ($questionsSnapshot === []) {
-            abort(422, 'This questionnaire has no active questions.');
+            throw ValidationException::withMessages([
+                'questionnaire' => ['This questionnaire has no active questions.'],
+            ]);
         }
 
         $hasInProgressAttempt = $context->user->attempts()
@@ -40,7 +45,9 @@ class StartAttemptAction
             ->exists();
 
         if ($hasInProgressAttempt) {
-            abort(422, 'You already have an in-progress attempt for this questionnaire.');
+            throw ValidationException::withMessages([
+                'questionnaire' => ['You already have an in-progress attempt for this questionnaire.'],
+            ]);
         }
 
         $questionnaireSnapshot = [

@@ -1,5 +1,9 @@
 # Contexto — EAD 2026
 
+> **HISTÓRICO / SUPERSEDED (2026-09-05):** este ponteiro preserva uma descrição flat antiga de
+> `app/Actions`, `app/Http` e `app/Models`. Para trabalho novo, leia `AGENTS.md`, que aponta para a
+> arquitetura modular atual, e use `docs/STATE.md` apenas como handoff efêmero.
+
 Este arquivo é apenas um **ponteiro**. A documentação canônica vive em:
 
 - **`AGENTS.md`** — padrões de código, comandos úteis e regras de desenvolvimento. **Leia primeiro.**

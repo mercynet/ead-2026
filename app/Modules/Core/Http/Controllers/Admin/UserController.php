@@ -9,6 +9,7 @@ use App\Modules\Core\Http\Resources\UserResource;
 use App\Modules\Core\Models\User;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -73,7 +74,7 @@ class UserController extends Controller
      *
      * @response 200 scenario="Usuário excluído"
      * {
-     *   "message": "User deleted successfully."
+     *   "data": {"message": "User deleted successfully."}
      * }
      * @response 404 scenario="Usuário de outro tenant, developer ou inexistente"
      * {
@@ -81,12 +82,16 @@ class UserController extends Controller
      *   "errors": [{"code": "not_found", "message": "Recurso não encontrado."}]
      * }
      */
-    public function destroy(ApiContext $context, User $user): array
+    public function destroy(ApiContext $context, User $user): JsonResponse
     {
         Gate::forUser($context->requiredUser())->authorize('core.users.delete-check', [$context->tenant, $user]);
 
         $this->deleteUserAction->handle($user);
 
-        return ['message' => 'User deleted successfully.'];
+        return new JsonResponse([
+            'data' => [
+                'message' => 'User deleted successfully.',
+            ],
+        ]);
     }
 }

@@ -106,11 +106,17 @@ core.tenants.create · core.tenants.update-status
 
 ## Quick Reference
 
+### Estado do contrato de autenticação
+
+- **`TARGET_CANONICAL`:** `/api/v1/auth/*` — superfície pública canônica implementada no WS1.
+- **`CURRENT_IMPLEMENTED` + `LEGACY_COMPATIBILITY`:** `/api/v1/core/auth/*` — permanece disponível
+  durante a v1. Remoção futura exige inventário de consumidores e decisão explícita.
+
 | Recurso | Endpoint | Permission |
 |---------|----------|------------|
-| Login | `POST /api/v1/core/auth/login` | público (rate limit 5/min) |
-| Logout | `POST /api/v1/core/auth/logout` | autenticado |
-| Usuário atual | `GET /api/v1/core/auth/me` | autenticado |
+| Login | `POST /api/v1/auth/login` | público (rate limit 5/min) |
+| Logout | `POST /api/v1/auth/logout` | autenticado |
+| Usuário atual | `GET /api/v1/auth/me` | autenticado |
 | Criar convite | `POST /api/v1/core/invitations` | `core.invitations.create` (rate limit 60/min) |
 | Aceitar convite | `POST /api/v1/core/invitations/accept` | público (token; rate limit 10/min) |
 | Listar usuários | `GET /api/v1/core/users` | `core.users.list` |

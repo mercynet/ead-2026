@@ -4,6 +4,7 @@ namespace App\Modules\Core\Http\Middleware;
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Shared\Exceptions\AccessDeniedException;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,15 +28,7 @@ class EnsureTenantAccess
         }
 
         if (! $authenticatedUser->isDeveloper() && ! $authenticatedUser->belongsToTenant($tenant)) {
-            return response([
-                'data' => null,
-                'errors' => [
-                    [
-                        'code' => 'forbidden',
-                        'message' => 'User does not belong to tenant.',
-                    ],
-                ],
-            ], 403);
+            throw AccessDeniedException::make('tenant', $tenant->id);
         }
 
         return $next($request);

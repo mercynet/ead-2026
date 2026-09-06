@@ -1,5 +1,9 @@
 # Auditoria de Varredura — Plano de Correção
 
+> **HISTÓRICO (2026-09-05):** snapshot de 2026-07-11, baseado no branch/commit indicados abaixo.
+> Alguns itens já foram corrigidos e não devem ser tratados como backlog atual sem confronto com
+> código, `tasks.md` e a auditoria de estado de 2026-09-05. Este arquivo não é fonte canônica.
+
 > **Status: PENDING** · Gerado em 2026-07-11 · Branch `harness/specs-foundation` (working tree, base `ca8f9fb`)
 > Origem: varredura completa (docs + implementação) com verificação empírica — suite 297/299 verde,
 > phpstan 394 erros, 4 auditorias paralelas (arquitetura, domínios, Learning, Core/Financial/Assessment).

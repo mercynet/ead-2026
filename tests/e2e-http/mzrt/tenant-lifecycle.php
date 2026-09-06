@@ -9,9 +9,10 @@ use App\Modules\Ecosystem\Models\PluginActivation;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
 use App\Modules\Ecosystem\Models\TenantPluginConfigRevision;
 use Illuminate\Support\Facades\DB;
+use Spatie\Activitylog\Models\Activity;
 
 return [
-    'endpoint' => 'GET /api/v1/mzrt/tenants',
+    'endpoint' => 'POST /api/v1/mzrt/tenants',
 
     'setup' => function (array $ctx): array {
         $suffix = (string) $ctx['tenant']->id;
@@ -26,11 +27,30 @@ return [
 
     'cases' => [
         [
+            'name' => 'developer logs in through canonical auth',
+            'method' => 'POST',
+            'tenant' => null,
+            'path' => '/api/v1/auth/login',
+            'body' => fn (array $ctx): array => [
+                'email' => $ctx['users']['developer']->email,
+                'password' => 'password123',
+            ],
+            'expect' => [
+                'status' => 200,
+                'json' => ['data.user.id' => fn (array $ctx): int => $ctx['users']['developer']->id],
+            ],
+            'capture' => fn (array $ctx): array => [
+                'developerToken' => data_get($ctx['response']->json(), 'data.token'),
+            ],
+        ],
+        [
             'name' => 'developer creates tenant and cash entitlement',
             'method' => 'POST',
             'tenant' => null,
-            'as' => 'developer',
             'path' => '/api/v1/mzrt/tenants',
+            'headers' => [
+                'Authorization' => fn (array $ctx): string => 'Bearer '.$ctx['fixtures']['developerToken'],
+            ],
             'body' => fn (array $ctx): array => [
                 'name' => 'E2E MZRT Tenant',
                 'domain' => $ctx['fixtures']['domain'],
@@ -66,6 +86,7 @@ return [
                     'cash activation active' => ['active', $activation?->status],
                     'cash activation attributed to admin' => [$admin?->id, $activation?->activated_by],
                     'cash config enabled' => [true, $config?->enabled],
+                    'response omits admin password' => [false, data_has($ctx['response']->json(), 'data.admin.password')],
                 ];
             },
         ],
@@ -73,8 +94,10 @@ return [
             'name' => 'developer sees target entitlements without sensitive configuration',
             'method' => 'GET',
             'tenant' => null,
-            'as' => 'developer',
             'path' => fn (array $ctx): string => '/api/v1/mzrt/tenants/'.$ctx['fixtures']['tenantId'].'/entitlements',
+            'headers' => [
+                'Authorization' => fn (array $ctx): string => 'Bearer '.$ctx['fixtures']['developerToken'],
+            ],
             'expect' => [
                 'status' => 200,
                 'json' => [
@@ -92,7 +115,7 @@ return [
             'name' => 'created admin logs in and token is captured',
             'method' => 'POST',
             'tenant' => null,
-            'path' => '/api/v1/core/auth/login',
+            'path' => '/api/v1/auth/login',
             'headers' => ['X-Tenant-ID' => fn (array $ctx): int => $ctx['fixtures']['tenantId']],
             'body' => fn (array $ctx): array => [
                 'email' => $ctx['fixtures']['email'],
@@ -105,19 +128,26 @@ return [
             'name' => 'developer suspends created tenant',
             'method' => 'PATCH',
             'tenant' => null,
-            'as' => 'developer',
             'path' => fn (array $ctx): string => '/api/v1/mzrt/tenants/'.$ctx['fixtures']['tenantId'].'/status',
+            'headers' => [
+                'Authorization' => fn (array $ctx): string => 'Bearer '.$ctx['fixtures']['developerToken'],
+            ],
             'body' => ['status' => 'suspended'],
             'expect' => ['status' => 200, 'json' => ['data.status' => 'suspended']],
             'db' => fn (array $ctx): array => [
                 'tenant is inactive' => [false, Tenant::query()->find($ctx['fixtures']['tenantId'])?->is_active],
+                'status change is audited' => [1, Activity::query()
+                    ->where('subject_type', Tenant::class)
+                    ->where('subject_id', $ctx['fixtures']['tenantId'])
+                    ->where('event', 'updated')
+                    ->count()],
             ],
         ],
         [
             'name' => 'suspended tenant login is rejected',
             'method' => 'POST',
             'tenant' => null,
-            'path' => '/api/v1/core/auth/login',
+            'path' => '/api/v1/auth/login',
             'headers' => ['X-Tenant-ID' => fn (array $ctx): int => $ctx['fixtures']['tenantId']],
             'body' => fn (array $ctx): array => [
                 'email' => $ctx['fixtures']['email'],
@@ -129,7 +159,7 @@ return [
             'name' => 'suspended tenant token has no resolved context',
             'method' => 'GET',
             'tenant' => null,
-            'path' => '/api/v1/core/auth/me',
+            'path' => '/api/v1/auth/me',
             'headers' => [
                 'X-Tenant-ID' => fn (array $ctx): int => $ctx['fixtures']['tenantId'],
                 'Authorization' => fn (array $ctx): string => 'Bearer '.$ctx['fixtures']['adminToken'],
@@ -140,8 +170,10 @@ return [
             'name' => 'developer reactivates created tenant',
             'method' => 'PATCH',
             'tenant' => null,
-            'as' => 'developer',
             'path' => fn (array $ctx): string => '/api/v1/mzrt/tenants/'.$ctx['fixtures']['tenantId'].'/status',
+            'headers' => [
+                'Authorization' => fn (array $ctx): string => 'Bearer '.$ctx['fixtures']['developerToken'],
+            ],
             'body' => ['status' => 'active'],
             'expect' => ['status' => 200, 'json' => ['data.status' => 'active']],
             'db' => fn (array $ctx): array => [
@@ -152,7 +184,7 @@ return [
             'name' => 'reactivated tenant login succeeds',
             'method' => 'POST',
             'tenant' => null,
-            'path' => '/api/v1/core/auth/login',
+            'path' => '/api/v1/auth/login',
             'headers' => ['X-Tenant-ID' => fn (array $ctx): int => $ctx['fixtures']['tenantId']],
             'body' => fn (array $ctx): array => [
                 'email' => $ctx['fixtures']['email'],
@@ -164,7 +196,7 @@ return [
             'name' => 'original token works after reactivation',
             'method' => 'GET',
             'tenant' => null,
-            'path' => '/api/v1/core/auth/me',
+            'path' => '/api/v1/auth/me',
             'headers' => [
                 'X-Tenant-ID' => fn (array $ctx): int => $ctx['fixtures']['tenantId'],
                 'Authorization' => fn (array $ctx): string => 'Bearer '.$ctx['fixtures']['adminToken'],
@@ -187,7 +219,7 @@ return [
         TenantPluginConfig::query()->where('tenant_id', $tenantId)->delete();
         PluginActivation::query()->where('tenant_id', $tenantId)->delete();
 
-        $userIds = User::query()->where('tenant_id', $tenantId)->pluck('id');
+        $userIds = User::withTrashed()->where('tenant_id', $tenantId)->pluck('id');
         DB::table('personal_access_tokens')
             ->where('tokenable_type', User::class)
             ->whereIn('tokenable_id', $userIds)
@@ -196,7 +228,7 @@ return [
             ->where('model_type', User::class)
             ->whereIn('model_id', $userIds)
             ->delete();
-        User::query()->where('tenant_id', $tenantId)->delete();
+        User::withTrashed()->whereKey($userIds)->forceDelete();
         Tenant::query()->whereKey($tenantId)->delete();
         DB::table('activity_log')->where('subject_type', Tenant::class)->where('subject_id', $tenantId)->delete();
         DB::table('activity_log')->where('subject_type', User::class)->whereIn('subject_id', $userIds)->delete();

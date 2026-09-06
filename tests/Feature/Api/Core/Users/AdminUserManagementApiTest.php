@@ -175,7 +175,8 @@ it('soft deletes a tenant student and revokes its sessions', function (): void {
 
     $this->deleteJson('/api/v1/admin/users/'.$student->id, [], $headers)
         ->assertSuccessful()
-        ->assertJsonPath('message', 'User deleted successfully.');
+        ->assertJsonPath('data.message', 'User deleted successfully.')
+        ->assertJsonMissingPath('message');
 
     expect(User::query()->find($student->id))->toBeNull()
         ->and(User::withTrashed()->find($student->id)?->deleted_at)->not->toBeNull()

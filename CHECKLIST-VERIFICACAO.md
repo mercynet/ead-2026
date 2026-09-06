@@ -1,5 +1,9 @@
 # Checklist de Verificação - EAD 2026
 
+> **HISTÓRICO / SUPERSEDED (2026-09-05):** checklist de auditorias anteriores. Seus itens podem
+> registrar correções já incorporadas ou paths flat antigos; não substitui `AGENTS.md`, as specs, o
+> roadmap, as tasks nem os testes executáveis atuais.
+
 ## 1. Arquitetura e Padrões
 
 ### ✅ Implementado Corretamente

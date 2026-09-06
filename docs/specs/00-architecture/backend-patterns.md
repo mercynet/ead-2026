@@ -4,6 +4,12 @@ applies-to: all-domains
 last-reviewed: 2026-06-10
 ---
 
+> **Estado reconciliado em 2026-09-05:** o layout canônico atual é `app/Modules/{Core,Learning,Assessment,Financial,Ecosystem}`
+> com `app/Shared`. `app/Plugins/` e `app/Support/Ports/` são históricos/superseded e não devem
+> receber trabalho novo. A dívida Eloquent cross-module existente continua congelada na allowlist;
+> não foi refatorada nem resolvida por esta reconciliação. A decisão de tenant vigente é a do ADR-004
+> e do `TenantScopingTest`.
+
 # Padrões de Backend
 
 Como o código é organizado e por quê. Princípio-guia: **YAGNI + SOLID juntos** — estrutura
@@ -23,11 +29,8 @@ app/
     Assessment/   # 30-assessment
     Financial/    # 40-financial
     Ecosystem/    # 50-ecosystem-plugins
-  Plugins/        # plugins first-party (implementam o contrato Plugin)
   Shared/         # ApiContext, base Controller/Action, Contracts cross-module, exceptions
-  Support/
-    Ports/        # interfaces das costuras plugáveis (PaymentGateway, MediaProvider)
-      Adapters/   # implementações concretas (Stripe, Vimeo, S3, ...)
+  Support/        # somente suporte transversal já existente, como DependencyAudit
 ```
 
 Cada módulo contém o que precisa, espelhando o spec do domínio:
@@ -71,15 +74,15 @@ código flat (relações Eloquent cross-module, ex.: `Certificate → Course`,
 `User → QuizAttempt`) numa allowlist que não pode crescer — o alvo é convertê-la em
 Events/Contracts.
 
-## Ports & Adapters — apenas onde paga (3 costuras)
+## Costuras plugáveis — apenas onde paga (3 costuras)
 
 Abstração via interface **só** onde há (ou haverá comprovadamente) mais de uma implementação:
 
-| Port | Por quê | Adapters |
-|------|---------|----------|
-| `PaymentGateway` | spec exige gateway-agnostic | Stripe, MercadoPago, Pagar.me |
-| `MediaProvider` | múltiplos provedores de mídia | YouTube, Vimeo, AWS S3, Live |
-| `Plugin` | sistema de plugins first-party | cada plugin em `app/Plugins/` |
+| Costura | Local canônico atual | Estado |
+|---------|-----------------------|--------|
+| `PaymentGateway` | `app/Modules/Financial/Gateways/{Contracts,Adapters,Data}` | manager e resolvers existentes; adapters adicionais são futuros |
+| `MediaProvider` | módulo dono da mídia, conforme o slice | alvo a construir; não criar `app/Support/Ports` |
+| `Plugin` | `app/Modules/Ecosystem` | catálogo, activation, config e contracts existentes |
 
 **Em qualquer outro lugar: Eloquent direto.** Sem repositório sobre Eloquent (o Eloquent já é a
 camada de dados), sem interface para implementação única, sem CQRS/event-sourcing.
@@ -122,10 +125,9 @@ cross-module (ver acima).
 
 ## Migração do código atual
 
-**Concluída.** O código vive em `app/Modules/{Core,Learning,Assessment}` + `app/Shared`
-(`ApiContext`, base `Controller`, exceptions). Cada módulo registra gates e rotas no seu
-`Providers/<M>ServiceProvider` (ver `bootstrap/providers.php`); não existe mais `routes/api.php`
-global. Os invariantes de fronteira de módulo (`ModuleBoundaryTest`) e controller-lean
-(`ControllerLeannessTest`) estão ativos, sem skip. Factories resolvem via
-`protected static string $factory` no model + `protected $model` na factory (models fora de
-`App\Models` não têm descoberta por convenção).
+**O layout atual é o de cinco módulos:** `Core`, `Learning`, `Assessment`, `Financial` e
+`Ecosystem`, além de `app/Shared`. Cada módulo registra gates, migrations e rotas no seu
+`Providers/<M>ServiceProvider` (ver `bootstrap/providers.php`); não existe `routes/api.php` global.
+Os invariantes de fronteira de módulo (`ModuleBoundaryTest`) e controller-lean
+(`ControllerLeannessTest`) permanecem ativos, sem skip. A dívida Eloquent cross-module herdada
+continua explicitamente na allowlist e deve ser tratada no WS3, não maquiada nesta reconciliação.

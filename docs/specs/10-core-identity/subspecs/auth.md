@@ -35,13 +35,21 @@ Autenticação via Laravel Sanctum (tokens opacos, com device type). Detalhes de
 
 ## Endpoints
 
+O contrato público canônico é `/api/v1/auth/*` (`TARGET_CANONICAL`), implementado pelo WS1. A
+superfície `/api/v1/core/auth/*` permanece disponível como `CURRENT_IMPLEMENTED` +
+`LEGACY_COMPATIBILITY` durante a v1, com o mesmo controller, middleware, throttling e semântica.
+Remoção futura exige inventário de consumidores e decisão explícita; não há data artificial.
+
 | Método | Path | Descrição | Permission |
 |--------|------|-----------|------------|
-| POST | `/api/v1/core/auth/login` | Autentica via email + senha, retorna token Sanctum | público (limiter `login`, 5/min) |
-| POST | `/api/v1/core/auth/password/forgot` | Emite pedido de redefinição (e-mail com token) | público (limiter `password-forgot`, 5/min) |
-| POST | `/api/v1/core/auth/password/reset` | Redefine a senha via token; revoga todas as sessões | público (limiter `password-reset`, 5/min) |
-| POST | `/api/v1/core/auth/logout` | Revoga o token atual | autenticado |
-| GET | `/api/v1/core/auth/me` | Usuário autenticado + roles + permissions | autenticado |
+| POST | `/api/v1/auth/login` | Autentica via email + senha, retorna token Sanctum | público (limiter `login`, 5/min) |
+| POST | `/api/v1/auth/password/forgot` | Emite pedido de redefinição (e-mail com token) | público (limiter `password-forgot`, 5/min) |
+| POST | `/api/v1/auth/password/reset` | Redefine a senha via token; revoga todas as sessões | público (limiter `password-reset`, 5/min) |
+| POST | `/api/v1/auth/logout` | Revoga o token atual | autenticado |
+| GET | `/api/v1/auth/me` | Usuário autenticado + roles + permissions | autenticado |
+
+Os mesmos cinco endpoints continuam atendendo em `/api/v1/core/auth/*` somente para
+compatibilidade legacy. A documentação Scribe primária exibe a superfície canônica.
 
 ## Permissions
 

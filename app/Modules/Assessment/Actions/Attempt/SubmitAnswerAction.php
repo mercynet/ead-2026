@@ -6,6 +6,7 @@ use App\Modules\Assessment\Models\QuizAttempt;
 use App\Modules\Assessment\Models\QuizAttemptAnswer;
 use App\Shared\Http\ApiContext;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Submit an answer to an attempt.
@@ -26,7 +27,9 @@ class SubmitAnswerAction
             ->findOrFail($attemptId);
 
         if ($attempt->status !== 'in_progress') {
-            abort(422, 'This attempt is already completed.');
+            throw ValidationException::withMessages([
+                'attempt' => ['This attempt is already completed.'],
+            ]);
         }
 
         $data = $request->validated();
@@ -37,7 +40,9 @@ class SubmitAnswerAction
             ->firstWhere('id', $questionId);
 
         if ($questionSnapshot === null) {
-            abort(422, 'This question does not belong to this attempt.');
+            throw ValidationException::withMessages([
+                'question_id' => ['This question does not belong to this attempt.'],
+            ]);
         }
 
         $alreadyAnswered = $attempt->answers()
@@ -45,7 +50,9 @@ class SubmitAnswerAction
             ->exists();
 
         if ($alreadyAnswered) {
-            abort(422, 'This question has already been answered in this attempt.');
+            throw ValidationException::withMessages([
+                'question_id' => ['This question has already been answered in this attempt.'],
+            ]);
         }
 
         $correctOptions = $questionSnapshot['correct_options'] ?? [];

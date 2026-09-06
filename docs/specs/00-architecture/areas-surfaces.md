@@ -177,7 +177,13 @@ só Actions/Models do próprio domínio (+ contratos compartilhados).
 > domínio é organização de código, não da URL.
 
 Rotas técnicas/cross-area usam namespace neutro explícito quando necessário: `/api/v1/auth/*`,
-`/api/v1/webhooks/*` e `/api/v1/public/*`. Prefixos existentes `/api/v1/core/*`,
+`/api/v1/webhooks/*` e `/api/v1/public/*`. Para autenticação, `/api/v1/auth/*` é o
+`TARGET_CANONICAL` público e está implementado. A superfície `/api/v1/core/auth/*` permanece como
+`CURRENT_IMPLEMENTED` e `LEGACY_COMPATIBILITY` durante a v1, com a mesma semântica, middleware e
+throttling; sua remoção não tem data artificial e exige inventário de consumidores e decisão
+explícita.
+
+Prefixos existentes `/api/v1/core/*`,
 `/api/v1/learning/*` e `/api/v1/assessment/*` são rotas legadas; não se tornam conformes por serem
 versionadas. Inventário, alvo e condição de remoção vivem no [ROADMAP](../../ROADMAP.md#inventário-agrupado-de-migração-legada).
 

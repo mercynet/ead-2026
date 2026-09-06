@@ -1161,7 +1161,8 @@ it('deletes a course as admin', function (): void {
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('message', 'Course deleted successfully.');
+        ->assertJsonPath('data.message', 'Course deleted successfully.')
+        ->assertJsonMissingPath('message');
 
     expect(Course::query()->find($course->id))->toBeNull();
 });

@@ -1,5 +1,9 @@
 # Auditoria E2E HTTP — 2026-07-16
 
+> **HISTÓRICO (2026-09-05):** snapshot de 2026-07-16, com commit, contagens e ambiente daquele
+> momento. Serve como evidência histórica e contexto de segurança; não prova o runtime atual nem
+> substitui a auditoria de estado de 2026-09-05 ou uma nova execução isolada.
+
 ## Veredito
 
 **Validação parcial, com NO-GO para execução HTTP mutante no ambiente atual.**

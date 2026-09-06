@@ -6,6 +6,7 @@ use App\Modules\Learning\Models\CourseMaterial;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Filesystem\Factory;
+use Illuminate\Validation\ValidationException;
 
 class GenerateCourseMaterialDownloadUrlAction
 {
@@ -25,13 +26,17 @@ class GenerateCourseMaterialDownloadUrlAction
         $filePath = $courseMaterial->file_path;
 
         if (! is_string($filePath) || ! $this->isSafeStoragePath($filePath, (int) $courseMaterial->tenant_id)) {
-            abort(422, 'Material file path is invalid.');
+            throw ValidationException::withMessages([
+                'file_path' => ['Material file path is invalid.'],
+            ]);
         }
 
         $diskName = config('filesystems.default');
 
         if (! is_string($diskName) || ! $this->isSafeStorageDisk($diskName)) {
-            abort(422, 'Material storage disk is not allowed.');
+            throw ValidationException::withMessages([
+                'storage_disk' => ['Material storage disk is not allowed.'],
+            ]);
         }
 
         $expiresAt = CarbonImmutable::now()->addMinutes(self::URL_TTL_MINUTES);

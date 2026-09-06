@@ -74,14 +74,21 @@ public function handle(ApiContext $context): CursorPaginator
 return UserResource::collection($paginator);                              // coleção paginada
 return UserResource::make($model);                                        // recurso único
 return UserResource::make($model)->toResponse(request())->setStatusCode(201); // status custom
-return new JsonResponse(['data' => $payload]);                            // payload manual (login etc.)
+return new JsonResponse(['data' => $payload]);                            // payload manual (login/status etc.)
 ```
 
 Tipos de retorno recomendados:
 
 - `Resource::collection()` → `AnonymousResourceCollection`
 - `Resource::make()` → o tipo do Resource
-- payload manual → `JsonResponse`
+- payload manual → `JsonResponse`, sempre com `data` (ex.: login, logout,
+  confirmação de alteração e mensagens de exclusão). Não criar Resource só para
+  envolver uma mensagem.
+- `data: null` é permitido quando o contrato representa ausência de recurso
+  (ex.: consulta de matrícula sem matrícula).
+- A verificação pública de certificado mantém deliberadamente sua projeção
+  histórica top-level (`valid`, `certificate`, `message`), protegida por teste e
+  documentada no endpoint; ela não é um padrão para endpoints novos.
 
 ## FormRequest para Filtros (obrigatório em listagens)
 

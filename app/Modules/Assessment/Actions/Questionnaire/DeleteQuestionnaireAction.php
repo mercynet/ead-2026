@@ -4,6 +4,7 @@ namespace App\Modules\Assessment\Actions\Questionnaire;
 
 use App\Modules\Assessment\Models\Questionnaire;
 use App\Shared\Http\ApiContext;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Delete a questionnaire.
@@ -24,7 +25,9 @@ class DeleteQuestionnaireAction
 
         $hasAttempts = $questionnaire->attempts()->exists();
         if ($hasAttempts) {
-            abort(422, 'Cannot delete a questionnaire that has attempts.');
+            throw ValidationException::withMessages([
+                'questionnaire' => ['Cannot delete a questionnaire that has attempts.'],
+            ]);
         }
 
         $questionnaire->delete();

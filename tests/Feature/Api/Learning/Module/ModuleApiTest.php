@@ -301,7 +301,8 @@ it('deletes a module for an authorized user in the current tenant', function ():
 
     $this->deleteJson('/api/v1/learning/modules/'.$module->id, [], $headers)
         ->assertOk()
-        ->assertJsonPath('message', 'Module deleted successfully.');
+        ->assertJsonPath('data.message', 'Module deleted successfully.')
+        ->assertJsonMissingPath('message');
 
     $this->assertDatabaseMissing('course_modules', ['id' => $module->id]);
 });

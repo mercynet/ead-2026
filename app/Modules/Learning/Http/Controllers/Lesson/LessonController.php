@@ -134,7 +134,7 @@ class LessonController extends Controller
         return LessonProgressResource::make($progress);
     }
 
-    public function destroy(ApiContext $context, int $id): array
+    public function destroy(ApiContext $context, int $id): JsonResponse
     {
         $lesson = $this->getLessonAction->handle($context, $id);
 
@@ -142,6 +142,10 @@ class LessonController extends Controller
 
         $this->deleteLessonAction->handle($lesson);
 
-        return ['message' => 'Lesson deleted successfully.'];
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Lesson deleted successfully.',
+            ],
+        ]);
     }
 }

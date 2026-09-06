@@ -112,7 +112,7 @@ class ModuleController extends Controller
      *
      * @urlParam id int required ID do módulo
      */
-    public function destroy(ApiContext $context, int $id): array
+    public function destroy(ApiContext $context, int $id): JsonResponse
     {
         $module = $this->getModuleAction->handle($context, $id);
 
@@ -120,6 +120,10 @@ class ModuleController extends Controller
 
         $this->deleteModuleAction->handle($module);
 
-        return ['message' => 'Module deleted successfully.'];
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Module deleted successfully.',
+            ],
+        ]);
     }
 }

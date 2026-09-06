@@ -70,7 +70,7 @@ it('refuses to start an attempt when the questionnaire has no active questions',
         $this->headers,
     );
 
-    $response->assertStatus(422);
+    assertApiErrorEnvelope($response, 422, 'validation_error');
 });
 
 it('denies instructor starting an attempt', function (): void {
@@ -198,7 +198,7 @@ it('rejects an answer for a question outside the frozen snapshot', function (): 
         $this->headers,
     );
 
-    $response->assertStatus(422);
+    assertApiErrorEnvelope($response, 422, 'validation_error');
     expect(QuizAttemptAnswer::query()->where('quiz_attempt_id', $attempt->id)->exists())->toBeFalse();
 });
 
@@ -216,7 +216,7 @@ it('rejects answering the same question twice', function (): void {
 
     $response = $this->patchJson("/api/v1/assessment/attempts/{$attempt->id}", $payload, $this->headers);
 
-    $response->assertStatus(422);
+    assertApiErrorEnvelope($response, 422, 'validation_error');
     expect(QuizAttemptAnswer::query()->where('quiz_attempt_id', $attempt->id)->count())->toBe(1);
 });
 

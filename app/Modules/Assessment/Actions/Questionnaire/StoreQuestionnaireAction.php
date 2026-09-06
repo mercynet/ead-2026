@@ -7,6 +7,7 @@ use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\Lesson;
 use App\Shared\Http\ApiContext;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Create a new questionnaire.
@@ -44,7 +45,9 @@ class StoreQuestionnaireAction
             };
 
             if ($modelClass && ! $modelClass::where('id', $quizableId)->exists()) {
-                abort(422, "The {$quizableType} with ID {$quizableId} does not exist.");
+                throw ValidationException::withMessages([
+                    'quizable_id' => ["The {$quizableType} with ID {$quizableId} does not exist."],
+                ]);
             }
         }
 

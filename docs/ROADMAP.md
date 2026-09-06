@@ -20,6 +20,13 @@ Executar uma jornada principal por vez, em fatias verticais. Itens sem bloquear 
 just-in-time: gateways adicionais, PDF, analytics/RabbitMQ, i18n/SEO, comissões, quotas e catálogo
 amplo de plugins.
 
+### Fechamento evidencial MZRT — 2026-09-05
+
+`MZRT-SKELETON` mantém status `usable` e agora tem a jornada crítica `RUNTIME_VERIFIED`: o
+receipt atual cobre create → `cash`/entitlements → login canônico → suspend/deny →
+reactivate/allow em banco descartável `ead2026_e2e`, com side effects e teardown sem resíduos.
+O contrato Scribe permanece satisfeito pelo Slice 1; SHOULD/LATER continuam fora desta jornada.
+
 ## Gates
 
 **`FOUNDATION-0` universal** vale para cada nova rota de produto por área; não exige terminar itens
@@ -45,7 +52,16 @@ depreciado.
 ## Snapshot — área × capability
 
 Status: `not-started` | `partial` | `usable` | `hardened`. Snapshot 2026-07-29; cobertura de
-contrato/jornada, não certificação global.
+contrato/jornada, não certificação global. Esses status não são evidência de runtime atual.
+
+### Evidência atual
+
+Use uma classificação separada do status da jornada/capability: `RUNTIME_VERIFIED` (execução atual
+contra app e banco adequados), `TEST_VERIFIED` (teste/resultado disponível, sem substituir runtime),
+`STATIC_EVIDENCE_ONLY` (código/rota/model/migration/teste presente sem resultado atual confiável),
+`DOCUMENTATION_ONLY` (intenção sem implementação arbitrada) e `UNVERIFIED` (evidência insuficiente
+ou conflitante). Na reconciliação de 2026-09-05, nenhuma capability foi promovida a
+`RUNTIME_VERIFIED`; E2E/testes descritos em snapshots anteriores permanecem históricos.
 
 | Área | Control plane / configuração | Operar / criar | Comprar / consumir | Superfície área-first |
 |---|---|---|---|---|
@@ -72,7 +88,7 @@ explícitas: `/api/v1/auth/*`, `/api/v1/webhooks/*`, `/api/v1/public/*`. Prefixo
 
 | Legacy route/group | Classificação | Target | Status | Owner/source | Condição remoção/depreciação |
 |---|---|---|---|---|---|
-| `/core/auth/*` | técnica cross-area | `/auth/*` | legado | Core / inventory | neutral substituto documentado e clientes migrados |
+| `/core/auth/*` | técnica cross-area | `/auth/*` | `CURRENT_IMPLEMENTED` + `LEGACY_COMPATIBILITY` | Core / inventory | WS1 aplicado; remoção futura só após inventário de consumidores e decisão explícita |
 | `/core/invitations` | create Admin; accept pública | split Admin + neutral/public | legado | Core / inventory | ambos contratos entregues |
 | `/core/users*`, self | Admin/Mzrt/self misto | áreas + possível account neutral | parcial | Core / inventory | ✔ update/delete de instructor/student em `v1/admin/users/{id}`; list/show e self ainda em `/core`, pendente decidir account neutral |
 | `/learning/catalog/courses*` | público | Home | legado | Learning / inventory | Home E2E público |

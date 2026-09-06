@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-07-29
+last-updated: 2026-09-05
 ---
 
 # Tasks — Catalog & Learning
@@ -8,6 +8,9 @@ last-updated: 2026-07-29
 Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de aceite = teste.
 
 ## Done
+
+> `[x]` registra slice entregue; não é promoção automática para `RUNTIME_VERIFIED`. O delta aberto
+> fica exclusivamente em `Pending`.
 
 - [x] Models `Course`, `Category`, `CourseModule`, `Lesson`, `Enrollment`, `LessonProgress` (+ factories).
 - [x] Migrations com soft deletes, `tenant_id`, categorias hierárquicas.
@@ -64,11 +67,30 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [x] Definir subtipos/contrato avançado de `LessonMedia` (YouTube/Vimeo/AWS via `s3`) junto de `LessonMediaProgress` e `ProgressStrategy`.
 - [x] Registrar espelho financeiro atômico para concessão manual sem `billing_type` via `EnrollmentCreatedEvent`: `Order`/`OrderItem`/`Payment` zero-consideration idempotentes por matrícula; inclui catálogo pago e pendente de aprovação. `Journey: ADMIN-OPS | Area: admin | Depends on: Financial orders/payments`. Matrícula manual externa permanece fora deste espelho; reconciliação financeira externa e decisão de espelhar após aprovação ficam pendentes.
 
+### Slices entregues posteriormente
+
+- [x] Pivô `category_course`: `sort_order` + `is_featured`, FKs reais incluindo integridade tenant↔curso, unicidade de categoria/ordem por curso e relações ordenadas em `Course::categories()`/`Category::courses()`.
+- [x] Soft delete + proteção no delete: system com cursos **bloqueia**; tenant com cursos exige `force`+`confirm` no `DeleteCategoryRequest` e faz **detach** sob lock antes do soft delete.
+- [x] Re-slot área-first de categorias: system → Mzrt (`v1/mzrt/categories`), tenant → Admin (`v1/admin/categories`); escrita removida de `v1/learning/catalog/categories`, que fica só com o `GET`; `is_system` proibido nos payloads. `Journey: ADMIN-OPS | Area: admin + mzrt | Depends on: FOUNDATION-0`
+- [x] Attach categories to courses: `PUT /api/v1/admin/courses/{id}/categories` substitui o conjunto pelo pivô dedicado, derivando `sort_order` da posição e rejeitando payload inválido sem alterar vínculos.
+- [x] CRUD e reorder de módulos: `POST /modules`, `GET /modules/{id}`, `PATCH /modules/{id}`, `DELETE /modules/{id}`, `PATCH /modules/reorder`.
+- [x] CRUD, reorder e preview de lessons para cursos draft: `POST/PATCH/DELETE /lessons`, `Lesson reorder`, preview para instrutor/admin.
+- [x] Regras de acesso a curso/aula consomem a matrícula corrente (`pending|active`) sem ambiguidade com histórico.
+- [x] `LessonView` + `LessonViewedEvent`; `Rating`/`RatingStats` para Course e Lesson, com rollup, student-only e update own.
+- [x] `LessonMedia` / `LessonMediaProgress` + `ProgressStrategy` configurável.
+- [x] Learning consome `OrderPaidEvent` via `EnrollService` e dispara `EnrollmentCreated`.
+- [x] **Ownership `own` de instructor (2026-07-11)** implementado em courses, modules, lessons e lesson media; gates `-check`; teste `InstructorOwnershipTest` (18).
+- [x] **Lesson media avançado**: subtypes YouTube/Vimeo/AWS (`provider=s3`), `progress_strategy` e contratos normalizados de configuração; upload real/`MediaEmbedService` permanecem fora deste slice.
+- [x] **Matrícula manual por instrutor (`billing_type=external`)**: curso pago cria matrícula `pending` e preserva `created_by_instructor_id`; curso grátis retorna `422`.
+- [x] Alinhar `Enrollment` ao contrato revisado: status `pending|active|cancelled|expired`, rematrícula de `cancelled/expired` e progresso fora do status.
+
 ## In Progress
 
 - _(nenhuma)_
 
 ## Pending
+
+> Somente deltas ainda abertos permanecem aqui. Histórico entregue não é repetido nesta seção.
 
 ### Categorias (redesign — ADR-002)
 > Impl atual já tem `is_system` + `parent_id` + antiduplicação em `StoreCategoryAction`. Delta até o
@@ -77,56 +99,6 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] Coluna gerada `tenant_key = COALESCE(tenant_id,0)` + `UNIQUE(tenant_key, normalized_name)`.
 - [ ] Materialized path: colunas `path`/`depth` + manutenção na escrita (create/move) + prevenção de ciclo.
 - [ ] Regra **parent de mesmo escopo** (system→system, tenant→mesmo tenant); proibir cross-escopo.
-- [x] Pivô `category_course`: `sort_order` + `is_featured`, FKs reais incluindo integridade tenant↔curso, unicidade de categoria/ordem por curso e relações ordenadas em `Course::categories()`/`Category::courses()`.
-- [x] Soft delete + proteção no delete: system com cursos **bloqueia**; tenant com cursos exige `force`+`confirm` no `DeleteCategoryRequest` e faz **detach** sob lock antes do soft delete (invariante: nenhum pivô aponta para categoria soft-deletada).
-- [x] Re-slot área-first: system → Mzrt (`v1/mzrt/categories`, sem contexto de tenant), tenant →
-  Admin (`v1/admin/categories`); escrita removida de `v1/learning/catalog/categories`, que fica só
-  com o `GET`. `is_system` proibido no payload das duas superfícies — a área decide o escopo, e
-  `CategoryPolicy` segue decidindo autorização por `is_system`.
-  `Journey: ADMIN-OPS | Area: admin + mzrt | Depends on: FOUNDATION-0`
-
-### Courses
-- [x] Attach categories to courses: `PUT /api/v1/admin/courses/{id}/categories` substitui o conjunto
-  completo pelo pivô dedicado — `sort_order` derivado da posição no array, `is_featured` por item,
-  categoria de sistema ou do próprio tenant, e payload inválido não altera o vínculo existente.
-  `Journey: ADMIN-OPS | Area: admin | Depends on: pivô category_course`
-
-### Modules
-- [x] `POST /modules` (criação mínima; tenant isolation + sort_order automático).
-- [x] `GET /modules/{id}`.
-- [x] `PATCH /modules/{id}`.
-- [x] `DELETE /modules/{id}`.
-- [x] `PATCH /modules/reorder`.
-
-### Lessons
-- [x] `POST/PATCH/DELETE /lessons` (CRUD).
-- [x] `POST /lessons`.
-- [x] `DELETE /lessons/{id}`.
-- [x] `PATCH /lessons/{id}`.
-- [x] Lesson reorder.
-- [x] Preview de cursos draft para instrutor/admin.
-
-### Enrollment & Progress
-
-- [x] Regras de acesso a curso/aula devem consumir a matrícula corrente (`pending|active`) sem ambiguidade com histórico.
-
-### Media & Ratings
-- [x] `LessonView` (estatísticas de replay) + `LessonViewedEvent`.
-- [x] `Rating` / `RatingStats` para **Course** (1-5 estrelas, like/dislike, rollup, student-only, update own).
-- [x] `Rating` / `RatingStats` para **Lesson** (1-5 estrelas, like/dislike, rollup, student-only, update own).
-- [x] `LessonMedia` / `LessonMediaProgress` + `ProgressStrategy` configurável.
-
-### Eventos
-- [x] Consumir `OrderPaidEvent` (Financial) para matrícula automática via `EnrollService`.
-- [x] Disparar `EnrollmentCreated`.
-
-### RBAC
-- [x] **Ownership `own` de instructor (2026-07-11)**: matriz do `rbac.md` implementada em
-  courses (update/publish/delete), modules (view/CRUD/reorder), lessons (CRUD/reorder) e lesson
-  media — via `instructor_id` do curso. Gates renomeados para sufixo `-check` (gate com nome de
-  permission era curto-circuitado pelo `Gate::before` do Spatie e a policy nunca rodava).
-  Superfícies de consumo (catalog, lesson view/progress) seguem tenant-wide por design.
-  Testes: `tests/Feature/Api/Learning/Rbac/InstructorOwnershipTest.php` (18).
 
 ### Reuso eadIA (a importar — ver ADR-001)
 > **Curso-core revisado (2026-06-13):** ead2026 já é mais rico que o eadIA em `courses`/`lessons`
@@ -137,13 +109,15 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] **i18n traduzível** em `title`/`description`/`short_description` de Course/Module/Lesson/Category (JSON por locale, **com fallback**).
 - [ ] **`is_fifo`** (sequência linear) no curso.
 - [ ] **`meta_title`/`meta_description`** (JSON, SEO) — para a área Home/landing.
-- [x] **Lesson media avançado** (`LessonMediaProgress`): subtypes YouTube/Vimeo/AWS (`provider=s3`), `progress_strategy` (80%/full/manual/time_based), contrato normalizado de `provider_config`/`progress_config`. Upload real/`MediaEmbedService` continuam fora deste slice.
-- [x] **Matrícula manual por instrutor (delta restante)**: `POST /enrollments` agora aceita `billing_type=external` para instrutor em curso pago, persiste o marcador, cria a matrícula como `pending` e preserva `created_by_instructor_id`; curso grátis com `external` retorna `422`.
-- [ ] **Ratings** (`Rating` + `RatingStats`) — delta restante: ranking por tenant; **Materials** (`CourseMaterial`/`MaterialDownload`/`MaterialStats` via medialibrary).
+- [ ] Upload real / `MediaEmbedService` e o `MediaProvider` no módulo dono da mídia.
+- [ ] Integração de `CourseMaterial` com media library/upload real (o slice atual cobre metadados/path e URL temporária).
+- [ ] **UNKNOWN — Ratings:** confirmar se existe delta adicional além dos slices históricos de Course/Lesson e ranking por tenant; os registros anteriores misturavam capability entregue com “delta restante”.
+- [ ] Reconciliação financeira da matrícula manual externa e decisão de espelhar após aprovação.
 
 ## Needs Review
 
-- [x] Alinhar implementação de `Enrollment` ao contrato revisado: status `pending|active|cancelled|expired`, rematrícula para `cancelled/expired`, progresso fora do status da matrícula.
+- _(nenhuma)_ — slices históricos entregues foram movidos para *Done*; deltas abertos permanecem em
+  *Pending*.
 
 ## Open Questions
 

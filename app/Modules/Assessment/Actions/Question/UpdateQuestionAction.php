@@ -5,6 +5,7 @@ namespace App\Modules\Assessment\Actions\Question;
 use App\Modules\Assessment\Models\QuizQuestion;
 use App\Shared\Http\ApiContext;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Update a question.
@@ -38,7 +39,9 @@ class UpdateQuestionAction
             ->exists();
 
         if ($hasAttempts) {
-            abort(422, 'Cannot edit a question that has been used in completed attempts. Create a new version instead.');
+            throw ValidationException::withMessages([
+                'question' => ['Cannot edit a question that has been used in completed attempts. Create a new version instead.'],
+            ]);
         }
 
         $data = $request->validated();

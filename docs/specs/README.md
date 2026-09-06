@@ -74,6 +74,18 @@ existentes (ex.: futuro `25-`) sem renumerar. `00-architecture/` é base cross-c
   tocada usa `Journey | Area | Depends on`, conforme migração prospectiva. **Sessão atual / próximos
   passos?** `docs/STATE.md`.
 
+### Status e evidência
+
+`Done` em `tasks.md` significa que o slice foi declarado entregue; `Pending` contém somente delta
+aberto. `[x]` não promove uma capability a runtime verificado. A evidência deve ser classificada
+separadamente como `RUNTIME_VERIFIED` (execução atual contra app/banco adequados), `TEST_VERIFIED`
+(teste/resultado de teste disponível, sem substituir runtime atual), `STATIC_EVIDENCE_ONLY`
+(código/rota/model/migration/teste presente sem resultado atual confiável), `DOCUMENTATION_ONLY`
+(intenção sem implementação arbitrada) ou `UNVERIFIED` (evidência insuficiente ou conflitante).
+
+Na reconciliação de 2026-09-05, nenhuma capability foi promovida a `RUNTIME_VERIFIED`; resultados
+históricos continuam históricos.
+
 ### Frontmatter
 
 - `spec.md`: `{domain, maturity: draft|stable|deprecated, last-reviewed, owners, related}` —

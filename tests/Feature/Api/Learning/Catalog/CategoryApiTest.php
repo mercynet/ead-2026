@@ -415,7 +415,8 @@ it('deletes a tenant category', function (): void {
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('message', 'Category deleted successfully.');
+        ->assertJsonPath('data.message', 'Category deleted successfully.')
+        ->assertJsonMissingPath('message');
 
     expect(Category::query()->find($category->id))->toBeNull();
 });
@@ -497,7 +498,8 @@ it('detaches courses and soft deletes a tenant category with force and confirmat
         'X-Tenant-ID' => (string) $tenant->id,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('message', 'Category deleted successfully.');
+        ->assertJsonPath('data.message', 'Category deleted successfully.')
+        ->assertJsonMissingPath('message');
 
     expect(Category::withTrashed()->find($category->id)?->deleted_at)->not->toBeNull();
     expect(DB::table('category_course')->where('category_id', $category->id)->count())->toBe(0);

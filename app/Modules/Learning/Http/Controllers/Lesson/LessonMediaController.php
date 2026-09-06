@@ -50,7 +50,7 @@ class LessonMediaController extends Controller
         return LessonMediaResource::make($lessonMedia);
     }
 
-    public function destroy(int $lessonId, int $mediaId, ApiContext $context): array
+    public function destroy(int $lessonId, int $mediaId, ApiContext $context): JsonResponse
     {
         $lesson = $this->getLessonAction->handle($context, $lessonId);
         $lessonMedia = $this->getLessonMediaAction->handle($context, $lessonId, $mediaId);
@@ -59,6 +59,10 @@ class LessonMediaController extends Controller
 
         $this->deleteLessonMediaAction->handle($lessonMedia);
 
-        return ['message' => 'Lesson media deleted successfully.'];
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Lesson media deleted successfully.',
+            ],
+        ]);
     }
 }

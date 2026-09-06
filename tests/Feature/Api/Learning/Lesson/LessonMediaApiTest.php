@@ -434,7 +434,8 @@ it('deletes lesson media for an authorized user in the current tenant', function
 
     $this->deleteJson("/api/v1/learning/lessons/{$lesson->id}/media/{$lessonMedia->id}", [], $headers)
         ->assertOk()
-        ->assertJson(['message' => 'Lesson media deleted successfully.']);
+        ->assertJson(['data' => ['message' => 'Lesson media deleted successfully.']])
+        ->assertJsonMissingPath('message');
 
     $this->assertDatabaseMissing('lesson_media', [
         'id' => $lessonMedia->id,

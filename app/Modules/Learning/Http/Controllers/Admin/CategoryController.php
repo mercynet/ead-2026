@@ -12,6 +12,7 @@ use App\Modules\Learning\Http\Requests\Catalog\UpdateCategoryRequest;
 use App\Modules\Learning\Http\Resources\Catalog\CatalogCategoryResource;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -96,7 +97,7 @@ class CategoryController extends Controller
      *
      * @response 200 scenario="Categoria excluída"
      * {
-     *   "message": "Category deleted successfully."
+     *   "data": {"message": "Category deleted successfully."}
      * }
      * @response 422 scenario="Cursos vinculados sem force/confirm"
      * {
@@ -104,7 +105,7 @@ class CategoryController extends Controller
      *   "errors": [{"code": "validation_error", "message": "Attached courses require force and confirm to delete this category."}]
      * }
      */
-    public function destroy(DeleteCategoryRequest $request, ApiContext $context, int $id): array
+    public function destroy(DeleteCategoryRequest $request, ApiContext $context, int $id): JsonResponse
     {
         $category = $this->getCategoryAction->handle($context, $id);
 
@@ -116,6 +117,10 @@ class CategoryController extends Controller
             (bool) ($request->validated('confirm') ?? false),
         );
 
-        return ['message' => 'Category deleted successfully.'];
+        return new JsonResponse([
+            'data' => [
+                'message' => 'Category deleted successfully.',
+            ],
+        ]);
     }
 }

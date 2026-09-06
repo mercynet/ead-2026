@@ -4,6 +4,7 @@ namespace App\Modules\Assessment\Actions\Attempt;
 
 use App\Modules\Assessment\Models\QuizAttempt;
 use App\Shared\Http\ApiContext;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Finish an attempt and calculate the score.
@@ -22,7 +23,9 @@ class FinishAttemptAction
             ->findOrFail($attemptId);
 
         if ($attempt->status !== 'in_progress') {
-            abort(422, 'This attempt is already completed.');
+            throw ValidationException::withMessages([
+                'attempt' => ['This attempt is already completed.'],
+            ]);
         }
 
         $totalPoints = $attempt->answers()->sum('points_earned');

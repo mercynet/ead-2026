@@ -145,5 +145,5 @@ it('cannot update question used in completed attempt', function (): void {
         ['X-Tenant-ID' => (string) $this->tenant->id],
     );
 
-    $response->assertStatus(422);
+    assertApiErrorEnvelope($response, 422, 'validation_error');
 });

@@ -31,3 +31,16 @@ it('denies an admin reaching a questionnaire owned by another tenant', function 
 
     assertTenantIsolation($response);
 });
+
+it('renders cross-tenant middleware denial in the canonical error envelope', function (): void {
+    $tenantA = makeTenant(['domain' => 'tenant-a.local']);
+    $tenantB = makeTenant(['domain' => 'tenant-b.local']);
+    [, $headers] = actingAsUserType(UserType::Admin, $tenantA);
+
+    $response = $this->getJson('/api/v1/core/users', [
+        ...$headers,
+        'X-Tenant-ID' => (string) $tenantB->id,
+    ]);
+
+    assertApiErrorEnvelope($response, 403, 'access_denied');
+});

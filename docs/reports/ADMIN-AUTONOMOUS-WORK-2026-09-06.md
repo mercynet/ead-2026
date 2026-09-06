@@ -1,7 +1,7 @@
 # Admin Autonomous Work — 2026-09-06
 
 **HEAD/base:** `495e35c054a10dfff61f57dbe4e701ac0ecbb736` on `main`
-**Working tree:** alterações locais não commitadas; nenhum commit, push ou merge realizado.
+**Estado:** commit `07f0bbc` em `main`, enviado para `origin/main`; working tree limpo.
 **Verdict:** `ADMIN_COMPLETE`
 
 ## 1. Baseline e escopo
@@ -95,5 +95,5 @@ webhook/payment automation e demais SHOULD/LATER.
 
 ## 10. Provenance
 
-O trabalho permanece no working tree da branch `main`, sem commit/push. O estado de retomada está em
+O trabalho está consolidado no commit `07f0bbc` da branch `main`, enviado para `origin/main`. O estado de retomada está em
 [`docs/STATE.md`](../STATE.md); os relatórios por fatia são Slice 3, Slice 4, Slice 5 e Slice 6 acima.

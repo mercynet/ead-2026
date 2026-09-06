@@ -34,4 +34,4 @@ MediaProvider, quiz avançado ou lifecycle de plugins permanecem fora do escopo.
 
 ## Estado git
 
-Alterações permanecem no working tree de `main`; nenhum commit, push ou merge foi realizado.
+Alterações estão consolidadas no commit `07f0bbc` de `main` e foram enviadas para `origin/main`.

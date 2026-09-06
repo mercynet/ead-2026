@@ -62,5 +62,5 @@ no relatório principal.
 
 ## Último commit
 
-- `main` = `495e35c054a10dfff61f57dbe4e701ac0ecbb736` (`chore: reconcile API contract and verification evidence`).
-  Nenhum commit ou push foi feito; Slice 1, Slice 2, reconciliação e Slice 3 permanecem no working tree.
+- `main` = `07f0bbc84e1c07b294b1d016995f8398928f7791` (`feat(admin): close admin operations and evidence`),
+  enviado para `origin/main`; working tree limpo.

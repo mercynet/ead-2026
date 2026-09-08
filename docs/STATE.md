@@ -7,23 +7,22 @@ Student S-01/S-02, Assessment e Learning foram reconciliados, sem artefatos de r
 
 ## Próximos passos (1-3)
 
-1. Decidir a decomposição final em commits atômicos; manter o worktree sem stage/commit até pedido
-   explícito.
-2. Resolver os avisos de `bodyParameters()` do Scribe somente se o contrato/documentação exigir;
+1. Resolver os avisos de `bodyParameters()` do Scribe somente se o contrato/documentação exigir;
    a geração atual terminou exit 0.
-3. Se aprovado, stagear por grupo e repetir o gate completo antes de qualquer commit.
+2. Planejar em outro dia os workstreams de least-privilege real, backup/restore, deploy, storage,
+   TLS/secrets, monitoring e rollback.
+3. Manter Student Assessment como `CONDITIONAL_CAPABILITY / NOT RELEASED` e Paid Pilot como
+   `NOT_READY`.
 
 ## Decisões abertas
 
 Student Assessment = `CONDITIONAL_CAPABILITY / NOT RELEASED`; Certificate =
-`NOT_PROMISED_IN_V0_1`; Paid Pilot permanece `NOT_READY`. Falta decidir apenas a decomposição
-final do checkpoint; least-privilege real, backup/restore, deploy, storage,
-TLS/secrets, monitoring e rollback continuam workstreams posteriores.
+`NOT_PROMISED_IN_V0_1`; Paid Pilot permanece `NOT_READY`.
 
 ## Último commit
 
-`8df531fbc826c79aa4073dfbb70ee7a191ad7cb7` em `main`; estado atual: 124 entradas dirty
-(35 modificadas, 89 não rastreadas), sem stage/commit/push desta task.
+`9533b50d` em `main`; entrega funcional consolidada e pushed para `origin/main`. O checkpoint
+deste arquivo será consolidado no commit seguinte.
 
 ## Evidência atual
 
@@ -55,5 +54,5 @@ TLS/secrets, monitoring e rollback continuam workstreams posteriores.
 - context: alto (estimado; sessão retomada com revisão, testes e auditoria de segurança).
 - state: `docs/STATE.md` atualizado.
 - recommendation: clear.
-- reason: revisão e validação estão encerradas; a próxima ação depende de decisão explícita sobre
-  decomposição/stage, e o handoff está fresco para retomada.
+- reason: entrega consolidada e publicada; sessão encerrada por hoje, com pendências de release
+  explicitamente preservadas.

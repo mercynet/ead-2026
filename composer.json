@@ -81,7 +81,7 @@
         "qa:gate": [
             "@composer validate --strict",
             "@php artisan config:clear --ansi",
-            "@php artisan migrate:fresh --env=testing --force --ansi",
+            "APP_ENV=testing DB_DISPOSABLE=testing DB_CONNECTION=mysql DB_DATABASE=testing @php artisan qa:fresh --ansi",
             "vendor/bin/pint --format agent",
             "git diff --exit-code",
             "@composer analyse",

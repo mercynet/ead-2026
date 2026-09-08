@@ -9,7 +9,10 @@ use App\Modules\Core\Enums\UserType;
 
 beforeEach(function (): void {
     $this->tenant = makeTenant();
-    [$this->student, $this->headers] = actingAsUserType(UserType::Student, $this->tenant);
+    [$this->actor, $developerHeaders] = actingAsUserType(UserType::Developer);
+    $this->headers = array_merge($developerHeaders, [
+        'X-Tenant-ID' => (string) $this->tenant->id,
+    ]);
 
     $this->questionnaire = Questionnaire::factory()->create([
         'tenant_id' => $this->tenant->id,
@@ -88,7 +91,7 @@ it('denies instructor starting an attempt', function (): void {
 it('shows an attempt without exposing the answer key', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
     ]);
 
@@ -105,7 +108,7 @@ it('shows an attempt without exposing the answer key', function (): void {
 it('submits an answer scored from the server snapshot', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
     ]);
 
@@ -127,7 +130,7 @@ it('submits an answer scored from the server snapshot', function (): void {
 it('ignores a forged answer key sent by the client', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
     ]);
 
@@ -160,7 +163,7 @@ it('ignores a forged answer key sent by the client', function (): void {
 it('rejects the legacy payload without question_id', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
     ]);
 
@@ -185,7 +188,7 @@ it('rejects the legacy payload without question_id', function (): void {
 it('rejects an answer for a question outside the frozen snapshot', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
     ]);
 
@@ -205,7 +208,7 @@ it('rejects an answer for a question outside the frozen snapshot', function (): 
 it('rejects answering the same question twice', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
     ]);
 
@@ -241,7 +244,7 @@ it('denies answering an attempt of another user', function (): void {
 it('requires authentication to answer', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
     ]);
 
@@ -257,7 +260,7 @@ it('requires authentication to answer', function (): void {
 it('finishes an attempt computing the score from the frozen snapshot', function (): void {
     $attempt = QuizAttempt::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'user_id' => $this->student->id,
+        'user_id' => $this->actor->id,
         'questionnaire_id' => $this->questionnaire->id,
         'questionnaire_snapshot' => [
             'title' => $this->questionnaire->title,

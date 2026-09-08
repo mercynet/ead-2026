@@ -16,6 +16,7 @@ use App\Modules\Learning\Policies\CourseModulePolicy;
 use App\Modules\Learning\Policies\CoursePolicy;
 use App\Modules\Learning\Policies\EnrollmentPolicy;
 use App\Modules\Learning\Policies\LessonPolicy;
+use App\Modules\Learning\Policies\StudentPolicy;
 use App\Modules\Learning\Services\AssessmentCatalogResolver;
 use App\Modules\Learning\Services\CourseCheckoutCatalogResolver;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -65,6 +66,8 @@ class LearningServiceProvider extends ServiceProvider
         });
 
         Gate::define('learning.courses.list', [CoursePolicy::class, 'list']);
+        Gate::define('learning.instructor.courses.list', [CoursePolicy::class, 'listOwn']);
+        Gate::define('learning.instructor.courses.view-check', [CoursePolicy::class, 'showOwn']);
 
         Gate::define('learning.modules.list-check', function (User $user, ?Tenant $tenant = null, ?Course $course = null): bool {
             return app(CourseModulePolicy::class)->list($user, $tenant, $course);
@@ -89,6 +92,9 @@ class LearningServiceProvider extends ServiceProvider
         Gate::define('learning.lessons.view', function (User $user, ?Tenant $tenant = null): bool {
             return app(LessonPolicy::class)->view($user, $tenant);
         });
+        Gate::define('learning.instructor.lessons.view-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
+            return app(LessonPolicy::class)->viewOwn($user, $tenant, $lesson);
+        });
 
         Gate::define('learning.lessons.list-check', function (User $user, ?Tenant $tenant = null, ?CourseModule $courseModule = null): bool {
             return app(LessonPolicy::class)->list($user, $tenant, $courseModule);
@@ -100,6 +106,9 @@ class LearningServiceProvider extends ServiceProvider
 
         Gate::define('learning.progress.update', function (User $user, ?Tenant $tenant = null): bool {
             return app(LessonPolicy::class)->progress($user, $tenant);
+        });
+        Gate::define('learning.progress.view', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Enrollment $enrollment = null): bool {
+            return app(EnrollmentPolicy::class)->progress($user, $tenant, $enrollment);
         });
 
         Gate::define('learning.lessons.update-check', function (User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool {
@@ -149,12 +158,19 @@ class LearningServiceProvider extends ServiceProvider
         Gate::define('learning.enrollments.delete', function (User $user, ?Tenant $tenant = null, ?\App\Modules\Learning\Models\Enrollment $enrollment = null): bool {
             return app(EnrollmentPolicy::class)->delete($user, $tenant, $enrollment);
         });
+
+        Gate::define('learning.student.courses.list', [StudentPolicy::class, 'coursesList']);
+        Gate::define('learning.student.courses.view', [StudentPolicy::class, 'coursesView']);
+        Gate::define('learning.student.lessons.view', [StudentPolicy::class, 'lessonsView']);
+        Gate::define('learning.student.progress.update', [StudentPolicy::class, 'progressUpdate']);
     }
 
     private function registerRoutes(): void
     {
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/api.php');
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/admin.php');
+        Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/instructor.php');
+        Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/student.php');
         Route::middleware('api')->prefix('api')->group(__DIR__.'/../Routes/mzrt.php');
     }
 

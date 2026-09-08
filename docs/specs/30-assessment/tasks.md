@@ -1,6 +1,6 @@
 ---
 domain: assessment
-last-updated: 2026-09-06
+last-updated: 2026-09-08
 ---
 
 # Tasks — Assessment
@@ -35,6 +35,11 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   `/api/v1/admin/questionnaires` e `/api/v1/admin/questions`, com criação Admin sem
   `instructor_id`, edição preservando ownership pedagógico, tenant isolation e Contract de
   Learning para parents/categories.
+- [x] **Instructor I-03 (2026-09-08):** superfície própria em
+  `/api/v1/instructor/assessment` para Questionnaire/Question, composição, resultados e
+  respostas projetadas; parents somente Course/Lesson próprios, isolamento A/B e cross-tenant,
+  Assessment Admin-owned invisível e imutabilidade após attempt. Evidência Feature, Architecture,
+  PHPStan, Scribe e E2E em `docs/reports/INSTRUCTOR-I03-ASSESSMENT-OWN-RESULTS-2026-09-08.md`.
 
 ## In Progress
 

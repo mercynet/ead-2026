@@ -165,6 +165,11 @@ class CourseController extends Controller
      *   "data": null,
      *   "errors": [{"code": "access_denied", "message": "Acesso negado."}]
      * }
+     * @response 422 scenario="Course não está comercialmente pronto"
+     * {
+     *   "data": null,
+     *   "errors": [{"code": "validation_error", "message": "Course is not commercially ready: certificates are not available in the current release."}]
+     * }
      * @response 404 scenario="Curso não encontrado"
      * {
      *   "data": null,

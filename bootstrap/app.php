@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Assessment\Http\Middleware\BlockLegacyStudentAssessment;
 use App\Modules\Core\Exceptions\TenantAlreadyExistsException;
 use App\Modules\Core\Http\Middleware\EnsureAreaAccess;
 use App\Modules\Financial\Exceptions\CheckoutConflictException;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.access' => \App\Modules\Core\Http\Middleware\EnsureTenantAccess::class,
             'tenant.required.unless.developer' => \App\Modules\Core\Http\Middleware\EnsureTenantRequiredForNonDeveloper::class,
             'area.guard' => \App\Modules\Core\Http\Middleware\EnsureAreaAccess::class,
+            'assessment.legacy.student.blocked' => BlockLegacyStudentAssessment::class,
         ]);
 
         $middleware->prependToPriorityList(SubstituteBindings::class, EnsureAreaAccess::class);

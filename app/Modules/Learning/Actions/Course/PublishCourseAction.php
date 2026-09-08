@@ -5,10 +5,15 @@ namespace App\Modules\Learning\Actions\Course;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
 use App\Modules\Learning\Models\Lesson;
+use App\Modules\Learning\Services\CourseCommercialReadiness;
 use Illuminate\Validation\ValidationException;
 
 class PublishCourseAction
 {
+    public function __construct(
+        private readonly CourseCommercialReadiness $commercialReadiness,
+    ) {}
+
     public function handle(Course $course): Course
     {
         if ($course->status === 'archived') {
@@ -50,6 +55,8 @@ class PublishCourseAction
                 'lessons' => 'Courses must contain at least one published and active lesson before publishing.',
             ]);
         }
+
+        $this->commercialReadiness->assertPublishable($course);
 
         $course->status = 'published';
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Shared\Documentation\Scribe\BodyParameters\GetFromFormRequest as SafeBodyParametersFromFormRequest;
+use App\Shared\Documentation\Scribe\QueryParameters\GetFromFormRequest as SafeQueryParametersFromFormRequest;
 use Knuckles\Scribe\Config\Defaults;
 use Knuckles\Scribe\Extracting\Strategies;
 
@@ -239,10 +241,12 @@ return [
             ...Defaults::URL_PARAMETERS_STRATEGIES,
         ],
         'queryParameters' => [
-            ...Defaults::QUERY_PARAMETERS_STRATEGIES,
+            ...removeStrategies(Defaults::QUERY_PARAMETERS_STRATEGIES, [Strategies\QueryParameters\GetFromFormRequest::class]),
+            SafeQueryParametersFromFormRequest::class,
         ],
         'bodyParameters' => [
-            ...Defaults::BODY_PARAMETERS_STRATEGIES,
+            ...removeStrategies(Defaults::BODY_PARAMETERS_STRATEGIES, [Strategies\BodyParameters\GetFromFormRequest::class]),
+            SafeBodyParametersFromFormRequest::class,
         ],
         'responses' => configureStrategy(
             Defaults::RESPONSES_STRATEGIES,

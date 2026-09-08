@@ -28,7 +28,7 @@ class StoreProgressRequest extends FormRequest
                 'integer',
                 Rule::exists('lesson_media', 'id')->where(fn ($query) => $query
                     ->where('tenant_id', $tenant->id)
-                    ->where('lesson_id', $this->route('id'))
+                    ->where('lesson_id', $this->route('id') ?? $this->route('lessonId'))
                     ->where('is_active', true)
                 ),
             ],

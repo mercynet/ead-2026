@@ -18,6 +18,18 @@ return [
 
     'default' => env('DB_CONNECTION', 'sqlite'),
 
+    'destructive_operations' => [
+        'allowed_environments' => ['testing', 'e2e'],
+        'allowed_connections' => ['mysql'],
+        'allowed_databases' => [
+            'testing' => ['testing'],
+            'e2e' => ['ead2026_e2e'],
+        ],
+        'allowed_hosts' => ['mysql', '127.0.0.1', 'localhost'],
+        'allowed_usernames' => ['sail', 'testing'],
+        'disposable_marker' => env('DB_DISPOSABLE', ''),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections

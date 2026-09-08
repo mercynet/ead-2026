@@ -1,66 +1,59 @@
 # State — Sessão Atual
 
-> Efêmero: handoff e próximos passos. Status fino permanece em `docs/specs/*/tasks.md`.
-
 ## Sessão
 
-Admin A–D + ADM-03 concluído em 2026-09-06 com evidência consolidada; verdict do escopo autorizado é
-`ADMIN_COMPLETE`. ADM-03 cobre apenas matrícula manual interna e confirmação cash; matrícula externa,
-webhooks e automação de gateway permanecem deliberadamente fora.
-Relatório: `docs/reports/ADMIN-AUTONOMOUS-WORK-2026-09-06.md`.
-
-ADM-03 foi verificado no slice `docs/reports/ADMIN-CLOSURE-SLICE-6-2026-09-06.md`: superfície
-`/api/v1/admin/enrollments`, espelho financeiro idempotente, confirmação cash/manual, outbox e
-E2E HTTP real em banco descartável.
-
-Categorias System/Custom Admin executadas em 2026-09-06: normalização compartilhada, tenant_key,
-unicidade, parent de mesmo escopo, materialized path/cycle guard e Resource `type` implementados;
-Feature/Architecture/PHPStan verdes. Relatório: `docs/reports/ADMIN-CLOSURE-SLICE-4-2026-09-06.md`.
-
-Publication readiness Admin executada em 2026-09-06: transições explícitas de Lesson e regra de
-readiness de Course implementadas e verificadas por Feature, Architecture, PHPStan, Scribe e E2E
-HTTP real em banco descartável. Relatório: `docs/reports/ADMIN-CLOSURE-SLICE-3-2026-09-06.md`.
-
-Canonicalização anterior preservada: Assessment ownership, categorias System/Custom e
-publication/readiness estão registradas no manifest/specs/tasks e não dependem de decisão humana.
-
-Contexto preexistente preservado: Admin Slice 2 havia executado a superfície Admin de curso,
-módulos, aulas, materiais e mídia com boundary Instructor preservado; o relatório correspondente é
-`docs/reports/ADMIN-CLOSURE-SLICE-2-2026-09-06.md`. O fechamento Admin atual está consolidado
-no relatório principal.
+2026-09-09: revisão independente dos paths dirty concluída; grupos OPS-01, Instructor I-01–I-04,
+Student S-01/S-02, Assessment e Learning foram reconciliados, sem artefatos de runtime encontrados.
 
 ## Próximos passos (1-3)
 
-1. Corrigir separadamente o finding machine-specific de `.codex/config.toml:6` no hardening Codex,
-   se essa manutenção entrar no escopo.
-2. Manter quiz core/advanced boundary detalhada, MediaProvider, matrícula externa e lifecycle de plugins sob `HUMAN_DECISION_REQUIRED`; WS2/WS3 permanecem fora.
-3. Retomar apenas quando houver novo objetivo explícito fora do fechamento Admin.
+1. Decidir a decomposição final em commits atômicos; manter o worktree sem stage/commit até pedido
+   explícito.
+2. Resolver os avisos de `bodyParameters()` do Scribe somente se o contrato/documentação exigir;
+   a geração atual terminou exit 0.
+3. Se aprovado, stagear por grupo e repetir o gate completo antes de qualquer commit.
 
 ## Decisões abertas
 
-- Fronteira core simple versus advanced quiz/plugin.
-- MediaProvider, matrícula externa e lifecycle completo de plugins.
-- Nenhuma decisão humana aberta para Assessment ownership, System/Custom ou publication/readiness.
-
-## EVIDENCE
-
-- Publication focal: `6 passed (94 assertions)`; categorias/schema/authorization: `41 passed (140 assertions)`;
-  convergência de categorias: `6 passed (46 assertions)`.
-- Assessment Admin focal: `7 passed (59 assertions)`; regressão Assessment: `46 passed (265 assertions)`;
-  E2E Assessment Admin: `7/7` e cleanup de questionnaires/questions confirmado.
-- Enrollment Admin focal: `4 passed (21 assertions)`; Financial enrollment/manual focal:
-  `25 passed (229 assertions)`; E2E Admin enrollment/manual: `6/6`.
-- Regressão Learning completa após ADM-03: `289 passed (1460 assertions)`; Architecture completa:
-  `22 passed (709 assertions)`; Scribe exit 0.
-- Architecture completa `22 passed (709 assertions)`, PHPStan sem erros, Pint via `sail pint` e
-  `git diff --check` verdes; receipt após ADM-03: `11` arquivos de Architecture verdes.
-- E2E HTTP real: 36/36 casos passados após ADM-03; banco `ead2026_e2e` confirmou zero fixtures de
-  domínio após cleanup.
-- `scripts/ai/verify-changes.sh` passou com 11 arquivos de `tests/Architecture`.
-- `validate-harness.py` permanece com 1 failure em `.codex/config.toml:6` (absolute machine-specific
-  path) e warning esperado de `.opencode/opencode.json` ausente; finding fora dos slices de produto.
+Student Assessment = `CONDITIONAL_CAPABILITY / NOT RELEASED`; Certificate =
+`NOT_PROMISED_IN_V0_1`; Paid Pilot permanece `NOT_READY`. Falta decidir apenas a decomposição
+final do checkpoint; least-privilege real, backup/restore, deploy, storage,
+TLS/secrets, monitoring e rollback continuam workstreams posteriores.
 
 ## Último commit
 
-- `main` = `07f0bbc84e1c07b294b1d016995f8398928f7791` (`feat(admin): close admin operations and evidence`),
-  enviado para `origin/main`; working tree limpo.
+`8df531fbc826c79aa4073dfbb70ee7a191ad7cb7` em `main`; estado atual: 124 entradas dirty
+(35 modificadas, 89 não rastreadas), sem stage/commit/push desta task.
+
+## Evidência atual
+
+- `DestructiveDatabaseGuard` + `qa:fresh` aplicados; `--force-db` passou a ser rejeitado.
+- Safety focalizado: 9/9 testes, 19 assertions; Architecture: 37/37, 1.338 assertions (repetição
+  serial após `qa:fresh`);
+  PHPStan sem erros; Pint pass; composer validate e `git diff --check` pass.
+- `qa:fresh` executado com identidade testing allowlisted; 73 migrations concluídas.
+- Fresh E2E em `ead2026_e2e`: 73/73 migrations e MZRT 10/10; commercial integrated 28/28;
+  pós-cleanup `tenants=0 users=0 tokens=0 courses=0 enrollments=0 orders=0 payments=0 outbox=0`.
+- A primeira prova MZRT falhou por `APP_KEY` ausente no servidor E2E; a repetição passou com
+  `APP_KEY` efêmera em memória, sem segredo versionado ou registrado.
+- `E2eRunCommandTest.php` + `DestructiveDatabaseSafetyTest.php`: 16/16 testes, 36 assertions;
+  o ramo `--fresh` usa `FreshDatabaseRefresher` mockável no teste e mantém o sink real em produção.
+- Regressão Feature ampla: 668/668 testes, 4.280 assertions, 669s.
+- Scribe (`composer docs`): exit 0; PHPStan: sem erros; uma execução anterior de
+  `verify-changes.sh` passou os invariantes do diff em 11 arquivos de Architecture; a repetição
+  final ficou bloqueada pelo wrapper Sail reportar `Docker is not running`, apesar de `docker exec`
+  funcionar.
+- Manifesto determinístico de 73 migrations e fingerprint registrados em
+  `docs/reports/OPS-01-EVIDENCE-2026-09-09.md`.
+- Testes focais de APIs/console: 76/76, 1.087 assertions (repetição serial); `git diff --check` e
+  Architecture direto no container verdes. Uma tentativa concorrente anterior foi inválida por
+  compartilhar o DB `testing` entre suítes e não é evidência do código; a repetição final do
+  `verify-changes.sh` permanece não confirmada por falha exclusiva do wrapper Sail.
+
+## CONTEXT CHECKPOINT
+
+- context: alto (estimado; sessão retomada com revisão, testes e auditoria de segurança).
+- state: `docs/STATE.md` atualizado.
+- recommendation: clear.
+- reason: revisão e validação estão encerradas; a próxima ação depende de decisão explícita sobre
+  decomposição/stage, e o handoff está fresco para retomada.

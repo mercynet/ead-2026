@@ -51,9 +51,9 @@ at_cmd_pos 'git[[:space:]]+clean[[:space:]]+-[a-zA-Z]*f' && block "git clean -f"
 at_cmd_pos 'rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*f|rm[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*r' && block "rm -rf"
 at_cmd_pos 'composer[[:space:]]+update([[:space:]]|$)' && block "composer update (use composer require/install)"
 
-# DB wipe via artisan, only when NOT explicitly targeting the testing env.
+# DB wipe via artisan is always routed through a guarded project command.
 if printf '%s' "$cmd" | grep -Eq 'artisan[[:space:]]+(migrate:(fresh|refresh)|db:wipe)'; then
-    printf '%s' "$cmd" | grep -q -- '--env=testing' || block "migrate:fresh/refresh/db:wipe without --env=testing"
+    block "migrate:fresh/refresh/db:wipe direto: use qa:fresh ou e2e:run, que validam identidade descartável"
 fi
 
 # PHP toolchain roda no container. `php`, `pint`, `phpstan`, `pest` e `composer` a seco

@@ -27,6 +27,7 @@ class Lesson extends Model
         'slug',
         'short_description',
         'description',
+        'content',
         'video_path',
         'status',
         'thumbnail',
@@ -87,6 +88,7 @@ class Lesson extends Model
             'is_free' => 'boolean',
             'is_active' => 'boolean',
             'published_at' => 'datetime',
+            'content' => 'array',
         ];
     }
 }

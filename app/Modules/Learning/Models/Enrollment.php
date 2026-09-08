@@ -63,6 +63,10 @@ class Enrollment extends Model
         return $this->hasMany(LessonProgress::class);
     }
 
+    /**
+     * @param  Builder<Enrollment>  $query
+     * @return Builder<Enrollment>
+     */
     public function scopeForTenantUserCourse(Builder $query, int $tenantId, int $userId, int $courseId): Builder
     {
         return $query
@@ -71,11 +75,34 @@ class Enrollment extends Model
             ->where('course_id', $courseId);
     }
 
+    /**
+     * @param  Builder<Enrollment>  $query
+     * @return Builder<Enrollment>
+     */
     public function scopeCurrentStatuses(Builder $query): Builder
     {
         return $query->whereIn('status', self::CURRENT_STATUSES);
     }
 
+    /**
+     * @param  Builder<Enrollment>  $query
+     * @return Builder<Enrollment>
+     */
+    public function scopeActiveForAccess(Builder $query): Builder
+    {
+        return $query
+            ->where('status', 'active')
+            ->where(function (Builder $expiryQuery): void {
+                $expiryQuery
+                    ->whereNull('access_expires_at')
+                    ->orWhere('access_expires_at', '>', now());
+            });
+    }
+
+    /**
+     * @param  Builder<Enrollment>  $query
+     * @return Builder<Enrollment>
+     */
     public function scopeOrderedByCurrentStatusPriority(Builder $query): Builder
     {
         return $query

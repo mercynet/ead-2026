@@ -1,0 +1,22 @@
+<?php
+
+namespace App\Modules\Learning\Http\Requests\Instructor;
+
+use App\Modules\Learning\Http\Requests\Course\UpdateCourseRequest as BaseUpdateCourseRequest;
+
+class UpdateCourseRequest extends BaseUpdateCourseRequest
+{
+    public function rules(): array
+    {
+        return [
+            ...parent::rules(),
+            'tenant_id' => ['prohibited'],
+            'instructor_id' => ['prohibited'],
+            'owner' => ['prohibited'],
+            'slug' => ['prohibited'],
+            'status' => ['prohibited'],
+            'published_at' => ['prohibited'],
+            'is_published' => ['prohibited'],
+        ];
+    }
+}

@@ -32,7 +32,10 @@ class UpdateProgressAction
                     $context->requiredUser()->id,
                     $course->id
                 )
-                ->currentStatuses()
+                ->where('status', 'active')
+                ->where(function ($expiryQuery): void {
+                    $expiryQuery->whereNull('access_expires_at')->orWhere('access_expires_at', '>', now());
+                })
                 ->orderByDesc('id')
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -282,9 +285,15 @@ class UpdateProgressAction
     private function updateEnrollmentProgress(Enrollment $enrollment, User $user, array &$pendingEvents): void
     {
         $course = $enrollment->course;
+        $tenantId = (int) $enrollment->getAttribute('tenant_id');
+        $userId = (int) $enrollment->getAttribute('user_id');
+        $courseId = (int) $course->id;
 
         $publishedLessonIds = Lesson::query()
-            ->whereHas('courseModule', fn ($q) => $q->where('course_id', $course->id))
+            ->where('tenant_id', $tenantId)
+            ->whereHas('courseModule', fn ($q) => $q
+                ->where('tenant_id', $tenantId)
+                ->where('course_id', $courseId))
             ->where('status', 'published')
             ->where('is_active', true)
             ->pluck('id');
@@ -294,6 +303,9 @@ class UpdateProgressAction
         }
 
         $completedLessons = LessonProgress::query()
+            ->where('tenant_id', $tenantId)
+            ->where('user_id', $userId)
+            ->where('course_id', $courseId)
             ->where('enrollment_id', $enrollment->id)
             ->whereIn('lesson_id', $publishedLessonIds)
             ->where('is_completed', true)

@@ -22,6 +22,12 @@ class CoursePolicy
             && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.list');
     }
 
+    public function listOwn(User $authenticatedUser, ?Tenant $tenant = null): bool
+    {
+        return $authenticatedUser->isInstructor()
+            && $this->list($authenticatedUser, $tenant);
+    }
+
     public function show(User $authenticatedUser, ?Tenant $tenant, ?Course $course = null): bool
     {
         if ($authenticatedUser->isDeveloper()) {
@@ -34,6 +40,14 @@ class CoursePolicy
 
         return $authenticatedUser->belongsToTenant($tenant)
             && $authenticatedUser->getAllPermissions()->contains('name', 'learning.courses.view');
+    }
+
+    public function showOwn(User $authenticatedUser, ?Tenant $tenant = null, ?Course $course = null): bool
+    {
+        return $authenticatedUser->isInstructor()
+            && $this->show($authenticatedUser, $tenant, $course)
+            && $course !== null
+            && (int) $course->instructor_id === (int) $authenticatedUser->id;
     }
 
     public function preview(User $authenticatedUser, ?Tenant $tenant, ?Course $course = null): bool

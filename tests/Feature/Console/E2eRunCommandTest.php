@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Core\Models\User;
+use App\Shared\Database\FreshDatabaseRefresher;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Http;
 use Spatie\Activitylog\Models\Activity;
 
@@ -29,6 +31,21 @@ it('returns zero when cleanup succeeds and no case fails', function (): void {
     $this->artisan('e2e:run', [
         'spec' => '_fixtures/cleanup-ok',
         '--base' => 'http://e2e.test',
+    ])->assertExitCode(0);
+});
+
+it('continues after a successful fresh migration', function (): void {
+    $freshener = Mockery::mock(FreshDatabaseRefresher::class);
+    $freshener->shouldReceive('refresh')->once()->andReturnTrue();
+    $this->app->instance(FreshDatabaseRefresher::class, $freshener);
+    $this->app[Kernel::class]->setArtisan(null);
+
+    Http::fake(['*' => Http::response(['data' => ['ok' => true]], 200)]);
+
+    $this->artisan('e2e:run', [
+        'spec' => '_fixtures/cleanup-ok',
+        '--base' => 'http://e2e.test',
+        '--fresh' => true,
     ])->assertExitCode(0);
 });
 

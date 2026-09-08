@@ -26,6 +26,6 @@ class StoreLessonAction
             ->where('course_module_id', $module->id)
             ->max('sort_order') + 1;
 
-        return Lesson::query()->create($attributes);
+        return Lesson::query()->create($attributes)->load('courseModule.course');
     }
 }

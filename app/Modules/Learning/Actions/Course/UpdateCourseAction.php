@@ -4,6 +4,7 @@ namespace App\Modules\Learning\Actions\Course;
 
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CoursePriceHistory;
+use App\Modules\Learning\Services\CourseCommercialReadiness;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
 
@@ -11,6 +12,7 @@ class UpdateCourseAction
 {
     public function __construct(
         private readonly DatabaseManager $database,
+        private readonly CourseCommercialReadiness $commercialReadiness,
     ) {}
 
     public function handle(Course $course, array $attributes, int $actorId): Course
@@ -22,6 +24,8 @@ class UpdateCourseAction
                 ->lockForUpdate()
                 ->firstOrFail();
             $oldPriceCents = $lockedCourse->price_cents;
+
+            $this->commercialReadiness->assertUpdateable($lockedCourse, $attributes);
 
             if (isset($attributes['title'])) {
                 $attributes['slug'] = Str::slug($attributes['title']);

@@ -35,6 +35,14 @@ class LessonPolicy
         return $this->allows($user, $tenant, 'learning.lessons.view');
     }
 
+    public function viewOwn(User $user, ?Tenant $tenant = null, ?Lesson $lesson = null): bool
+    {
+        return $user->isInstructor()
+            && $this->view($user, $tenant)
+            && $lesson !== null
+            && (int) $lesson->courseModule?->course?->instructor_id === (int) $user->id;
+    }
+
     public function progress(User $user, ?Tenant $tenant = null): bool
     {
         return $this->allows($user, $tenant, 'learning.progress.update');

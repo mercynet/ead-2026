@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Shared\Database\DestructiveDatabaseGuard;
+use App\Shared\Database\FreshDatabaseRefresher;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Console\Command;
@@ -26,10 +28,10 @@ use Throwable;
  * `other` ou null para omitir X-Tenant-ID) e `capture` (closure que devolve fixtures
  * derivadas da resposta, sem imprimi-las).
  *
- * Segurança (auditoria 2026-07-16): só roda em local|testing|e2e; recusa DB que não
- * pareça descartável (nome sem e2e/test) salvo --force-db; canário prova servidor↔DB
- * antes de qualquer mutação; timeout por request; circuit breaker no 5xx inesperado;
- * saída sanitizada (sem token/segredo).
+ * Segurança: exige identidade descartável composta por ambiente, conexão, DB, host,
+ * credencial allowlisted e marcador explícito; canário prova servidor↔DB antes de
+ * qualquer mutação; timeout por request; circuit breaker no 5xx inesperado; saída
+ * sanitizada (sem token/segredo).
  *
  * Stack e2e dedicada (recomendado): copie .env.e2e.example → .env.e2e (DB_DATABASE=ead2026_e2e,
  * APP_ENV=e2e, APP_DEBUG=false), suba a app com esse env e rode:
@@ -42,7 +44,7 @@ class E2eRunCommand extends Command
         {--timeout=10 : Timeout por request em segundos (evita travar num endpoint pendurado)}
         {--continue-on-error : Não abortar no primeiro 5xx inesperado (por padrão a corrida para)}
         {--fresh : Roda migrate:fresh no DB atual antes da bateria (só após o gate de DB descartável)}
-        {--force-db : Permite rodar contra um DB que não parece descartável (dev). Use com cuidado}
+        {--force-db : Opção removida: nunca desativa o gate de banco descartável}
         {--keep : Não limpar as fixtures efêmeras no fim (debug)}';
 
     protected $description = 'Executa um spec E2E contra o app rodando (HTTP real + asserts de DB)';
@@ -56,10 +58,23 @@ class E2eRunCommand extends Command
 
     private bool $aborted = false;
 
+    public function __construct(
+        private readonly DestructiveDatabaseGuard $databaseGuard,
+        private readonly FreshDatabaseRefresher $databaseRefresher,
+    ) {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
-        if (! app()->environment(['local', 'testing', 'e2e'])) {
-            $this->error('e2e:run só roda em local|testing|e2e (ambiente atual: '.app()->environment().').');
+        if ($this->option('force-db')) {
+            $this->error('--force-db foi removido: nenhuma opção permite tornar um banco arbitrário elegível para E2E destrutivo.');
+
+            return self::FAILURE;
+        }
+
+        if (! app()->environment(['testing', 'e2e'])) {
+            $this->error('e2e:run só roda em testing|e2e (ambiente atual: '.app()->environment().').');
 
             return self::FAILURE;
         }
@@ -69,16 +84,33 @@ class E2eRunCommand extends Command
             return self::FAILURE;
         }
 
-        $database = (string) DB::connection()->getDatabaseName();
-        if (! $this->isDisposableDatabase($database) && ! $this->option('force-db')) {
-            $this->error("e2e:run recusa mutar o DB '{$database}' — não parece descartável.");
-            $this->line('  Aponte a app+runner para um DB e2e (APP_ENV=e2e, DB_DATABASE=..._e2e) ou passe --force-db.');
+        $databaseGuardReason = $this->databaseGuard->denialReason();
+        if ($databaseGuardReason !== null) {
+            $configuredDatabase = (string) config('database.connections.'.config('database.default').'.database');
+            $this->error("e2e:run recusado para o DB '{$configuredDatabase}': {$databaseGuardReason}.");
+            $this->line('  Use a stack E2E/teste dedicada com identidade descartável explícita.');
 
             return self::FAILURE;
         }
 
+        $database = (string) DB::connection()->getDatabaseName();
+
         if ($this->option('fresh')) {
-            $this->components->task("migrate:fresh em {$database}", fn (): bool => $this->callSilent('migrate:fresh', ['--force' => true]) === self::SUCCESS);
+            $freshSucceeded = false;
+            $this->components->task(
+                "migrate:fresh em {$database}",
+                function () use (&$freshSucceeded): bool {
+                    $freshSucceeded = $this->databaseRefresher->refresh();
+
+                    return $freshSucceeded;
+                },
+            );
+
+            if (! $freshSucceeded) {
+                $this->error("migrate:fresh falhou em {$database}; nenhuma fixture E2E será criada.");
+
+                return self::FAILURE;
+            }
         }
 
         $base = rtrim((string) ($this->option('base') ?: config('app.url')), '/');
@@ -461,15 +493,6 @@ class E2eRunCommand extends Command
             '$1[REDACTED]$2',
             $text,
         ) ?? $text;
-    }
-
-    /**
-     * DB é "descartável" se o nome sinaliza teste/e2e — nunca o DB de dev/prod.
-     * Barra mutação acidental no banco errado (o --force-db é o escape explícito).
-     */
-    private function isDisposableDatabase(string $database): bool
-    {
-        return preg_match('/(e2e|test)/i', $database) === 1;
     }
 
     /**

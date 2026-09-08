@@ -8,6 +8,7 @@ use App\Modules\Core\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use LogicException;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,6 +19,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (config('app.env') === 'production') {
+            throw new LogicException('DatabaseSeeder é seed de desenvolvimento e não pode rodar em produção.');
+        }
+
         $tenant = Tenant::query()->firstOrCreate(
             ['domain' => 'seed-tenant.local'],
             [

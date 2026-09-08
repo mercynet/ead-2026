@@ -20,6 +20,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $tenant_id
  * @property int $instructor_id
  * @property int $price_cents
+ * @property string $status
+ * @property bool $is_active
+ * @property bool $certificate_enabled
+ * @property bool $certificate_requires_quiz
  * @property string $title
  * @property string $slug
  */

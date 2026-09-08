@@ -11,7 +11,7 @@ Route::prefix('v1/assessment')
     ->group(function (): void {
         Route::prefix('questionnaires')
             ->controller(QuestionnaireController::class)
-            ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access'])
+            ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access', 'assessment.legacy.student.blocked'])
             ->group(function (): void {
                 Route::get('/', 'index');
                 Route::post('/', 'store');
@@ -22,7 +22,7 @@ Route::prefix('v1/assessment')
 
         Route::prefix('questions')
             ->controller(QuestionController::class)
-            ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access'])
+            ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access', 'assessment.legacy.student.blocked'])
             ->group(function (): void {
                 Route::get('/', 'index');
                 Route::post('/', 'store');
@@ -32,7 +32,7 @@ Route::prefix('v1/assessment')
 
         Route::prefix('attempts')
             ->controller(AttemptController::class)
-            ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access'])
+            ->middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access', 'assessment.legacy.student.blocked'])
             ->group(function (): void {
                 Route::post('/questionnaires/{questionnaireId}', 'store');
                 Route::get('/{id}', 'show');
@@ -45,7 +45,7 @@ Route::prefix('v1/assessment')
             ->group(function (): void {
                 Route::get('/verify/{certificateNumber}', 'verify');
 
-                Route::middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access'])
+                Route::middleware(['tenant.required.unless.developer', 'auth:sanctum', 'tenant.access', 'assessment.legacy.student.blocked'])
                     ->group(function (): void {
                         Route::get('/', 'index');
                         Route::get('/{id}', 'show');

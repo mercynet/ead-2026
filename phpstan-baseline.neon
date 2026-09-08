@@ -139,12 +139,6 @@ parameters:
 			path: app/Modules/Assessment/Actions/Attempt/SubmitAnswerAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_enabled\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_min_progress\.$#'
 			identifier: property.notFound
 			count: 1
@@ -152,12 +146,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_min_score\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$certificate_requires_quiz\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Modules/Assessment/Actions/Certificate/IssueCertificateAction.php
@@ -721,22 +709,10 @@ parameters:
 			path: app/Modules/Learning/Actions/Course/PublishCourseAction.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Course/PublishCourseAction.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\CourseMaterial\:\:\$tenant_id\.$#'
 			identifier: property.notFound
 			count: 2
 			path: app/Modules/Learning/Actions/Course/SyncMaterialStatsAction.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Actions/Course/UnpublishCourseAction.php
 
 
 		-
@@ -1542,18 +1518,6 @@ parameters:
 			identifier: function.alreadyNarrowedType
 			count: 1
 			path: app/Modules/Learning/Listeners/EnrollStudentFromOrderPaidListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Models/Course.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Course\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Learning/Models/Course.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Learning\\Models\\Enrollment\:\:\$access_expires_at\.$#'

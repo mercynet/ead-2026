@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Modules\Learning\Http\Requests\Instructor;
+
+use App\Modules\Learning\Http\Requests\Lesson\StoreLessonRequest as BaseStoreLessonRequest;
+
+class StoreLessonRequest extends BaseStoreLessonRequest
+{
+    public function rules(): array
+    {
+        return [
+            ...parent::rules(),
+            'tenant_id' => ['prohibited'],
+            'slug' => ['prohibited'],
+            'status' => ['prohibited'],
+            'sort_order' => ['prohibited'],
+            'published_at' => ['prohibited'],
+            'owner' => ['prohibited'],
+        ];
+    }
+}

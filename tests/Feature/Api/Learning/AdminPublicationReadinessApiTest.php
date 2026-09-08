@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Assessment\Models\Questionnaire;
 use App\Modules\Core\Enums\UserType;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\CourseModule;
@@ -179,4 +180,168 @@ it('keeps lesson publication tenant-scoped', function (): void {
         404,
         'not_found'
     );
+});
+
+it('rejects publishing a course whose commercial completion requires assessment', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+    $course = Course::factory()->draft()->create([
+        'tenant_id' => $tenant->id,
+        'is_active' => true,
+        'certificate_requires_quiz' => true,
+    ]);
+    $module = CourseModule::factory()->for($tenant)->for($course)->create();
+    Lesson::factory()->for($tenant)->for($module)->create([
+        'status' => 'published',
+        'is_active' => true,
+    ]);
+
+    $response = assertApiErrorEnvelope(
+        $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], $headers),
+        422,
+        'validation_error'
+    );
+
+    $response->assertJsonPath('errors.0.message', 'Course is not commercially ready: Student Assessment is not available for a required completion condition.');
+    expect($course->refresh()->status)->toBe('draft')
+        ->and($course->published_at)->toBeNull();
+});
+
+it('rejects publishing a course that promises a certificate', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+    $course = Course::factory()->draft()->create([
+        'tenant_id' => $tenant->id,
+        'is_active' => true,
+        'certificate_enabled' => true,
+    ]);
+    $module = CourseModule::factory()->for($tenant)->for($course)->create();
+    Lesson::factory()->for($tenant)->for($module)->create([
+        'status' => 'published',
+        'is_active' => true,
+    ]);
+
+    $response = assertApiErrorEnvelope(
+        $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], $headers),
+        422,
+        'validation_error'
+    );
+
+    $response->assertJsonPath('errors.0.message', 'Course is not commercially ready: certificates are not available in the current release.');
+    expect($course->refresh()->status)->toBe('draft')
+        ->and($course->published_at)->toBeNull();
+});
+
+it('keeps a course without unreleased capability requirements publishable', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+    $course = Course::factory()->draft()->create([
+        'tenant_id' => $tenant->id,
+        'is_active' => true,
+        'certificate_enabled' => false,
+        'certificate_requires_quiz' => false,
+    ]);
+    $module = CourseModule::factory()->for($tenant)->for($course)->create();
+    Lesson::factory()->for($tenant)->for($module)->create([
+        'status' => 'published',
+        'is_active' => true,
+    ]);
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', 'published');
+
+    expect($course->refresh()->published_at)->not->toBeNull();
+});
+
+it('does not treat an incidental course questionnaire as a commercial requirement', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+    $course = Course::factory()->draft()->create([
+        'tenant_id' => $tenant->id,
+        'is_active' => true,
+        'certificate_enabled' => false,
+        'certificate_requires_quiz' => false,
+    ]);
+    $module = CourseModule::factory()->for($tenant)->for($course)->create();
+    Lesson::factory()->for($tenant)->for($module)->create([
+        'status' => 'published',
+        'is_active' => true,
+    ]);
+    Questionnaire::factory()->course()->create([
+        'tenant_id' => $tenant->id,
+        'instructor_id' => null,
+        'quizable_id' => $course->id,
+        'quizable_type' => 'course',
+    ]);
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], $headers)
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', 'published');
+});
+
+it('cannot publish a course through generic course update', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+    $course = Course::factory()->draft()->create([
+        'tenant_id' => $tenant->id,
+        'is_active' => true,
+    ]);
+
+    assertApiErrorEnvelope(
+        $this->patchJson('/api/v1/admin/courses/'.$course->id, [
+            'status' => 'published',
+        ], $headers),
+        422,
+        'validation_error'
+    );
+
+    expect($course->refresh()->status)->toBe('draft')
+        ->and($course->published_at)->toBeNull();
+
+    $this->patchJson('/api/v1/admin/courses/'.$course->id, [
+        'certificate_enabled' => true,
+    ], $headers)
+        ->assertSuccessful();
+
+    expect($course->refresh()->status)->toBe('draft')
+        ->and($course->certificate_enabled)->toBeTrue();
+
+    assertApiErrorEnvelope(
+        $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], $headers),
+        422,
+        'validation_error'
+    );
+
+    expect($course->refresh()->status)->toBe('draft')
+        ->and($course->published_at)->toBeNull();
+});
+
+it('rejects adding an unreleased requirement to an already published course', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Admin, $tenant);
+    $course = Course::factory()->draft()->create([
+        'tenant_id' => $tenant->id,
+        'is_active' => true,
+    ]);
+    $module = CourseModule::factory()->for($tenant)->for($course)->create();
+    Lesson::factory()->for($tenant)->for($module)->create([
+        'status' => 'published',
+        'is_active' => true,
+    ]);
+
+    $this->postJson('/api/v1/admin/courses/'.$course->id.'/publish', [], $headers)
+        ->assertSuccessful();
+
+    $response = assertApiErrorEnvelope(
+        $this->patchJson('/api/v1/admin/courses/'.$course->id, [
+            'certificate_requires_quiz' => true,
+        ], $headers),
+        422,
+        'validation_error'
+    );
+
+    $response->assertJsonPath('errors.0.message', 'Course is not commercially ready: Student Assessment is not available for a required completion condition.');
+    expect($course->refresh()->status)->toBe('published')
+        ->and($course->certificate_requires_quiz)->toBeFalse();
 });

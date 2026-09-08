@@ -1,6 +1,6 @@
 ---
 domain: catalog-learning
-last-updated: 2026-09-06
+last-updated: 2026-09-08
 ---
 
 # Tasks — Catalog & Learning
@@ -97,10 +97,22 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   `/api/v1/admin/enrollments`, payloads de escopo/ownership proibidos, concessão manual com espelho
   financeiro idempotente e confirmação cash via outbox validada por E2E HTTP real. Matrícula externa,
   webhooks e automação de gateway permanecem fora deste slice.
+- [x] **I-01 — Instructor Learning own surface (2026-09-08):** superfície canônica area-first para
+  Course, Module e Lesson próprios, com ownership transitivo, payloads de escopo protegidos e
+  evidência Feature/Architecture/Scribe/E2E. Publish/unpublish, assignment e categorias write
+  permanecem fora do slice.
+- [x] **I-02 — Instructor attachments + roster + progress + free enrollment (2026-09-08):**
+  LessonMedia/CourseMaterial próprios, roster e progresso apenas de Courses próprios, matrícula
+  manual FREE idempotente com espelho zero-consideration, rejeição de paid/external, PII mínima e
+  evidência Feature/Architecture/Scribe/E2E. Lifecycle de Enrollment, upload/MediaProvider e
+  matrícula paid external permanecem fora do slice.
+- [x] **S-01 — Student own access & consumption surface (2026-09-08):** superfície canônica
+  `/api/v1/student` para My Courses, Course/Module/Lesson, mídia, material e progresso próprios;
+  Enrollment ativa/não expirada, publicação/atividade, preview read-only, isolamento tenant/own,
+  Resources Student sem paths/PII internos e evidência Feature/Architecture/Scribe/performance/E2E.
+  Assessment, certificados e workstreams posteriores permanecem fora.
 
 ## In Progress
-
-- _(nenhuma)_
 
 ## Pending
 

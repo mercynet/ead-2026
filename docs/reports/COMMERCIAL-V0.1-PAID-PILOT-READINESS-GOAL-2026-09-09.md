@@ -232,12 +232,13 @@ Nenhum blocker interno conhecido permanece após as correções e provas deste r
 ## 18. External Blockers
 
 Host real; IP/SSH/runtime; DNS; domínio; certificado TLS/ACME; APP_KEY e secrets reais; DB users
-e privilégios; owner/support; canal de alerta; adapter/destino/credencial/retention de backup
-off-host; execução recorrente de cron/systemd; e provisioning/aceite do ambiente de ativação.
+e privilégios; owner/support; canal de alerta (`ALERT_PROVIDER_EXTERNAL_BLOCKER`); adapter/destino/
+credencial/retention de backup off-host (`REMOTE_BACKUP_EXTERNAL_BLOCKER`); execução recorrente de
+cron/systemd; e provisioning/aceite do ambiente de ativação.
 
 ## 19. Human Decisions
 
-Aceitar formalmente RPO ≤24h e RTO ≤4h úteis; nomear support owner e alert owner; aceitar
+Aceitar formalmente RPO ≤24h e RTO ≤4h úteis (`HUMAN_ACCEPTANCE_PENDING`); nomear support owner e alert owner; aceitar
 rollback-via-restore do primeiro deploy; aceitar claims e exclusões comerciais v0.1; decidir se e
 quando SMTP/worker/reset por e-mail entram em promessa.
 

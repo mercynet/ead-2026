@@ -63,8 +63,10 @@ monitorados.
 
 ## Pendências que não são OPS-04 internos
 
-Host/IP, DNS/domínio/TLS, secrets reais e privilégios DB, owner/canal de alertas, adapter/destino/
-credencial de backup remoto, suporte/cron-systemd e aceite humano de RPO ≤24h/RTO ≤4h úteis.
+Host/IP, DNS/domínio/TLS, secrets reais e privilégios DB, owner/canal de alertas
+(`ALERT_PROVIDER_EXTERNAL_BLOCKER`), adapter/destino/credencial de backup remoto
+(`REMOTE_BACKUP_EXTERNAL_BLOCKER`), suporte/cron-systemd e aceite humano
+(`HUMAN_ACCEPTANCE_PENDING`) de RPO ≤24h/RTO ≤4h úteis.
 Primeiro deploy não possui N-1: recovery é restore do baseline/pre-release, seguida de RC conhecida,
 readiness e synthetic.
 

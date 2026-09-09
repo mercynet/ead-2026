@@ -54,7 +54,7 @@ monitorados.
 
 ## Regressão
 
-- Alert unit: `4 passed (15 assertions)`.
+- Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`.
 - Readiness Feature: `5 passed (29 assertions)`.
 - Infrastructure contract: `6 passed (100 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan e Pint: PASS; `bash -n`, `git diff --check` e `scripts/ai/verify-changes.sh`: PASS.

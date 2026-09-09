@@ -202,7 +202,7 @@ forem ativados.
 
 | Item | Estado |
 |---|---|
-| RC SHA | `[PROVEN]` — RC operacional `655c939`; OPS-04 hardening `c410e9b` |
+| RC SHA | `[PROVEN]` — RC operacional `655c939`; OPS-04 hardening `c410e9b`/`c167cf8` |
 | host | `[EXTERNAL_PENDING]` |
 | domain | `[EXTERNAL_PENDING]` |
 | TLS/hostname/expiration | `[EXTERNAL_PENDING]`; validação estrutural passou |
@@ -244,7 +244,7 @@ quando SMTP/worker/reset por e-mail entram em promessa.
 ## 20. Regression
 
 - `bash -n scripts/ops/ops04-*.sh scripts/ops/validate-production-env.sh` — PASS.
-- Alert unit: `4 passed (15 assertions)`.
+- Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`.
 - Readiness Feature: `5 passed (29 assertions)`.
 - Infrastructure contract: `6 passed (100 assertions)`.
 - PHPStan: `No errors`.
@@ -262,6 +262,10 @@ quando SMTP/worker/reset por e-mail entram em promessa.
 STATE inicial.
 `9b0c86f docs(ops): record final local commit provenance` — provenance local reconciliada; nenhum
 push/tag/deploy real foi feito.
+`c167cf8 feat(ops): close synthetic and harden activation validation` — provisioning MZRT no
+monitor, APP_KEY/secrets validation e proteção do remetente de alertas.
+`b66175a docs(ops): reconcile final paid-pilot evidence` — receipts reconciliados; `3a98cf3`
+atualizou o handoff final.
 
 ## 22. Engineering Verdict
 

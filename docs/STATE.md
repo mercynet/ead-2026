@@ -30,7 +30,8 @@ Relatórios/STATE: `b66175a docs(ops): reconcile final paid-pilot evidence`. Bra
 
 ## Evidência atual
 
-- Alert unit: `4 passed (15 assertions)`; readiness Feature: `5 passed (29 assertions)`.
+- Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`; readiness
+  Feature: `5 passed (29 assertions)`.
 - Infrastructure contract: `6 passed (100 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan: `No errors`; Pint: PASS; `bash -n`: PASS; `git diff --check`: PASS.
 - Synthetic HTTP real dedicado: provisioning MZRT `10 passed, 0 failed` e jornada comercial

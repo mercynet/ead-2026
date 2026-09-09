@@ -27,13 +27,15 @@ fi
 five_xx="$(grep -Eo '"status"[[:space:]]*:[[:space:]]*5[0-9]{2}' "$tmp_dir/log" || true)"
 five_xx="$(printf '%s\n' "$five_xx" | sed '/^$/d' | wc -l | tr -d ' ')"
 critical="$(grep -Eic '"level_name"[[:space:]]*:[[:space:]]*"CRITICAL"|exception\.unhandled' "$tmp_dir/log" || true)"
-printf 'error_scan=PASS five_xx=%s critical=%s threshold=%s\n' "$five_xx" "$critical" "$threshold"
-
 if (( five_xx >= threshold )); then
+    printf 'error_scan=FAIL five_xx=%s critical=%s threshold=%s reason=http_5xx_spike\n' "$five_xx" "$critical" "$threshold" >&2
     "$script_dir/ops04-alert.sh" http_5xx_spike critical 'contain traffic and inspect the failing route'
     exit 1
 fi
 if (( critical > 0 )); then
+    printf 'error_scan=FAIL five_xx=%s critical=%s threshold=%s reason=critical_exception\n' "$five_xx" "$critical" "$threshold" >&2
     "$script_dir/ops04-alert.sh" critical_exception critical 'inspect the exception and correlate the request id'
     exit 1
 fi
+
+printf 'error_scan=PASS five_xx=%s critical=%s threshold=%s\n' "$five_xx" "$critical" "$threshold"

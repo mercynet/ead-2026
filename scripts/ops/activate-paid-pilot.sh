@@ -304,9 +304,9 @@ alert_delivery_status="$(sed -n 's/^alert_delivery_canary=\([^ ]*\).*/\1/p' "$te
 tls_status="$(sed -n 's/^domain_tls=\([^ ]*\).*/\1/p' "$temp_dir/domain-tls.txt" | head -n 1)"
 synthetic_status="$(sed -n 's/^synthetic=\([^ ]*\).*/\1/p' "$temp_dir/synthetic.txt" | head -n 1)"
 scheduler_status="$(sed -n 's/^scheduler=\([^ ]*\).*/\1/p' "$temp_dir/readiness.txt" | head -n 1)"
-[[ "$readiness_status" == PASS && "$observability_status" == PASS && "$remote_backup_status" == PASS \
+    [[ "$readiness_status" == PASS && "$observability_status" == PASS && "$remote_backup_status" == PASS \
     && "$alert_delivery_status" == PASS && "$tls_status" == PASS && "$synthetic_status" == PASS \
-    && "$scheduler_status" == required-and-running ]] || {
+    && "$scheduler_status" == PASS ]] || {
     printf 'activation gates did not produce a complete PASS set\n' >&2
     exit 1
 }

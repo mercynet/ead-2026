@@ -26,8 +26,8 @@ humanas separadas.
 Implementação: `c410e9b feat(ops): harden paid-pilot monitoring and synthetic`.
 Hardening final: `c167cf8 feat(ops): close synthetic and harden activation validation`.
 Error scan: `1b0f226 fix(ops): make error scan failures explicit`.
-Relatórios/STATE: `b66175a docs(ops): reconcile final paid-pilot evidence`. Branch `main`, 16 commits
-à frente de `origin/main`, sem push.
+Último receipt selado: `12c5516 docs(ops): classify external activation blockers`. Branch `main`,
+sem push.
 
 ## Evidência atual
 

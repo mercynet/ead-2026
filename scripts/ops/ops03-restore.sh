@@ -8,6 +8,10 @@ set -euo pipefail
 
 backup_dir="${1:?usage: ops03-restore.sh <backup-directory>}"
 compose_file="${COMPOSE_FILE:-compose.production.yaml}"
+compose_env_args=()
+if [[ -n "${OPS03_ENV_FILE:-}" ]]; then
+    compose_env_args+=(--env-file "$OPS03_ENV_FILE")
+fi
 manifest="$backup_dir/manifest.txt"
 
 [[ -f "$manifest" ]] || { printf 'backup manifest not found\n' >&2; exit 1; }
@@ -22,9 +26,23 @@ actual_storage_checksum="$(sha256sum "$backup_dir/storage.tar.gz" | awk '{print 
 [[ "$actual_db_checksum" == "$expected_db_checksum" ]] || { printf 'database checksum mismatch\n' >&2; exit 1; }
 [[ "$actual_storage_checksum" == "$expected_storage_checksum" ]] || { printf 'storage checksum mismatch\n' >&2; exit 1; }
 
-docker compose -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" up -d db
-docker compose -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T db sh -c \
-    'MYSQL_PWD="$DB_MIGRATION_PASSWORD" gunzip -c | mysql --binary-mode -u"$DB_MIGRATION_USERNAME" "$MYSQL_DATABASE"' \
+docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" up -d db
+db_container="$(docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" ps -q db)"
+db_ready=false
+for _ in $(seq 1 60); do
+    health="$(docker inspect -f '{{.State.Health.Status}}' "$db_container" 2>/dev/null || true)"
+    if [[ "$health" == healthy ]]; then
+        db_ready=true
+        break
+    fi
+    if [[ "$health" == unhealthy ]]; then
+        break
+    fi
+    sleep 1
+done
+[[ "$db_ready" == true ]] || { printf 'database did not become healthy before restore\n' >&2; exit 1; }
+docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T db sh -c \
+    'gunzip -c | MYSQL_PWD="$DB_MIGRATION_PASSWORD" mysql --binary-mode -u"$DB_MIGRATION_USERNAME" "$MYSQL_DATABASE"' \
     < "$backup_dir/database.sql.gz"
 
 docker run --rm \

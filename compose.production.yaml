@@ -106,7 +106,7 @@ services:
         networks:
             - private
         healthcheck:
-            test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u"$${MYSQL_USER}" -p"$${MYSQL_PASSWORD}" --silent']
+            test: ['CMD-SHELL', 'MYSQL_PWD="$${DB_RUNTIME_PASSWORD}" mysqladmin ping -h 127.0.0.1 -u"$${DB_RUNTIME_USERNAME}" --silent']
             interval: 10s
             timeout: 5s
             retries: 10

@@ -21,6 +21,10 @@ require_rehearsal
 
 backup_root="${1:-/tmp/ead2026-ops03-backups}"
 compose_file="${COMPOSE_FILE:-compose.production.yaml}"
+compose_env_args=()
+if [[ -n "${OPS03_ENV_FILE:-}" ]]; then
+    compose_env_args+=(--env-file "$OPS03_ENV_FILE")
+fi
 expected_migrations="${OPS03_EXPECTED_MIGRATIONS:-73}"
 backup_id="$(date -u +%Y%m%dT%H%M%SZ)-${RANDOM}"
 partial_dir="${backup_root}/${backup_id}.partial"
@@ -59,7 +63,7 @@ trap 'fail_backup "unexpected backup failure"' ERR
 
 mkdir -p "$backup_root"
 
-if ! docker compose -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T db sh -c \
+if ! docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T db sh -c \
     'MYSQL_PWD="$DB_MIGRATION_PASSWORD" mysqldump --single-transaction --routines --triggers --events --no-tablespaces -u"$DB_MIGRATION_USERNAME" "$MYSQL_DATABASE" | gzip -c' \
     > "$partial_dir/database.sql.gz"; then
     fail_backup 'database dump command failed'

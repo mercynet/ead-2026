@@ -21,6 +21,8 @@ http://{$APP_DOMAIN} {
         -Server
     }
 
-    php_fastcgi app:9000
+    php_fastcgi app:9000 {
+        root /var/www/html/public
+    }
     file_server
 }

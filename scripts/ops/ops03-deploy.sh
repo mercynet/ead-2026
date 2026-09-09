@@ -12,12 +12,26 @@ set -euo pipefail
 grep -qx 'status=PASS' "$OPS03_BACKUP_DIR/manifest.txt" || { printf 'predeploy backup is not valid\n' >&2; exit 1; }
 
 compose_file="${COMPOSE_FILE:-compose.production.yaml}"
-docker compose -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" up -d db app scheduler web
-docker compose -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T app php artisan optimize:clear
-docker compose -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" run --rm \
-    -e DB_USERNAME="$DB_MIGRATION_USERNAME" \
-    -e DB_PASSWORD="$DB_MIGRATION_PASSWORD" \
-    app php artisan migrate --force --no-interaction
+compose_env_args=()
+if [[ -n "${OPS03_ENV_FILE:-}" ]]; then
+    compose_env_args+=(--env-file "$OPS03_ENV_FILE")
+fi
+docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" up -d db app scheduler web
+docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T app php artisan optimize:clear
+
+[[ -n "${OPS03_ENV_FILE:-}" && -f "$OPS03_ENV_FILE" ]] || {
+    printf 'OPS03_ENV_FILE is required for migration credentials\n' >&2
+    exit 1
+}
+migration_username="$(awk -F= '$1 == "DB_MIGRATION_USERNAME" { print substr($0, index($0, "=") + 1) }' "$OPS03_ENV_FILE")"
+migration_password="$(awk -F= '$1 == "DB_MIGRATION_PASSWORD" { print substr($0, index($0, "=") + 1) }' "$OPS03_ENV_FILE")"
+
+for migration_path in database/migrations app/Modules/Core/Database/Migrations app/Modules/Financial/Database/Migrations app/Modules/Learning/Database/Migrations app/Modules/Assessment/Database/Migrations app/Modules/Ecosystem/Database/Migrations; do
+    docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" run --rm \
+        -e DB_MIGRATION_USERNAME="$migration_username" \
+        -e DB_MIGRATION_PASSWORD="$migration_password" \
+        app sh -c 'DB_USERNAME="$DB_MIGRATION_USERNAME" DB_PASSWORD="$DB_MIGRATION_PASSWORD" php artisan migrate --path="$1" --force --no-interaction' -- "$migration_path"
+done
 
 printf 'deploy=PASS\n'
 printf 'sha=%s\n' "$APP_BUILD_SHA"

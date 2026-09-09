@@ -26,11 +26,10 @@ bootstrap_username=$(escape_sql_string "$DB_BOOTSTRAP_USERNAME")
 runtime_username=$(escape_sql_string "$DB_RUNTIME_USERNAME")
 migration_username=$(escape_sql_string "$DB_MIGRATION_USERNAME")
 
-mysql \
+MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql \
     --protocol=socket \
     --socket=/var/run/mysqld/mysqld.sock \
     --user=root \
-    --password="$MYSQL_ROOT_PASSWORD" \
     --batch \
     --skip-column-names <<SQL
 DROP USER IF EXISTS '${bootstrap_username}'@'%';

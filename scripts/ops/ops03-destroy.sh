@@ -11,7 +11,11 @@ set -euo pipefail
 }
 
 compose_file="${COMPOSE_FILE:-compose.production.yaml}"
-docker compose -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" down --remove-orphans
+compose_env_args=()
+if [[ -n "${OPS03_ENV_FILE:-}" ]]; then
+    compose_env_args+=(--env-file "$OPS03_ENV_FILE")
+fi
+docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" down --remove-orphans
 docker volume rm "$PRODUCTION_DB_VOLUME" "$PRODUCTION_STORAGE_VOLUME" "$PRODUCTION_CACHE_VOLUME"
 
 printf 'destruction=PASS\n'

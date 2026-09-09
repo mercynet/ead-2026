@@ -16,6 +16,14 @@ RUN composer install \
     --no-scripts \
     --classmap-authoritative
 
+COPY . ./
+
+RUN composer dump-autoload \
+    --no-dev \
+    --no-interaction \
+    --no-scripts \
+    --classmap-authoritative
+
 FROM php:8.4-fpm-bookworm AS app
 
 ARG APP_BUILD_SHA=unknown

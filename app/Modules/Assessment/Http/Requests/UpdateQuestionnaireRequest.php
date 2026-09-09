@@ -22,4 +22,17 @@ class UpdateQuestionnaireRequest extends FormRequest
             'show_results' => ['sometimes', 'boolean'],
         ];
     }
+
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'title' => ['description' => 'Título do questionário.', 'example' => 'Avaliação revisada'],
+            'description' => ['description' => 'Descrição do questionário.', 'example' => 'Conteúdo atualizado'],
+            'passing_score' => ['description' => 'Percentual mínimo para aprovação.', 'example' => 70],
+            'time_limit_minutes' => ['description' => 'Limite de tempo em minutos.', 'example' => 30],
+            'is_active' => ['description' => 'Indica se o questionário está ativo.', 'example' => true],
+            'show_results' => ['description' => 'Indica se o resultado será exibido.', 'example' => true],
+        ];
+    }
 }

@@ -18,6 +18,14 @@ class UpdateModuleRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'title' => ['description' => 'Novo título do módulo.', 'example' => 'Módulo atualizado'],
+        ];
+    }
+
     public function messages(): array
     {
         return [

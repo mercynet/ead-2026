@@ -1,6 +1,6 @@
 # COMMERCIAL V0.1 — OPS-03 Backup, Restore, Deploy, Migration and Rollback Rehearsal
 
-Data: 2026-09-09  
+Data: 2026-09-09
 Escopo: rehearsal descartável; nenhuma operação em produção real.
 
 ## 1. Baseline

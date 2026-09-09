@@ -18,6 +18,14 @@ class UpdateLessonRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'title' => ['description' => 'Novo título da lesson.', 'example' => 'Lesson atualizada'],
+        ];
+    }
+
     public function messages(): array
     {
         return [

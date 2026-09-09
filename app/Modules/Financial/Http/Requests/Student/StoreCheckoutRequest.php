@@ -33,6 +33,14 @@ class StoreCheckoutRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'course_id' => ['description' => 'ID do curso publicado e ativo.', 'example' => 1],
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {

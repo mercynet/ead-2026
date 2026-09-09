@@ -20,6 +20,15 @@ class SubmitAnswerRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'question_id' => ['description' => 'ID da questão respondida.', 'example' => 1],
+            'selected_options' => ['description' => 'Índices das opções selecionadas.', 'example' => [0]],
+        ];
+    }
+
     public function messages(): array
     {
         return [

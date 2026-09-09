@@ -27,4 +27,19 @@ class UpdateQuestionRequest extends FormRequest
             'category_ids.*' => ['integer', 'exists:categories,id'],
         ];
     }
+
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'question' => ['description' => 'Novo enunciado.', 'example' => 'Qual é a resposta revisada?'],
+            'type' => ['description' => 'Tipo da pergunta.', 'example' => 'single_choice'],
+            'options' => ['description' => 'Novas opções.', 'example' => [['text' => 'A'], ['text' => 'B']]],
+            'correct_options' => ['description' => 'Índices corretos.', 'example' => [1]],
+            'explanation' => ['description' => 'Explicação da resposta.', 'example' => 'A alternativa B é correta.'],
+            'points' => ['description' => 'Pontuação da pergunta.', 'example' => 10],
+            'is_active' => ['description' => 'Indica se a pergunta está ativa.', 'example' => true],
+            'category_ids' => ['description' => 'Categorias associadas.', 'example' => [1]],
+        ];
+    }
 }

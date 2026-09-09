@@ -71,7 +71,7 @@ write_manifest() {
         printf 'compose_project=%s\n' "$COMPOSE_PROJECT_NAME"
         printf 'database=%s\n' "$DB_DATABASE"
         printf 'storage_volume=%s\n' "$PRODUCTION_STORAGE_VOLUME"
-        printf 'db_checksum=%s\n' "${db_checksum:-}" 
+        printf 'db_checksum=%s\n' "${db_checksum:-}"
         printf 'storage_checksum=%s\n' "${storage_checksum:-}"
         printf 'error=%s\n' "$error_message"
     } > "$manifest"

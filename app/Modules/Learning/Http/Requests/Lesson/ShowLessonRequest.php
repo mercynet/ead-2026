@@ -15,4 +15,10 @@ class ShowLessonRequest extends FormRequest
     {
         return [];
     }
+
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [];
+    }
 }

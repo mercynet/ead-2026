@@ -28,6 +28,21 @@ class StoreQuestionRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'question' => ['description' => 'Enunciado da pergunta.', 'example' => 'Qual é a resposta correta?'],
+            'type' => ['description' => 'Tipo da pergunta.', 'example' => 'single_choice'],
+            'options' => ['description' => 'Opções disponíveis.', 'example' => [['text' => 'A'], ['text' => 'B']]],
+            'correct_options' => ['description' => 'Índices das opções corretas.', 'example' => [0]],
+            'explanation' => ['description' => 'Explicação da resposta.', 'example' => 'A alternativa A é correta.'],
+            'points' => ['description' => 'Pontuação da pergunta.', 'example' => 10],
+            'is_active' => ['description' => 'Indica se a pergunta está ativa.', 'example' => true],
+            'category_ids' => ['description' => 'Categorias associadas.', 'example' => [1]],
+        ];
+    }
+
     public function messages(): array
     {
         return [

@@ -61,6 +61,23 @@ class UpdateLessonMediaRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, array{description: string, example: mixed}> */
+    public function bodyParameters(): array
+    {
+        return [
+            'media_type' => ['description' => 'Tipo da mídia.', 'example' => 'video'],
+            'provider' => ['description' => 'Provedor da mídia.', 'example' => 'internal'],
+            'provider_ref' => ['description' => 'Referência do provedor.', 'example' => 'asset-123'],
+            'url' => ['description' => 'URL pública ou externa da mídia.', 'example' => 'https://cdn.example.test/media.mp4'],
+            'content' => ['description' => 'Conteúdo textual da mídia.', 'example' => 'Texto da aula'],
+            'duration_seconds' => ['description' => 'Duração em segundos.', 'example' => 120],
+            'progress_strategy' => ['description' => 'Estratégia de progresso.', 'example' => 'full_duration'],
+            'sort_order' => ['description' => 'Ordem de exibição.', 'example' => 1],
+            'is_active' => ['description' => 'Indica se a mídia está ativa.', 'example' => true],
+            'metadata' => ['description' => 'Metadados controlados da mídia.', 'example' => ['player_url' => 'https://player.example.test/asset-123']],
+        ];
+    }
+
     public function messages(): array
     {
         return [

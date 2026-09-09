@@ -32,6 +32,7 @@ O slice existente foi revisado e corrigido, sem alterar regras do produto:
 - outbox health ignora falha histórica de mensagem já despachada;
 - synthetic exige stack `APP_ENV=e2e`, `APP_DEBUG=false`, DB marcada `e2e` e APP_KEY presente;
 - `compose.e2e.yaml` injeta `.env.e2e` explicitamente e fecha a causa do ambiente `local`;
+- probes de readiness validam o JSON (`status=ready` e checks essenciais), e não somente HTTP 200;
 - validação domain/TLS, secrets e contrato remoto de backup foram adicionados.
 
 ## 4. Alerting
@@ -118,8 +119,8 @@ Estado: `SYNTHETIC_PILOT_VERIFIED`.
 
 | Canary | Resultado comprovado |
 |---|---|
-| app indisponível | synthetic aborta antes de mutar, signal `synthetic_app_unavailable`, exit 1 |
-| readiness fail | signal `synthetic_readiness_failed`, exit 1 |
+| app indisponível | canário runtime abortou antes de mutar, signal `synthetic_app_unavailable`, exit 1 |
+| readiness fail | manifest removido no runtime descartável, HTTP 503, signal `synthetic_readiness_failed`, exit 1 |
 | DB indisponível | readiness Feature retorna 503 com `checks.db=fail` |
 | storage indisponível | readiness retorna 503 |
 | migration mismatch | readiness retorna 503 e `ops:migrate --check-only` falha fechado |
@@ -248,13 +249,15 @@ quando SMTP/worker/reset por e-mail entram em promessa.
 - `bash -n scripts/ops/ops04-*.sh scripts/ops/validate-production-env.sh` — PASS.
 - Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`.
 - Readiness Feature: `5 passed (29 assertions)`.
-- Infrastructure contract: `6 passed (100 assertions)`.
+- Infrastructure contract: `6 passed (104 assertions)`.
 - PHPStan: `No errors`.
 - Pint: PASS.
 - Architecture: `43 passed (1438 assertions)`.
 - Backup PASS, stale/missing fail, remote adapter mock PASS, domain structural PASS.
 - Synthetic HTTP real comercial: `29 passed, 0 failed`; provisioning MZRT adicional: `10 passed,
   0 failed`.
+- Negative canaries runtime: app indisponível e readiness inválido por manifest ausente, ambos
+  com exit 1 e incidente original preservado.
 - `git diff --check` e `scripts/ai/verify-changes.sh` passaram após o commit de implementação.
 
 ## 21. Commits

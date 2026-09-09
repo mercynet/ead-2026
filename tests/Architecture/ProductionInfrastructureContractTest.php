@@ -143,6 +143,10 @@ it('keeps OPS-04 readiness, telemetry and operational probes versioned', functio
         ->and($e2eEnv)->toContain('APP_KEY=base64:REPLACE_WITH_E2E_ONLY_KEY')
         ->and($scripts[2])->toContain('db_checksum')
         ->and($scripts[2])->toContain('storage_checksum')
+        ->and($scripts[1])->toContain('readiness_payload')
+        ->and($scripts[1])->toContain('migration_manifest')
+        ->and($scripts[4])->toContain('readiness_payload')
+        ->and($scripts[4])->toContain('"status":"ready"')
         ->and($scripts[8])->toContain('alert webhook must use https');
 
     expect($scripts[4])->toContain('env=e2e')

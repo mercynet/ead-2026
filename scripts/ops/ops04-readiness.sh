@@ -26,7 +26,16 @@ probe() {
     status="$(curl --silent --show-error --max-time "${OPS04_HTTP_TIMEOUT_SECONDS:-10}" \
         --output "$output_file" --write-out '%{http_code}' "${base_url%/}${path}" || true)"
     printf 'probe=%s status=%s\n' "$path" "$status"
-    [[ "$status" == 200 ]]
+    [[ "$status" == 200 ]] || return 1
+
+    if [[ "$path" == /readiness ]]; then
+        readiness_payload="$(tr -d '[:space:]' < "$output_file")"
+        [[ "$readiness_payload" == *'"status":"ready"'* ]] || return 1
+        for check in app db storage migration_manifest outbox; do
+            [[ "$readiness_payload" == *"\"$check\":{\"status\":\"pass\""* ]] || return 1
+        done
+        [[ "$readiness_payload" == *'"queue":{"status":"pass"'* || "$readiness_payload" == *'"queue":{"status":"not_required"'* ]] || return 1
+    fi
 }
 
 probe /up || { alert app_unavailable critical 'restart app and inspect logs'; exit 1; }

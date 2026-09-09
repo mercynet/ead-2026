@@ -7,7 +7,8 @@ HTTP real e selada em `5fd4d21`. Alerting provider-neutral, readiness não
 mutante, monitor de backup com checksum, contrato remoto, validação domain/TLS/secrets e harness
 E2E dedicado foram implementados. A execução combinada final passou: provisioning MZRT `10/10` e
 synthetic comercial `29/29`, em HTTP real, incluindo checkout cash real, com teardown e volumes
-descartáveis removidos.
+descartáveis removidos. Probes agora validam conteúdo JSON de readiness; canários runtime de app
+indisponível e manifest ausente passaram.
 Relatório final: `docs/reports/COMMERCIAL-V0.1-PAID-PILOT-READINESS-GOAL-2026-09-09.md`.
 
 ## Próximos passos (1-3)
@@ -32,7 +33,7 @@ sem push; worktree limpo.
 
 - Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`; readiness
   Feature: `5 passed (29 assertions)`.
-- Infrastructure contract: `6 passed (100 assertions)`; Architecture: `43 passed (1438 assertions)`.
+- Infrastructure contract: `6 passed (104 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan: `No errors`; Pint: PASS; `bash -n`: PASS; `git diff --check`: PASS.
 - Synthetic HTTP real dedicado: provisioning MZRT `10 passed, 0 failed` e jornada comercial
   `29 passed, 0 failed`, tenant efêmero com cleanup obrigatório; checkout foi exercitado por

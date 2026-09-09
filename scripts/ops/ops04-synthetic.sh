@@ -8,12 +8,31 @@ specs="${OPS04_SYNTHETIC_SPECS:-${OPS04_SYNTHETIC_SPEC:-mzrt/tenant-lifecycle op
 compose_project="${OPS04_COMPOSE_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-}}"
 compose_file="${OPS04_COMPOSE_FILE:-${COMPOSE_FILE:-compose.production.yaml}}"
 app_service="${OPS04_APP_SERVICE:-app}"
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
 
 curl --fail --silent --show-error --max-time "${OPS04_HTTP_TIMEOUT_SECONDS:-10}" "${base_url%/}/up" >/dev/null || {
     "$script_dir/ops04-alert.sh" synthetic_app_unavailable critical 'restore app availability before synthetic run'
     exit 1
 }
-curl --fail --silent --show-error --max-time "${OPS04_HTTP_TIMEOUT_SECONDS:-10}" "${base_url%/}/readiness" >/dev/null || {
+readiness_file="$tmp_dir/readiness.json"
+curl --fail --silent --show-error --max-time "${OPS04_HTTP_TIMEOUT_SECONDS:-10}" \
+    --output "$readiness_file" "${base_url%/}/readiness" || {
+    "$script_dir/ops04-alert.sh" synthetic_readiness_failed critical 'repair readiness before synthetic run'
+    exit 1
+}
+readiness_payload="$(tr -d '[:space:]' < "$readiness_file")"
+[[ "$readiness_payload" == *'"status":"ready"'* ]] || {
+    "$script_dir/ops04-alert.sh" synthetic_readiness_failed critical 'repair readiness before synthetic run'
+    exit 1
+}
+for check in app db storage migration_manifest outbox; do
+    [[ "$readiness_payload" == *"\"$check\":{\"status\":\"pass\""* ]] || {
+        "$script_dir/ops04-alert.sh" synthetic_readiness_failed critical 'repair readiness before synthetic run'
+        exit 1
+    }
+done
+[[ "$readiness_payload" == *'"queue":{"status":"pass"'* || "$readiness_payload" == *'"queue":{"status":"not_required"'* ]] || {
     "$script_dir/ops04-alert.sh" synthetic_readiness_failed critical 'repair readiness before synthetic run'
     exit 1
 }

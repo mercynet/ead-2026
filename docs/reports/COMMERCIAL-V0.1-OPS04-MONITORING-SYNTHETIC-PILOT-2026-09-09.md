@@ -12,7 +12,8 @@ estão em [COMMERCIAL-V0.1-PAID-PILOT-READINESS-GOAL-2026-09-09.md](COMMERCIAL-V
 - `ALERTING_MINIMUM_READY`: provider-neutral, preserva o incidente original mesmo sem canal ou
   quando a entrega falha; owner/canal reais permanecem externos.
 - `READINESS_MINIMUM_READY`: `/up` é liveness; `/readiness` é JSON 200/503, barato, determinístico
-  e não mutante, com app, DB, storage, manifest/schema, outbox e fila condicional.
+  e não mutante, com app, DB, storage, manifest/schema, outbox e fila condicional. Os probes
+  validam também o conteúdo JSON (`status=ready` e checks essenciais), não apenas HTTP 200.
 - `SYNTHETIC_PILOT_VERIFIED`: stack E2E descartável dedicada, `10 passed, 0 failed` em provisioning
   MZRT e `29 passed, 0 failed` no journey comercial, ambos via HTTP real e teardown obrigatório.
 - `ENGINEERING_READY_FOR_PAID_PILOT`; ativação externa ainda não liberada.
@@ -27,7 +28,9 @@ APP_KEY, Authorization, PII ou URL assinada é emitido.
 Sinais cobertos: app/readiness, DB, storage, migrations, scheduler/worker, outbox, capacidade,
 backup, 5xx/exceções e synthetic. Foram comprovados no rehearsal: provider ausente, webhook
 indisponível/destino inválido, timeout, deduplicação, backup stale/missing e falha de synthetic.
-O relatório diferencia `problem_detected=true` de `delivery_status=failed`.
+O relatório diferencia `problem_detected=true` de `delivery_status=failed`. Os canários runtime
+de app indisponível e readiness inválido também preservaram o incidente original e retornaram
+exit 1.
 
 ## Backup, domínio e secrets
 
@@ -56,11 +59,13 @@ monitorados.
 
 - Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`.
 - Readiness Feature: `5 passed (29 assertions)`.
-- Infrastructure contract: `6 passed (100 assertions)`; Architecture: `43 passed (1438 assertions)`.
+- Infrastructure contract: `6 passed (104 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan e Pint: PASS; `bash -n`, `git diff --check` e `scripts/ai/verify-changes.sh`: PASS.
 - Backup PASS/stale/missing, remote mock e domain structural: PASS.
 - Synthetic MZRT HTTP: `10 passed, 0 failed`; synthetic comercial HTTP: `29 passed, 0 failed`,
   com checkout cash exercitado por endpoint real.
+- Negative runtime canaries: app indisponível → `synthetic_app_unavailable`; manifest ausente →
+  HTTP 503 e `synthetic_readiness_failed`; ambos exit 1.
 
 ## Pendências que não são OPS-04 internos
 

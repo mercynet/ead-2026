@@ -40,8 +40,8 @@ remediações de código estão em `f507f9124c397a06f2c0e4f77654ec78ab8eab3d` e
   migration `73/73`; scheduler requerido e running.
 - OPS-03 descartável atual: backup assinado `PASS`, restore `PASS` e readiness `PASS`; marcador
   criado depois do backup foi removido pelo restore. Nenhum volume produtivo foi tocado.
-- Proveniência: imagens app/web foram construídas do HEAD do código e carregam revision + SHA do
-  manifest; activation dry-run passou com `mutation=none` e sem receipt.
+- Proveniência: imagens app/web foram construídas do último commit de código e carregam revision +
+  SHA do manifest; activation dry-run passou com `mutation=none` e sem receipt.
 - `bash -n scripts/ops/*.sh`, Pint e `git diff --check` passam no delta atual. A lista detalhada
   de F-01–F-13 e os limites externos estão no relatório pós-remediação.
 

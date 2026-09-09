@@ -31,8 +31,8 @@ humanas separadas.
 
 ## Último commit
 
-HEAD observado: `643a2b6 docs(ops): seal synthetic output gate`. Branch `main`, sem push; o Launch
-Package está em working tree e ainda não foi commitado.
+Commit de implementação do Launch Package: `0b11d7e feat(commercial): add paid pilot launch package`.
+Branch `main`, sem push; o checkpoint de estado será consolidado localmente.
 
 ## Evidência atual
 
@@ -51,13 +51,13 @@ Package está em working tree e ainda não foi commitado.
   foram inventados e permanecem external pending.
 - `bash -n scripts/ops/*.sh`, dry-run sem env, guard de execute, `git diff --check` e a regressão
   Pest do orchestrator (`2 passed, 9 assertions`) passaram; suite Ops (`8 passed, 32 assertions`).
-- O working tree contém somente o pacote comercial, o orchestrator, a regressão Pest e o ignore do
-  receipt. Não há runtime artifact. Permanecem para ativação somente host, domínio/TLS, secrets,
-  owners/canal, backup remoto, scheduler real e aceite humano.
+- O pacote comercial, orchestrator, regressão Pest e ignore do receipt estão commitados; não há
+  runtime artifact. Permanecem para ativação somente host, domínio/TLS, secrets, owners/canal,
+  backup remoto, scheduler real e aceite humano.
 
 ## CONTEXT CHECKPOINT
 
 - context: alto (estimado), pacote e receipt definidos; activation real ainda externa.
 - state: `docs/STATE.md` atualizado.
-- recommendation: continue.
-- reason: o pacote foi implementado e validado localmente; falta revisão/commit e depois apenas ativação externa/humana.
+- recommendation: waiting_for_user.
+- reason: o pacote está commitado e validado; a próxima ação material depende de inputs externos/humanos para ativação real.

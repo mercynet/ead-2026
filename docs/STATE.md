@@ -25,7 +25,8 @@ humanas separadas.
 
 Implementação: `c410e9b feat(ops): harden paid-pilot monitoring and synthetic`.
 Hardening final: `c167cf8 feat(ops): close synthetic and harden activation validation`.
-Relatórios/STATE: `b66175a docs(ops): reconcile final paid-pilot evidence`. Branch `main`, 14 commits
+Error scan: `1b0f226 fix(ops): make error scan failures explicit`.
+Relatórios/STATE: `b66175a docs(ops): reconcile final paid-pilot evidence`. Branch `main`, 16 commits
 à frente de `origin/main`, sem push.
 
 ## Evidência atual
@@ -42,9 +43,8 @@ Relatórios/STATE: `b66175a docs(ops): reconcile final paid-pilot evidence`. Bra
 - Backup monitor PASS com checksum; stale/missing exit 1 + signal crítico; remote adapter mock PASS.
 - Domain/TLS structural PASS; live domain/TLS, secrets reais, owner/canal e off-host backup não
   foram inventados e permanecem external pending.
-- Working tree atual contém somente as alterações OPS-04/docs desta continuação; não há runtime
-  artifact listado. Próxima ação: rodar regressão final, commitar atomicamente e deixar o host,
-  domínio/TLS, secrets, owners/canal, backup remoto e aceite humano para ativação.
+- Working tree está limpo e não há runtime artifact listado. Permanecem para ativação somente host,
+  domínio/TLS, secrets, owners/canal, backup remoto e aceite humano.
 
 ## CONTEXT CHECKPOINT
 

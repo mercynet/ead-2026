@@ -266,6 +266,8 @@ push/tag/deploy real foi feito.
 monitor, APP_KEY/secrets validation e proteção do remetente de alertas.
 `b66175a docs(ops): reconcile final paid-pilot evidence` — receipts reconciliados; `3a98cf3`
 atualizou o handoff final.
+`1b0f226 fix(ops): make error scan failures explicit` — erro 5xx/critical não pode mais emitir
+`error_scan=PASS`; regressão dedicada adicionada.
 
 ## 22. Engineering Verdict
 

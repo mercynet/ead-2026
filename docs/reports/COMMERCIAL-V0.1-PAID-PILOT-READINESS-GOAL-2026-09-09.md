@@ -96,9 +96,11 @@ Estratégia escolhida: tenant efêmero por execução, com teardown obrigatório
 DB explicitamente descartável e nunca `--keep` no monitor recorrente.
 
 Prova HTTP real final: projeto Compose `ead2026-e2e-codex`, DB `ead2026_e2e`, `APP_ENV=e2e`,
-`APP_DEBUG=false`, APP_KEY presente; `28 passed, 0 failed`. A jornada cobre:
+`APP_DEBUG=false`, APP_KEY presente; `28 passed, 0 failed` na jornada comercial. O monitor
+recorrente também executa `mzrt/tenant-lifecycle` como spec anterior (`10 passed, 0 failed`),
+provando provisioning MZRT por HTTP e teardown antes da jornada. A jornada comercial cobre:
 
-1. provisioning MZRT e tenant ativo;
+1. tenant ativo provisionado pelo spec MZRT anterior;
 2. Admin/Instructor/Student;
 3. course draft, module, lesson, conteúdo, media e material;
 4. publicação explícita;
@@ -242,21 +244,24 @@ quando SMTP/worker/reset por e-mail entram em promessa.
 ## 20. Regression
 
 - `bash -n scripts/ops/ops04-*.sh scripts/ops/validate-production-env.sh` — PASS.
-- Alert unit: `3 passed (13 assertions)`.
+- Alert unit: `4 passed (15 assertions)`.
 - Readiness Feature: `5 passed (29 assertions)`.
-- Infrastructure contract: `6 passed (99 assertions)`.
+- Infrastructure contract: `6 passed (100 assertions)`.
 - PHPStan: `No errors`.
 - Pint: PASS.
-- Architecture: `43 passed (1437 assertions)`.
+- Architecture: `43 passed (1438 assertions)`.
 - Backup PASS, stale/missing fail, remote adapter mock PASS, domain structural PASS.
-- Synthetic HTTP real: `28 passed, 0 failed`.
+- Synthetic HTTP real comercial: `28 passed, 0 failed`; provisioning MZRT adicional: `10 passed,
+  0 failed`.
 - `git diff --check` e `scripts/ai/verify-changes.sh` passaram após o commit de implementação.
 
 ## 21. Commits
 
 `c410e9b feat(ops): harden paid-pilot monitoring and synthetic` — implementação/harness.
 `0dd2249 docs(ops): seal paid-pilot readiness evidence` — relatório, receipt OPS-04 e STATE;
-nenhum push ou tag final foi feito.
+STATE inicial.
+`9b0c86f docs(ops): record final local commit provenance` — provenance local reconciliada; nenhum
+push/tag/deploy real foi feito.
 
 ## 22. Engineering Verdict
 

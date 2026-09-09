@@ -4,7 +4,8 @@
 
 2026-09-09: OPS-04 reconciliado e selado em `c410e9b`; alerting provider-neutral, readiness não
 mutante, monitor de backup com checksum, contrato remoto, validação domain/TLS/secrets e harness
-E2E dedicado foram implementados. Synthetic comercial HTTP real: `28 passed, 0 failed`.
+E2E dedicado foram implementados. A execução combinada final passou: provisioning MZRT `10/10` e
+synthetic comercial `28/28`, em HTTP real, com teardown e volumes descartáveis removidos.
 Relatório final: `docs/reports/COMMERCIAL-V0.1-PAID-PILOT-READINESS-GOAL-2026-09-09.md`.
 
 ## Próximos passos (1-3)
@@ -23,25 +24,31 @@ humanas separadas.
 ## Último commit
 
 Implementação: `c410e9b feat(ops): harden paid-pilot monitoring and synthetic`.
-Relatório/STATE: `0dd2249 docs(ops): seal paid-pilot readiness evidence`. Branch `main`, 11 commits
+Relatório/STATE: `0dd2249 docs(ops): seal paid-pilot readiness evidence`; provenance: `9b0c86f
+docs(ops): record final local commit provenance`. Branch `main`, 12 commits
 à frente de `origin/main`, sem push.
 
 ## Evidência atual
 
-- Alert unit: `3 passed (13 assertions)`; readiness Feature: `5 passed (29 assertions)`.
-- Infrastructure contract: `6 passed (99 assertions)`; Architecture: `43 passed (1437 assertions)`.
+- Alert unit: `4 passed (15 assertions)`; readiness Feature: `5 passed (29 assertions)`.
+- Infrastructure contract: `6 passed (100 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan: `No errors`; Pint: PASS; `bash -n`: PASS; `git diff --check`: PASS.
-- Synthetic HTTP real dedicado: `28 passed, 0 failed`, tenant efêmero com cleanup obrigatório.
+- Synthetic HTTP real dedicado: provisioning MZRT `10 passed, 0 failed` e jornada comercial
+  `28 passed, 0 failed`, tenant efêmero com cleanup obrigatório.
 - Readiness HTTP: `200`, checks app/db/storage/manifest/outbox/queue pass, sem cookie, `no-store`.
 - Alert canaries: no provider preserva problema + exit 1; webhook inválido/indisponível/timeout
   distingue delivery failure; deduplication comprovada.
 - Backup monitor PASS com checksum; stale/missing exit 1 + signal crítico; remote adapter mock PASS.
 - Domain/TLS structural PASS; live domain/TLS, secrets reais, owner/canal e off-host backup não
   foram inventados e permanecem external pending.
+- Working tree atual contém somente as alterações OPS-04/docs desta continuação; não há runtime
+  artifact listado. Próxima ação: rodar regressão final, commitar atomicamente e deixar o host,
+  domínio/TLS, secrets, owners/canal, backup remoto e aceite humano para ativação.
 
 ## CONTEXT CHECKPOINT
 
 - context: alto, estado e receipt finalizados.
 - state: `docs/STATE.md` atualizado.
-- recommendation: `waiting_for_user`.
-- reason: só restam host, domínio/TLS, secrets, canal/owners, backup remoto e aceite humano.
+- recommendation: `continue`.
+- reason: a prova E2E combinada passou; falta apenas regressão final, commit local e atualização do
+  veredito sem inventar dependências externas.

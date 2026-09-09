@@ -280,6 +280,8 @@ paid-pilot handoff state` — códigos externos e handoff final selados.
 diretas da jornada e comprovou checkout cash por HTTP real (`29/29`).
 `81cb6fd fix(ops): validate readiness probe payload` — probes passaram a validar o JSON de
 readiness e os canários runtime de app/manifest foram comprovados.
+`5582322 fix(ops): reject empty synthetic runner results` — o monitor passou a exigir resultado
+de runner com casos executados, pelo menos um sucesso e zero falhas.
 
 ## 22. Engineering Verdict
 

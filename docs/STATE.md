@@ -27,7 +27,7 @@ humanas separadas.
 
 ## Último commit
 
-Último commit de implementação: `81cb6fd fix(ops): validate readiness probe payload`. Branch `main`,
+Último commit de implementação: `5582322 fix(ops): reject empty synthetic runner results`. Branch `main`,
 sem push; worktree limpo.
 
 ## Evidência atual

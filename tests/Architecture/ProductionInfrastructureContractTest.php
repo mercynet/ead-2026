@@ -147,6 +147,7 @@ it('keeps OPS-04 readiness, telemetry and operational probes versioned', functio
         ->and($scripts[1])->toContain('migration_manifest')
         ->and($scripts[4])->toContain('readiness_payload')
         ->and($scripts[4])->toContain('"status":"ready"')
+        ->and($scripts[4])->toContain('Resultado: [1-9][0-9]* passou, 0 falhou')
         ->and($scripts[8])->toContain('alert webhook must use https');
 
     expect($scripts[4])->toContain('env=e2e')

@@ -62,9 +62,22 @@ printf '%s\n' "$runtime_identity" | grep -qx 'key_present=true' || {
     "$script_dir/ops04-alert.sh" synthetic_environment_invalid critical 'configure APP_KEY on the synthetic stack'
     exit 1
 }
+run_spec() {
+    local spec="$1"
+    local output
+
+    if ! output="$(docker compose -f "$compose_file" -p "$compose_project" exec -T "$app_service" \
+        php artisan e2e:run "$spec" --base=http://localhost --timeout="${OPS04_HTTP_TIMEOUT_SECONDS:-10}" 2>&1)"; then
+        printf '%s\n' "$output"
+        return 1
+    fi
+
+    printf '%s\n' "$output"
+    printf '%s\n' "$output" | grep -Eq 'Resultado: [1-9][0-9]* passou, 0 falhou\.'
+}
+
 for spec in $specs; do
-    if ! docker compose -f "$compose_file" -p "$compose_project" exec -T "$app_service" \
-        php artisan e2e:run "$spec" --base=http://localhost --timeout="${OPS04_HTTP_TIMEOUT_SECONDS:-10}"; then
+    if ! run_spec "$spec"; then
         "$script_dir/ops04-alert.sh" synthetic_journey_failed critical "rerun failed synthetic spec $spec"
         exit 1
     fi

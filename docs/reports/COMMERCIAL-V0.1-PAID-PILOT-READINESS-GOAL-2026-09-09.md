@@ -33,6 +33,7 @@ O slice existente foi revisado e corrigido, sem alterar regras do produto:
 - synthetic exige stack `APP_ENV=e2e`, `APP_DEBUG=false`, DB marcada `e2e` e APP_KEY presente;
 - `compose.e2e.yaml` injeta `.env.e2e` explicitamente e fecha a causa do ambiente `local`;
 - probes de readiness validam o JSON (`status=ready` e checks essenciais), e não somente HTTP 200;
+- o monitor sintético valida a saída do runner e exige ao menos um caso passado e zero falhas;
 - validação domain/TLS, secrets e contrato remoto de backup foram adicionados.
 
 ## 4. Alerting
@@ -249,7 +250,7 @@ quando SMTP/worker/reset por e-mail entram em promessa.
 - `bash -n scripts/ops/ops04-*.sh scripts/ops/validate-production-env.sh` — PASS.
 - Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`.
 - Readiness Feature: `5 passed (29 assertions)`.
-- Infrastructure contract: `6 passed (104 assertions)`.
+- Infrastructure contract: `6 passed (105 assertions)`.
 - PHPStan: `No errors`.
 - Pint: PASS.
 - Architecture: `43 passed (1438 assertions)`.

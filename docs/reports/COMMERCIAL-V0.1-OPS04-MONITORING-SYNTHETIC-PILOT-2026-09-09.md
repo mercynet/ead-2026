@@ -31,6 +31,7 @@ indisponível/destino inválido, timeout, deduplicação, backup stale/missing e
 O relatório diferencia `problem_detected=true` de `delivery_status=failed`. Os canários runtime
 de app indisponível e readiness inválido também preservaram o incidente original e retornaram
 exit 1.
+O monitor exige ainda saída de runner com ao menos um caso passado e zero falhas.
 
 ## Backup, domínio e secrets
 
@@ -59,7 +60,7 @@ monitorados.
 
 - Alert unit: `4 passed (15 assertions)`; error-scan unit: `2 passed (8 assertions)`.
 - Readiness Feature: `5 passed (29 assertions)`.
-- Infrastructure contract: `6 passed (104 assertions)`; Architecture: `43 passed (1438 assertions)`.
+- Infrastructure contract: `6 passed (105 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan e Pint: PASS; `bash -n`, `git diff --check` e `scripts/ai/verify-changes.sh`: PASS.
 - Backup PASS/stale/missing, remote mock e domain structural: PASS.
 - Synthetic MZRT HTTP: `10 passed, 0 failed`; synthetic comercial HTTP: `29 passed, 0 failed`,

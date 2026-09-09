@@ -26,7 +26,7 @@ humanas separadas.
 
 ## Último commit
 
-Último commit: `5fd4d21 fix(ops): exercise real checkout in synthetic pilot`. Branch `main`,
+Último commit de implementação: `81cb6fd fix(ops): validate readiness probe payload`. Branch `main`,
 sem push; worktree limpo.
 
 ## Evidência atual

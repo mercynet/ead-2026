@@ -277,6 +277,8 @@ atualizou o handoff final.
 paid-pilot handoff state` — códigos externos e handoff final selados.
 `5fd4d21 fix(ops): exercise real checkout in synthetic pilot` — removeu fixtures financeiras
 diretas da jornada e comprovou checkout cash por HTTP real (`29/29`).
+`81cb6fd fix(ops): validate readiness probe payload` — probes passaram a validar o JSON de
+readiness e os canários runtime de app/manifest foram comprovados.
 
 ## 22. Engineering Verdict
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Ecosystem\Services\EcosystemDefaultGatewayProvisioner;
 use App\Modules\Financial\Models\Order;
 use App\Modules\Financial\Models\OrderItem;
 use App\Modules\Financial\Models\OrderPaidOutbox;
@@ -26,6 +27,11 @@ return [
     'endpoint' => 'POST /api/v1/instructor/courses',
 
     'setup' => function (array $ctx): array {
+        app(EcosystemDefaultGatewayProvisioner::class)->provision(
+            $ctx['tenant']->id,
+            $ctx['users']['admin']->id,
+        );
+
         $instructorB = User::factory()->instructor()->forTenant($ctx['tenant'])->create([
             'name' => 'E2E S02 Instructor B',
         ]);
@@ -107,29 +113,8 @@ return [
             ],
             'capture' => function (array $ctx): array {
                 $courseId = (int) $ctx['response']->json('data.id');
-                $course = Course::query()->findOrFail($courseId);
-                $order = Order::factory()->create([
-                    'tenant_id' => $ctx['tenant']->id,
-                    'user_id' => $ctx['users']['student']->id,
-                    'status' => 'pending',
-                    'total_cents' => $course->price_cents,
-                    'metadata' => ['e2e' => 'student-s02-commercial'],
-                ]);
-                OrderItem::factory()->create([
-                    'order_id' => $order->id,
-                    'itemable_type' => Course::class,
-                    'itemable_id' => $course->id,
-                    'item_snapshot' => ['title' => $course->title],
-                    'price_cents' => $course->price_cents,
-                ]);
-                $payment = Payment::factory()->create([
-                    'order_id' => $order->id,
-                    'status' => 'pending',
-                    'gateway_slug' => 'cash',
-                    'confirmation_mode' => 'manual',
-                ]);
 
-                return ['courseId' => $courseId, 'orderId' => $order->id, 'paymentId' => $payment->id];
+                return ['courseId' => $courseId];
             },
             'db' => fn (array $ctx): array => [
                 'course pertence ao tenant' => [$ctx['tenant']->id, Course::query()->find($ctx['fixtures']['courseId'])?->tenant_id],
@@ -228,6 +213,34 @@ return [
 
                 return ['course publicado e ativo' => [true, $course?->is_active === true]];
             },
+        ],
+        [
+            'name' => 'Student cria checkout cash pelo fluxo comercial real',
+            'as' => 'student',
+            'method' => 'POST',
+            'path' => '/api/v1/student/checkout',
+            'headers' => ['Idempotency-Key' => '3b4e1dc1-0ef6-46d8-9bea-aa992d719744'],
+            'body' => ['course_id' => fn (array $ctx): int => $ctx['fixtures']['courseId']],
+            'expect' => [
+                'status' => 201,
+                'json' => [
+                    'data.status' => 'pending',
+                    'data.total_cents' => 1500,
+                    'data.payment.gateway_slug' => 'cash',
+                    'data.payment.confirmation_mode' => 'manual',
+                ],
+            ],
+            'capture' => function (array $ctx): array {
+                $orderId = (int) $ctx['response']->json('data.id');
+                $paymentId = (int) Payment::query()->where('order_id', $orderId)->value('id');
+
+                return ['orderId' => $orderId, 'paymentId' => $paymentId];
+            },
+            'db' => fn (array $ctx): array => [
+                'checkout order pending' => ['pending', Order::query()->find($ctx['fixtures']['orderId'])?->status],
+                'checkout payment pending' => ['pending', Payment::query()->find($ctx['fixtures']['paymentId'])?->status],
+                'checkout payment owned by cash config' => ['cash', Payment::query()->find($ctx['fixtures']['paymentId'])?->gateway_slug],
+            ],
         ],
         [
             'name' => 'Admin confirma pagamento cash manual e ativa Enrollment via outbox',

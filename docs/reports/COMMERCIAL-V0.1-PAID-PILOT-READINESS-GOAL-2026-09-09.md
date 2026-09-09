@@ -96,15 +96,16 @@ Estratégia escolhida: tenant efêmero por execução, com teardown obrigatório
 DB explicitamente descartável e nunca `--keep` no monitor recorrente.
 
 Prova HTTP real final: projeto Compose `ead2026-e2e-codex`, DB `ead2026_e2e`, `APP_ENV=e2e`,
-`APP_DEBUG=false`, APP_KEY presente; `28 passed, 0 failed` na jornada comercial. O monitor
+`APP_DEBUG=false`, APP_KEY presente; `29 passed, 0 failed` na jornada comercial. O monitor
 recorrente também executa `mzrt/tenant-lifecycle` como spec anterior (`10 passed, 0 failed`),
 provando provisioning MZRT por HTTP e teardown antes da jornada. A jornada comercial cobre:
 
-1. tenant ativo provisionado pelo spec MZRT anterior;
+1. tenant descartável e capability cash preparada pelo harness; provisioning MZRT é provado pelo
+   spec HTTP anterior do mesmo monitor;
 2. Admin/Instructor/Student;
 3. course draft, module, lesson, conteúdo, media e material;
 4. publicação explícita;
-5. cash/manual, order/payment, outbox e enrollment active;
+5. checkout cash/manual por `POST /api/v1/student/checkout`, order/payment, outbox e enrollment active;
 6. Student My Courses, navegação, consumo, download e progress;
 7. Instructor roster/progress;
 8. gate/negativas de persona, curso não consumível e cross-tenant.
@@ -218,7 +219,7 @@ forem ativados.
 | alerts | `[PROVEN]` machinery/canaries; `[EXTERNAL_PENDING]` owner/canal |
 | scheduler | `[PROVEN]` contract/schedule; host recurrence `[EXTERNAL_PENDING]` |
 | outbox | `[PROVEN]` health + S02 side effect; runtime host `[EXTERNAL_PENDING]` |
-| synthetic pilot | `[PROVEN]` 28/28 HTTP cases |
+| synthetic pilot | `[PROVEN]` 29/29 HTTP cases; checkout cash por endpoint real |
 | RPO/RTO | `[HUMAN_PENDING]` — RPO ≤24h / RTO ≤4h úteis |
 | support owner | `[EXTERNAL_PENDING]` |
 | alert owner | `[EXTERNAL_PENDING]` |
@@ -252,7 +253,7 @@ quando SMTP/worker/reset por e-mail entram em promessa.
 - Pint: PASS.
 - Architecture: `43 passed (1438 assertions)`.
 - Backup PASS, stale/missing fail, remote adapter mock PASS, domain structural PASS.
-- Synthetic HTTP real comercial: `28 passed, 0 failed`; provisioning MZRT adicional: `10 passed,
+- Synthetic HTTP real comercial: `29 passed, 0 failed`; provisioning MZRT adicional: `10 passed,
   0 failed`.
 - `git diff --check` e `scripts/ai/verify-changes.sh` passaram após o commit de implementação.
 

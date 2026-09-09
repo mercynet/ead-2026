@@ -14,7 +14,7 @@ estão em [COMMERCIAL-V0.1-PAID-PILOT-READINESS-GOAL-2026-09-09.md](COMMERCIAL-V
 - `READINESS_MINIMUM_READY`: `/up` é liveness; `/readiness` é JSON 200/503, barato, determinístico
   e não mutante, com app, DB, storage, manifest/schema, outbox e fila condicional.
 - `SYNTHETIC_PILOT_VERIFIED`: stack E2E descartável dedicada, `10 passed, 0 failed` em provisioning
-  MZRT e `28 passed, 0 failed` no journey comercial, ambos via HTTP real e teardown obrigatório.
+  MZRT e `29 passed, 0 failed` no journey comercial, ambos via HTTP real e teardown obrigatório.
 - `ENGINEERING_READY_FOR_PAID_PILOT`; ativação externa ainda não liberada.
 
 ## Alerting e canários
@@ -59,7 +59,8 @@ monitorados.
 - Infrastructure contract: `6 passed (100 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan e Pint: PASS; `bash -n`, `git diff --check` e `scripts/ai/verify-changes.sh`: PASS.
 - Backup PASS/stale/missing, remote mock e domain structural: PASS.
-- Synthetic MZRT HTTP: `10 passed, 0 failed`; synthetic comercial HTTP: `28 passed, 0 failed`.
+- Synthetic MZRT HTTP: `10 passed, 0 failed`; synthetic comercial HTTP: `29 passed, 0 failed`,
+  com checkout cash exercitado por endpoint real.
 
 ## Pendências que não são OPS-04 internos
 

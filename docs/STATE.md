@@ -5,7 +5,8 @@
 2026-09-09: OPS-04 reconciliado e selado em `c410e9b`; alerting provider-neutral, readiness não
 mutante, monitor de backup com checksum, contrato remoto, validação domain/TLS/secrets e harness
 E2E dedicado foram implementados. A execução combinada final passou: provisioning MZRT `10/10` e
-synthetic comercial `28/28`, em HTTP real, com teardown e volumes descartáveis removidos.
+synthetic comercial `29/29`, em HTTP real, incluindo checkout cash real, com teardown e volumes
+descartáveis removidos.
 Relatório final: `docs/reports/COMMERCIAL-V0.1-PAID-PILOT-READINESS-GOAL-2026-09-09.md`.
 
 ## Próximos passos (1-3)
@@ -36,7 +37,8 @@ sem push.
 - Infrastructure contract: `6 passed (100 assertions)`; Architecture: `43 passed (1438 assertions)`.
 - PHPStan: `No errors`; Pint: PASS; `bash -n`: PASS; `git diff --check`: PASS.
 - Synthetic HTTP real dedicado: provisioning MZRT `10 passed, 0 failed` e jornada comercial
-  `28 passed, 0 failed`, tenant efêmero com cleanup obrigatório.
+  `29 passed, 0 failed`, tenant efêmero com cleanup obrigatório; checkout foi exercitado por
+  `POST /api/v1/student/checkout`, sem Order/Payment factory direta.
 - Readiness HTTP: `200`, checks app/db/storage/manifest/outbox/queue pass, sem cookie, `no-store`.
 - Alert canaries: no provider preserva problema + exit 1; webhook inválido/indisponível/timeout
   distingue delivery failure; deduplication comprovada.

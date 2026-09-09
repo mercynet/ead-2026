@@ -236,7 +236,7 @@ if [[ -x "$repo_root/vendor/bin/sail" ]]; then
             printf 'Scribe cache owner is invalid\n' >&2
             exit 1
         }
-        printf 'chown -R %s /var/www/html/.scribe\n' "$scribe_owner" \
+        printf 'chown -R %s /var/www/html/.scribe /var/www/html/public/docs\n' "$scribe_owner" \
             | (cd "$repo_root" && env -u COMPOSE_PROJECT_NAME -u COMPOSE_FILE -u COMPOSE_PROFILES ./vendor/bin/sail root-shell)
     fi
     (cd "$repo_root" && env -u COMPOSE_PROJECT_NAME -u COMPOSE_FILE -u COMPOSE_PROFILES ./vendor/bin/sail composer docs)

@@ -483,3 +483,55 @@ bloqueadores externos host, DNS/TLS público, secrets reais, privilégios DB, ow
 backup off-host e scheduler recorrente; continuam decisões humanas RPO/RTO, owners, rollback,
 claims/exclusões comerciais e aprovação de promoção. N-1 rollback, activation execute e receipt
 atual seguem não provados. A cobrança permanece fechada.
+
+## 40. Fechamento da campanha de recuperação — 2026-09-09
+
+Esta seção sela a campanha antes da última execução de activation. O commit que contém este selo é
+o novo ponto de partida obrigatório para a cadeia `HEAD → imagem → manifest → receipt`; não será
+aceito reaproveitar uma imagem ou receipt de um commit anterior.
+
+### Evidência interna consolidada
+
+- F-01 a F-11 receberam correções e validação adversarial em stack descartável. A proteção de
+  identidade impede destruir/restaurar projeto, banco ou volumes fora de `ead2026-ops03`.
+- Preflight ocorre antes de mutação; migração usa arquivo de ambiente, sem senha em `argv`; imagens
+  carregam revision do commit e SHA do manifest; activation consome estados observados, não PASS
+  hardcoded.
+- O backup final observado antes deste selo foi `20260909T215558Z-3279`, com monitor, readback
+  remoto independente e canário de alerta em `PASS`; o restore anterior validou `73/73` migrations,
+  o marcador de storage e a readiness sem tocar volume produtivo.
+- A qualification stack separada passou `mzrt/tenant-lifecycle` `10/10` e
+  `ops04/synthetic-pilot` `29/29`; o grupo ops/assessment/financial passou `33/33` com `245`
+  assertions. Architecture passou `43` testes com `1459` assertions após a convergência Scribe.
+- `composer docs` terminou sem warnings; `bash -n scripts/ops/*.sh`, Pint e o diff sem whitespace
+  no delta atual passaram. A matriz de red-team confirmou falha fechada para restore fora do volume,
+  deploy sem backup, destroy fora do projeto, manifest divergente, verificação remota acoplada ao
+  upload, alerta sem provider, serviço synthetic incorreto e activation sem confirmação.
+
+### Execução final e limites da prova
+
+A execução final deve reconstruir app/web a partir do HEAD deste selo, reiniciar apenas a stack
+descartável `ead2026-ops03`, gerar backup novo, rodar readiness, Scribe, TLS local, synthetic,
+monitor, readback, alerta, deploy-observe e escrever receipt somente com os estados observados.
+Um `final_verdict=PASS` nesse receipt prova a qualificação da stack descartável e a integridade da
+cadeia de proveniência; não é autorização para produção e não cria `PROVEN_CURRENT` para host,
+DNS/TLS público, secrets, privilégios DB, backup off-host, canal real de alertas ou scheduler
+recorrente.
+
+O clean-room deve executar os mesmos gates sem depender do shell interativo. A política de
+rollback N-1 continua `NOT_PROVEN` até existir uma segunda execução independente; RPO/RTO, owners,
+política de rollback, claims/exclusões comerciais e aprovação de promoção continuam decisões
+humanas. Não abrir cobrança, não fazer push/tag e não executar deploy produtivo.
+
+### Verdict selado
+
+| Dimensão | Verdict |
+|---|---|
+| Launch Package | `LAUNCH_PACKAGE_VALID_WITH_GAPS` |
+| Engineering | `ENGINEERING_NOT_READY` |
+| Paid Pilot | `PAID_PILOT_NOT_READY` |
+| Claims atuais | `PROVEN_WITH_LIMITATION`, `NOT_PROVEN`, `INVALIDATED` ou `EXTERNAL_PENDING`; nenhum `PROVEN_CURRENT` produtivo |
+
+Os gaps externos e as decisões humanas são bloqueadores legítimos, não falhas ocultas pela
+qualificação local. A campanha só pode ser promovida depois de repetir a validação em ambiente
+aprovado, obter o aceite humano e reemitir uma matriz de claims independente.

@@ -28,3 +28,4 @@ public/docs
 /graphify-out
 __pycache__/
 .env.e2e
+paid-pilot-activation-receipt.json

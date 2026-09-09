@@ -11,12 +11,16 @@ descartáveis removidos. Probes agora validam conteúdo JSON de readiness; caná
 indisponível e manifest ausente passaram.
 O monitor também valida a saída do runner (`Resultado: >=1 passou, 0 falhou`).
 Relatório final: `docs/reports/COMMERCIAL-V0.1-PAID-PILOT-READINESS-GOAL-2026-09-09.md`.
+O Launch Package foi criado em `docs/commercial/`: checklist único, orchestrator dry-run/execute,
+receipt, intake/onboarding, demo, claims/oferta/pricing, ICP/discovery/score, support, operação da
+primeira semana, sucesso/exit/feedback/gate, FAQ, release notes, índice, Golden Path e revisão
+adversarial. O orchestrator e sua regressão Pest passam; ativação real não foi executada.
 
 ## Próximos passos (1-3)
 
-1. Provisionar no host real domínio/TLS, secrets, owners/canal e adapter/destino de backup remoto.
-2. Executar o runbook no host e repetir readiness, monitor, scheduler, backup/restore e synthetic.
-3. Obter aceite humano explícito de RPO ≤24h, RTO ≤4h úteis, checklist e claims v0.1.
+1. Revisar/commit o Launch Package e manter um receipt fora do Git.
+2. Provisionar no host real domínio/TLS, secrets, owners/canal e adapter/destino de backup remoto; executar o dry-run.
+3. Executar o runbook no host, repetir readiness/monitor/scheduler/backup-restore/synthetic e obter aceite humano de RPO ≤24h/RTO ≤4h úteis.
 
 ## Decisões abertas
 
@@ -27,8 +31,8 @@ humanas separadas.
 
 ## Último commit
 
-Último commit de implementação: `5582322 fix(ops): reject empty synthetic runner results`. Branch `main`,
-sem push; worktree limpo.
+HEAD observado: `643a2b6 docs(ops): seal synthetic output gate`. Branch `main`, sem push; o Launch
+Package está em working tree e ainda não foi commitado.
 
 ## Evidência atual
 
@@ -45,13 +49,15 @@ sem push; worktree limpo.
 - Backup monitor PASS com checksum; stale/missing exit 1 + signal crítico; remote adapter mock PASS.
 - Domain/TLS structural PASS; live domain/TLS, secrets reais, owner/canal e off-host backup não
   foram inventados e permanecem external pending.
-- Working tree está limpo e não há runtime artifact listado. Permanecem para ativação somente host,
-  domínio/TLS, secrets, owners/canal, backup remoto e aceite humano.
+- `bash -n scripts/ops/*.sh`, dry-run sem env, guard de execute, `git diff --check` e a regressão
+  Pest do orchestrator (`2 passed, 9 assertions`) passaram; suite Ops (`8 passed, 32 assertions`).
+- O working tree contém somente o pacote comercial, o orchestrator, a regressão Pest e o ignore do
+  receipt. Não há runtime artifact. Permanecem para ativação somente host, domínio/TLS, secrets,
+  owners/canal, backup remoto, scheduler real e aceite humano.
 
 ## CONTEXT CHECKPOINT
 
-- context: alto (estimado), estado e receipt finalizados.
+- context: alto (estimado), pacote e receipt definidos; activation real ainda externa.
 - state: `docs/STATE.md` atualizado.
-- recommendation: `clear`.
-- reason: implementação, regressão, prova E2E combinada, commits e worktree limpo estão concluídos;
-  só restam ativação externa e aceite humano. Retomar lendo AGENTS.md + docs/STATE.md.
+- recommendation: continue.
+- reason: o pacote foi implementado e validado localmente; falta revisão/commit e depois apenas ativação externa/humana.

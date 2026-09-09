@@ -29,7 +29,11 @@ for key in APP_ENV APP_KEY APP_BUILD_SHA APP_DOMAIN APP_URL TRUSTED_PROXIES TRUS
     require_nonempty "$key"
 done
 
-[[ "$(value APP_ENV)" == production ]] || { printf 'APP_ENV must be production\n' >&2; exit 1; }
+case "$(value APP_ENV)" in
+    production) ;;
+    rehearsal) [[ "$(value CADDY_TLS_DIRECTIVE)" == internal ]] || { printf 'rehearsal Caddy TLS must be internal\n' >&2; exit 1; } ;;
+    *) printf 'APP_ENV must be production or rehearsal\n' >&2; exit 1 ;;
+esac
 [[ "$(value APP_DEBUG)" == false ]] || { printf 'APP_DEBUG must be false\n' >&2; exit 1; }
 [[ "$(value APP_URL)" == https://* ]] || { printf 'APP_URL must use https\n' >&2; exit 1; }
 [[ "$(value FILESYSTEM_DISK)" == local || "$(value FILESYSTEM_DISK)" == s3 ]] || { printf 'FILESYSTEM_DISK must be local or s3\n' >&2; exit 1; }
@@ -40,7 +44,9 @@ done
 [[ "$(value DB_RUNTIME_USERNAME)" != "$(value DB_BOOTSTRAP_USERNAME)" ]] || { printf 'runtime and bootstrap DB users must differ\n' >&2; exit 1; }
 [[ "$(value DB_DATABASE)" != testing && "$(value DB_DATABASE)" != *e2e* ]] || { printf 'production DB name cannot be testing/e2e\n' >&2; exit 1; }
 [[ "$(value CORS_ALLOWED_ORIGINS)" != *\** ]] || { printf 'CORS origin wildcard is forbidden\n' >&2; exit 1; }
-[[ "$(value CADDY_TLS_DIRECTIVE)" != internal ]] || { printf 'Caddy internal TLS is rehearsal-only\n' >&2; exit 1; }
+if [[ "$(value APP_ENV)" == production ]]; then
+    [[ "$(value CADDY_TLS_DIRECTIVE)" != internal ]] || { printf 'Caddy internal TLS is rehearsal-only\n' >&2; exit 1; }
+fi
 
 if grep -Eq '^[A-Z][A-Z0-9_]*=.*REPLACE_WITH_' "$env_file"; then
     printf 'placeholder remains in production env\n' >&2

@@ -230,7 +230,7 @@ IFS='|' read -r web_digest web_revision web_manifest_sha <<<"$web_identity"
 
 scribe_docs_dir="${PAID_PILOT_SCRIBE_DOCS_DIR:-$repo_root/public/docs}"
 if [[ -x "$repo_root/vendor/bin/sail" ]]; then
-    (cd "$repo_root" && ./vendor/bin/sail composer docs)
+    (cd "$repo_root" && env -u COMPOSE_PROJECT_NAME -u COMPOSE_FILE -u COMPOSE_PROFILES ./vendor/bin/sail composer docs)
 elif command -v composer >/dev/null 2>&1; then
     (cd "$repo_root" && composer docs)
 else

@@ -3,11 +3,20 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-base_url="${OPS04_BASE_URL:-http://localhost}"
+base_url="${OPS04_SYNTHETIC_BASE_URL:-${OPS04_BASE_URL:-http://localhost}}"
 specs="${OPS04_SYNTHETIC_SPECS:-${OPS04_SYNTHETIC_SPEC:-mzrt/tenant-lifecycle ops04/synthetic-pilot}}"
-compose_project="${OPS04_COMPOSE_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-}}"
-compose_file="${OPS04_COMPOSE_FILE:-${COMPOSE_FILE:-compose.production.yaml}}"
-app_service="${OPS04_APP_SERVICE:-app}"
+compose_project="${OPS04_SYNTHETIC_COMPOSE_PROJECT_NAME:-${OPS04_COMPOSE_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-}}}"
+compose_files="${OPS04_SYNTHETIC_COMPOSE_FILES:-${OPS04_COMPOSE_FILE:-${COMPOSE_FILE:-compose.production.yaml}}}"
+app_service="${OPS04_SYNTHETIC_APP_SERVICE:-${OPS04_APP_SERVICE:-app}}"
+compose_env_args=()
+if [[ -n "${OPS04_SYNTHETIC_ENV_FILE:-}" ]]; then
+    compose_env_args+=(--env-file "$OPS04_SYNTHETIC_ENV_FILE")
+fi
+compose_args=(docker compose "${compose_env_args[@]}")
+IFS=':' read -r -a compose_file_list <<< "$compose_files"
+for compose_file in "${compose_file_list[@]}"; do
+    compose_args+=(-f "$compose_file")
+done
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
@@ -41,7 +50,7 @@ done
     "$script_dir/ops04-alert.sh" synthetic_runner_unconfigured critical 'provide the E2E Compose project and rerun synthetic smoke'
     exit 1
 }
-runtime_identity="$(docker compose -f "$compose_file" -p "$compose_project" exec -T "$app_service" sh -lc 'printf "env=%s\ndebug=%s\ndatabase=%s\ndisposable=%s\nkey_present=%s\n" "$APP_ENV" "$APP_DEBUG" "$DB_DATABASE" "$DB_DISPOSABLE" "$([ -n "${APP_KEY:-}" ] && printf true || printf false)"')"
+runtime_identity="$("${compose_args[@]}" -p "$compose_project" exec -T "$app_service" sh -lc 'printf "env=%s\ndebug=%s\ndatabase=%s\ndisposable=%s\nkey_present=%s\n" "$APP_ENV" "$APP_DEBUG" "$DB_DATABASE" "$DB_DISPOSABLE" "$([ -n "${APP_KEY:-}" ] && printf true || printf false)"')"
 printf '%s\n' "$runtime_identity" | grep -qx 'env=e2e' || {
     "$script_dir/ops04-alert.sh" synthetic_environment_invalid critical 'run synthetic against an APP_ENV=e2e disposable stack'
     exit 1
@@ -66,7 +75,7 @@ run_spec() {
     local spec="$1"
     local output
 
-    if ! output="$(docker compose -f "$compose_file" -p "$compose_project" exec -T "$app_service" \
+    if ! output="$("${compose_args[@]}" -p "$compose_project" exec -T "$app_service" \
         php artisan e2e:run "$spec" --base=http://localhost --timeout="${OPS04_HTTP_TIMEOUT_SECONDS:-10}" 2>&1)"; then
         printf '%s\n' "$output"
         return 1

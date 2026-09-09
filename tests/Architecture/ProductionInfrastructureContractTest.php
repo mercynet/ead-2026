@@ -144,7 +144,10 @@ it('keeps OPS-04 readiness, telemetry and operational probes versioned', functio
         ->and($env)->toContain('OPS04_EXPECTED_RC_SHA=REPLACE_WITH_RELEASE_GIT_SHA')
         ->and($env)->toContain('OPS04_EXPECTED_COMPOSE_PROJECT=ead2026-production')
         ->and($env)->toContain('OPS04_BACKUP_MANIFEST_KEY=REPLACE_WITH_BACKUP_MANIFEST_SIGNING_KEY')
-        ->and($env)->toContain('OPS04_REMOTE_BACKUP_VERIFY_ADAPTER=REPLACE_WITH_REMOTE_BACKUP_VERIFY_ADAPTER');
+        ->and($env)->toContain('OPS04_REMOTE_BACKUP_VERIFY_ADAPTER=REPLACE_WITH_REMOTE_BACKUP_VERIFY_ADAPTER')
+        ->and($env)->toContain('OPS04_SYNTHETIC_COMPOSE_FILES=compose.yaml:compose.e2e.yaml')
+        ->and($env)->toContain('OPS04_SYNTHETIC_ENV_FILE=/etc/ead2026/e2e.env')
+        ->and($env)->toContain('OPS04_SYNTHETIC_APP_SERVICE=laravel.test');
 
     expect($e2eCompose)->toContain('.env.e2e')
         ->and($e2eCompose)->toContain('APP_KEY: ${APP_KEY:?APP_KEY must be provided for E2E}')

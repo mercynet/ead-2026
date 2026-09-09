@@ -200,6 +200,12 @@ release_manifest="$repo_root/release/migrations.manifest.json"
     printf 'backup monitor expected storage volume must match activation\n' >&2
     exit 1
 }
+[[ -n "${OPS04_SYNTHETIC_BASE_URL:-}" && -n "${OPS04_SYNTHETIC_COMPOSE_PROJECT_NAME:-}" \
+    && -n "${OPS04_SYNTHETIC_COMPOSE_FILES:-}" && -n "${OPS04_SYNTHETIC_ENV_FILE:-}" \
+    && -n "${OPS04_SYNTHETIC_APP_SERVICE:-}" ]] || {
+    printf 'independent synthetic stack configuration is required\n' >&2
+    exit 1
+}
 
 "${compose[@]}" config --quiet
 

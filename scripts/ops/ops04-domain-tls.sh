@@ -13,6 +13,7 @@ port=443
 if [[ "$host" == *:* ]]; then
     port="${host##*:}"
 fi
+http_base_url="${OPS04_HTTP_BASE_URL:-http://$hostname}"
 
 if [[ "$mode" == structural ]]; then
     [[ "${CADDY_TLS_DIRECTIVE:-}" != internal || "${APP_ENV:-}" == rehearsal ]] || {
@@ -24,7 +25,7 @@ if [[ "$mode" == structural ]]; then
 fi
 
 [[ "$mode" == live ]] || { printf 'usage: ops04-domain-tls.sh [live|structural]\n' >&2; exit 2; }
-http_headers="$(curl --silent --show-error --max-time "$timeout" --dump-header - --output /dev/null "http://$host/health" || true)"
+http_headers="$(curl --silent --show-error --max-time "$timeout" --dump-header - --output /dev/null "${http_base_url%/}/health" || true)"
 printf '%s\n' "$http_headers" | grep -Eiq '^HTTP/[0-9.]+ 30[1278][[:space:]]' || {
     printf 'domain_tls=FAIL reason=http_to_https_redirect_missing\n' >&2
     exit 1

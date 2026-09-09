@@ -75,7 +75,7 @@ else
 fi
 
 if [[ -n "$compose_project" ]]; then
-    storage_available="$(docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$compose_project" exec -T app sh -c "df -Pk /var/www/html/storage | awk 'NR==2 {print \$4 * 1024}'")"
+    storage_available="$(docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$compose_project" exec -T app sh -c "df -Pk /var/www/html/storage | awk 'NR==2 {printf \"%.0f\", \$4 * 1024}'")"
     minimum="${OPS04_MIN_FREE_BYTES:-${OPS_STORAGE_MIN_FREE_BYTES:-1073741824}}"
     [[ "$storage_available" =~ ^[0-9]+$ && "$storage_available" -ge "$minimum" ]] || {
         alert storage_capacity_low critical 'free space or expand the storage volume'

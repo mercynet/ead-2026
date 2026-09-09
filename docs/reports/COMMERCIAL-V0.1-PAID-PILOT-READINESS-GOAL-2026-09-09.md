@@ -272,6 +272,8 @@ atualizou o handoff final.
 `error_scan=PASS`; regressão dedicada adicionada.
 `12c5516 docs(ops): classify external activation blockers` e `e15469a docs(ops): finalize
 paid-pilot handoff state` — códigos externos e handoff final selados.
+`5fd4d21 fix(ops): exercise real checkout in synthetic pilot` — removeu fixtures financeiras
+diretas da jornada e comprovou checkout cash por HTTP real (`29/29`).
 
 ## 22. Engineering Verdict
 

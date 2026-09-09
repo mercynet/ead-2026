@@ -2,7 +2,8 @@
 
 ## Sessão
 
-2026-09-09: OPS-04 reconciliado e selado em `c410e9b`; alerting provider-neutral, readiness não
+2026-09-09: OPS-04 reconciliado e selado; a jornada comercial foi corrigida para exercer checkout
+HTTP real e selada em `5fd4d21`. Alerting provider-neutral, readiness não
 mutante, monitor de backup com checksum, contrato remoto, validação domain/TLS/secrets e harness
 E2E dedicado foram implementados. A execução combinada final passou: provisioning MZRT `10/10` e
 synthetic comercial `29/29`, em HTTP real, incluindo checkout cash real, com teardown e volumes
@@ -24,11 +25,8 @@ humanas separadas.
 
 ## Último commit
 
-Implementação: `c410e9b feat(ops): harden paid-pilot monitoring and synthetic`.
-Hardening final: `c167cf8 feat(ops): close synthetic and harden activation validation`.
-Error scan: `1b0f226 fix(ops): make error scan failures explicit`.
-Último receipt selado: `12c5516 docs(ops): classify external activation blockers`. Branch `main`,
-sem push.
+Último commit: `5fd4d21 fix(ops): exercise real checkout in synthetic pilot`. Branch `main`,
+sem push; worktree limpo.
 
 ## Evidência atual
 
@@ -50,8 +48,8 @@ sem push.
 
 ## CONTEXT CHECKPOINT
 
-- context: alto, estado e receipt finalizados.
+- context: alto (estimado), estado e receipt finalizados.
 - state: `docs/STATE.md` atualizado.
-- recommendation: `waiting_for_user`.
-- reason: regressão, prova E2E combinada, commits e worktree limpo estão concluídos; só restam
-  ativação externa e aceite humano.
+- recommendation: `clear`.
+- reason: implementação, regressão, prova E2E combinada, commits e worktree limpo estão concluídos;
+  só restam ativação externa e aceite humano. Retomar lendo AGENTS.md + docs/STATE.md.

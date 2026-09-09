@@ -25,9 +25,9 @@ Assessment, certificates e PSP automático continuam fora da promessa v0.1.
 
 ## Último commit
 
-Remediações de código estão em `f507f9124c397a06f2c0e4f77654ec78ab8eab3d` e `4871373`, ambos
-locais, sem push, tag ou deploy produtivo. O relatório e este handoff foram atualizados para
-registrar a revalidação; a branch permanece somente local.
+`4f5ee55ec58a24a3de0c0311c899095665c4bf10` (`main`, commit local de relatório/state). As
+remediações de código estão em `f507f9124c397a06f2c0e4f77654ec78ab8eab3d` e
+`4871373d86808bb585623298c3a3c573eabc4b2a`; não houve push, tag ou deploy produtivo.
 
 ## Evidência atual
 

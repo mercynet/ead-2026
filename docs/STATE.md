@@ -2,47 +2,46 @@
 
 ## Sessão
 
-2026-09-09: OPS-03B fechou a auditoria de N-1, build reproducibility, schema compatibility,
-discovery de migrations e rollback. Não existe N-1 operacional válido anterior à primeira RC;
-`b045025` é `NOT_DEPLOYABLE_HISTORICALLY`. Relatório:
-`docs/reports/COMMERCIAL-V0.1-OPS03B-N1-MIGRATION-ROLLBACK-2026-09-09.md`.
+2026-09-09: OPS-04 reconciliado e selado em `c410e9b`; alerting provider-neutral, readiness não
+mutante, monitor de backup com checksum, contrato remoto, validação domain/TLS/secrets e harness
+E2E dedicado foram implementados. Synthetic comercial HTTP real: `28 passed, 0 failed`.
+Relatório final: `docs/reports/COMMERCIAL-V0.1-PAID-PILOT-READINESS-GOAL-2026-09-09.md`.
 
 ## Próximos passos (1-3)
 
-1. Usar restore de baseline pré-deploy/synthetic para recovery do primeiro deploy.
-2. A partir da próxima release, validar a RC anterior como N-1 e exercitar code rollback quando
-   o schema permitir.
-3. Manter Paid Pilot como `NOT_READY` até os gates restantes de operações e aceitação estarem
-   fechados.
+1. Provisionar no host real domínio/TLS, secrets, owners/canal e adapter/destino de backup remoto.
+2. Executar o runbook no host e repetir readiness, monitor, scheduler, backup/restore e synthetic.
+3. Obter aceite humano explícito de RPO ≤24h, RTO ≤4h úteis, checklist e claims v0.1.
 
 ## Decisões abertas
 
-O build exato de `b045025` falha no estágio vendor porque o Dockerfile histórico instala `exif`
-somente no runtime. O schema entre `b045025` e a RC é compatível, mas não há artefato N-1
-reproduzível. O caminho comprovado é `ROLLBACK_VIA_RESTORE_VERIFIED`; migration rehearsal é
-`NOT_APPLICABLE_FIRST_RELEASE`. Monitoring/alerting, ambiente real, domínio/TLS/segredos e
-aceitação do piloto permanecem fora desta task e abertos.
+RPO/RTO e aceite final humanos pendentes. Primeiro piloto não promete reset de senha por e-mail;
+worker é opcional, scheduler/outbox é MUST. Student Assessment, certificates e gateway automático
+continuam fora da promessa v0.1. MediaProvider avançado e plugin lifecycle continuam decisões
+humanas separadas.
 
 ## Último commit
 
-Implementação: `4879457 feat(ops): harden migration discovery and rollback gates`.
-Checkpoint documental: `a8bc317 docs(ops): seal OPS-03B migration rollback evidence`. Não houve
-push nem tag.
+Implementação: `c410e9b feat(ops): harden paid-pilot monitoring and synthetic`.
+Relatório/STATE: working tree documental desta sessão, a ser selado no commit seguinte. Branch
+`main`, 10 commits à frente de `origin/main`, sem push.
 
 ## Evidência atual
 
-- Build exato de `4e69cbc` e `b045025`: falha `ext-exif`; build exato da RC `655c939`: PASS.
-- Imagem final gerou manifest `expected=73 discovered=73`; deploy canônico e readiness passaram
-  com `applied_after=73`.
-- Backup `20260909T133721Z-14594`: `PASS`; deploy/readiness final e primeiro `/up`: HTTP `200`.
-- Testes tooling: `4 passed (11 assertions)`; infraestrutura + tooling: `9 passed (58 assertions)`.
-- Checkout comercial: `16 passed (183 assertions)`; S02: `2 passed (8 assertions)`.
-- `git diff --check` e `bash -n scripts/ops/*.sh`: PASS; não houve alteração funcional de produto.
+- Alert unit: `3 passed (13 assertions)`; readiness Feature: `5 passed (29 assertions)`.
+- Infrastructure contract: `6 passed (99 assertions)`; Architecture: `43 passed (1437 assertions)`.
+- PHPStan: `No errors`; Pint: PASS; `bash -n`: PASS; `git diff --check`: PASS.
+- Synthetic HTTP real dedicado: `28 passed, 0 failed`, tenant efêmero com cleanup obrigatório.
+- Readiness HTTP: `200`, checks app/db/storage/manifest/outbox/queue pass, sem cookie, `no-store`.
+- Alert canaries: no provider preserva problema + exit 1; webhook inválido/indisponível/timeout
+  distingue delivery failure; deduplication comprovada.
+- Backup monitor PASS com checksum; stale/missing exit 1 + signal crítico; remote adapter mock PASS.
+- Domain/TLS structural PASS; live domain/TLS, secrets reais, owner/canal e off-host backup não
+  foram inventados e permanecem external pending.
 
 ## CONTEXT CHECKPOINT
 
-- context: alto, com OPS-03B consolidado no relatório.
-- state: `docs/STATE.md` atualizado com fatos comprovados.
-- recommendation: `clear`.
-- reason: a task foi selada; retomar somente para os gates restantes ou para validar a próxima RC
-  como N-1.
+- context: alto, estado e receipt finalizados.
+- state: `docs/STATE.md` atualizado.
+- recommendation: `waiting_for_user`.
+- reason: só restam host, domínio/TLS, secrets, canal/owners, backup remoto e aceite humano.

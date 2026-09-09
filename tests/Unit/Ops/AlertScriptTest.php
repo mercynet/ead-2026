@@ -74,3 +74,17 @@ it('deduplicates repeated signals without hiding their non-zero result', functio
         @rmdir($stateDirectory);
     }
 });
+
+it('rejects an unsafe configured email sender before delivery', function (): void {
+    $process = runAlertScript([
+        'readiness_failed',
+        'critical',
+        'inspect readiness',
+    ], [
+        'OPS04_ALERT_EMAIL_TO' => 'owner@example.com',
+        'OPS04_ALERT_EMAIL_FROM' => 'attacker@example.com\\r\\nBcc: leaked@example.com',
+    ]);
+
+    expect($process->getExitCode())->toBe(2)
+        ->and($process->getErrorOutput())->toContain('invalid alert email sender');
+});

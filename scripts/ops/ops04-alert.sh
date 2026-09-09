@@ -61,10 +61,12 @@ fi
 email_to="${OPS04_ALERT_EMAIL_TO:-}"
 if [[ -n "$email_to" ]]; then
     [[ "$email_to" =~ $email_pattern ]] || { printf 'invalid alert email recipient\n' >&2; exit 2; }
+    email_from="${OPS04_ALERT_EMAIL_FROM:-no-reply@localhost}"
+    [[ "$email_from" =~ $email_pattern ]] || { printf 'invalid alert email sender\n' >&2; exit 2; }
     sendmail_bin="${OPS04_SENDMAIL_BIN:-/usr/sbin/sendmail}"
     [[ "$sendmail_bin" =~ ^/[A-Za-z0-9._/-]+$ ]] || { printf 'invalid sendmail path\n' >&2; exit 2; }
     if [[ "$deduplicated" == false ]] && [[ -x "$sendmail_bin" ]] && printf 'To: %s\nFrom: %s\nSubject: [%s] %s\nContent-Type: text/plain; charset=utf-8\n\nSignal: %s\nSeverity: %s\nTimestamp: %s\nContext: %s\nAction: %s\n' \
-        "$email_to" "${OPS04_ALERT_EMAIL_FROM:-no-reply@localhost}" "$severity" "$condition" "$condition" "$severity" "$timestamp" "$context" "$action" | "$sendmail_bin" -t; then
+        "$email_to" "$email_from" "$severity" "$condition" "$condition" "$severity" "$timestamp" "$context" "$action" | "$sendmail_bin" -t; then
         delivery_status=email_sent
     elif [[ "$deduplicated" == false ]]; then
         printf 'alert=EMAIL_FAILED signal=%s\n' "$condition" >&2

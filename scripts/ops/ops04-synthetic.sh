@@ -4,7 +4,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 base_url="${OPS04_BASE_URL:-http://localhost}"
-spec="${OPS04_SYNTHETIC_SPEC:-ops04/synthetic-pilot}"
+specs="${OPS04_SYNTHETIC_SPECS:-${OPS04_SYNTHETIC_SPEC:-mzrt/tenant-lifecycle ops04/synthetic-pilot}}"
 compose_project="${OPS04_COMPOSE_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-}}"
 compose_file="${OPS04_COMPOSE_FILE:-${COMPOSE_FILE:-compose.production.yaml}}"
 app_service="${OPS04_APP_SERVICE:-app}"
@@ -43,5 +43,11 @@ printf '%s\n' "$runtime_identity" | grep -qx 'key_present=true' || {
     "$script_dir/ops04-alert.sh" synthetic_environment_invalid critical 'configure APP_KEY on the synthetic stack'
     exit 1
 }
-docker compose -f "$compose_file" -p "$compose_project" exec -T "$app_service" php artisan e2e:run "$spec" --base=http://localhost --timeout="${OPS04_HTTP_TIMEOUT_SECONDS:-10}"
-printf 'synthetic=PASS strategy=ephemeral-cleanup timestamp=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+for spec in $specs; do
+    if ! docker compose -f "$compose_file" -p "$compose_project" exec -T "$app_service" \
+        php artisan e2e:run "$spec" --base=http://localhost --timeout="${OPS04_HTTP_TIMEOUT_SECONDS:-10}"; then
+        "$script_dir/ops04-alert.sh" synthetic_journey_failed critical "rerun failed synthetic spec $spec"
+        exit 1
+    fi
+done
+printf 'synthetic=PASS strategy=ephemeral-cleanup specs=%s timestamp=%s\n' "$specs" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"

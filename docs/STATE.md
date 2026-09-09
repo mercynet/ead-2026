@@ -24,8 +24,8 @@ humanas separadas.
 ## Último commit
 
 Implementação: `c410e9b feat(ops): harden paid-pilot monitoring and synthetic`.
-Relatório/STATE: `0dd2249 docs(ops): seal paid-pilot readiness evidence`; provenance: `9b0c86f
-docs(ops): record final local commit provenance`. Branch `main`, 12 commits
+Hardening final: `c167cf8 feat(ops): close synthetic and harden activation validation`.
+Relatórios/STATE: `b66175a docs(ops): reconcile final paid-pilot evidence`. Branch `main`, 14 commits
 à frente de `origin/main`, sem push.
 
 ## Evidência atual
@@ -49,6 +49,6 @@ docs(ops): record final local commit provenance`. Branch `main`, 12 commits
 
 - context: alto, estado e receipt finalizados.
 - state: `docs/STATE.md` atualizado.
-- recommendation: `continue`.
-- reason: a prova E2E combinada passou; falta apenas regressão final, commit local e atualização do
-  veredito sem inventar dependências externas.
+- recommendation: `waiting_for_user`.
+- reason: regressão, prova E2E combinada, commits e worktree limpo estão concluídos; só restam
+  ativação externa e aceite humano.

@@ -2,55 +2,47 @@
 
 ## Sessão
 
-2026-09-09: OPS-03 executado exclusivamente na rehearsal Docker descartável `ead2026-ops03`.
-Backup, restore DB+storage, deploy RC, readiness, scheduler, storage persistence e smoke HTTPS
-foram executados. Relatório:
-`docs/reports/COMMERCIAL-V0.1-OPS03-BACKUP-RESTORE-DEPLOY-MIGRATION-ROLLBACK-2026-09-09.md`.
+2026-09-09: OPS-03B fechou a auditoria de N-1, build reproducibility, schema compatibility,
+discovery de migrations e rollback. Não existe N-1 operacional válido anterior à primeira RC;
+`b045025` é `NOT_DEPLOYABLE_HISTORICALLY`. Relatório:
+`docs/reports/COMMERCIAL-V0.1-OPS03B-N1-MIGRATION-ROLLBACK-2026-09-09.md`.
 
 ## Próximos passos (1-3)
 
-1. Corrigir/reconstruir o N-1 real `b045025` com `ext-exif` e repetir o ensaio N-1 → RC.
-2. Repetir code rollback com a imagem N-1 exata e obter smoke HTTP verde; depois tratar OPS-04.
-3. Manter Paid Pilot como `NOT_READY` até monitoring/error alerting, synthetic pilot formal,
-   domínio/TLS e secrets reais e aceite humano.
+1. Usar restore de baseline pré-deploy/synthetic para recovery do primeiro deploy.
+2. A partir da próxima release, validar a RC anterior como N-1 e exercitar code rollback quando
+   o schema permitir.
+3. Manter Paid Pilot como `NOT_READY` até os gates restantes de operações e aceitação estarem
+   fechados.
 
 ## Decisões abertas
 
-O build exato de `b045025` falhou por `ext-exif` ausente; a imagem anterior disponível retornou
-500 no rollback smoke. Portanto `MIGRATION_REHEARSAL_FAILED`, `ROLLBACK_NOT_READY` e
-`OPERATIONS_NOT_READY` são os veredictos atuais. Hosting real, domínio/DNS, provider de
-backup/storage, SMTP e decisão `MediaProvider` permanecem abertos.
+O build exato de `b045025` falha no estágio vendor porque o Dockerfile histórico instala `exif`
+somente no runtime. O schema entre `b045025` e a RC é compatível, mas não há artefato N-1
+reproduzível. O caminho comprovado é `ROLLBACK_VIA_RESTORE_VERIFIED`; migration rehearsal é
+`NOT_APPLICABLE_FIRST_RELEASE`. Monitoring/alerting, ambiente real, domínio/TLS/segredos e
+aceitação do piloto permanecem fora desta task e abertos.
 
 ## Último commit
 
-Último commit funcional local do OPS-03: `887ac94` em `main`; um checkpoint documental seguirá
-este commit. Não houve push nem tag.
+Implementação: `4879457 feat(ops): harden migration discovery and rollback gates`.
+Checkpoint documental: `a8bc317 docs(ops): seal OPS-03B migration rollback evidence`. Não houve
+push nem tag.
 
 ## Evidência atual
 
-- Build final PASS: imagens app/web/mysql criadas com `APP_BUILD_SHA=655c939`; runtime PHP-FPM,
-  sem Pest/Scribe e sem source bind-mounted.
-- Fresh bootstrap e restore confirmaram `73/73` migrations, tenant/personas, Course/Module/Lesson
-  content/media/material, Enrollment, progress e financial mirror.
-- Backup PASS: manifest `20260909T125405Z-2075`, DB checksum
-  `e17416265180b1bb46e27bd787c9ce8e129bba9ad7c6073b678325cea6713639`, storage checksum
-  `5a86fdccb3403b444a596b2c1b6a380609a25d37b0a68ef56b9c0c1e324b33e2`.
-- Backup failure, invalid restore checksum, wrong environment, runtime DDL, DB-down readiness e
-  storage-missing readiness falharam fechados como esperado.
-- Storage persistence sobreviveu à recriação do app; foreign tenant recebeu `404 not_found` no
-  acesso ao material.
-- HTTP HTTPS smoke final: auth `200/200/200`, MZRT provisioning/entitlements `201/200`, Student,
-  Instructor e Admin `200`, `/up` `200`.
-- Scheduler `schedule:work` running; outbox command `0/0`; falha de comando inexistente retornou
-  exit code `1` e restart preservou configuração.
-- N-1 → RC e code rollback exatos não foram confirmados; ver relatório para a evidência.
-- `git diff --check` e `bash -n` dos scripts OPS-03 passaram; não houve alteração de capability
-  funcional do produto.
+- Build exato de `4e69cbc` e `b045025`: falha `ext-exif`; build exato da RC `655c939`: PASS.
+- Imagem final gerou manifest `expected=73 discovered=73`; deploy canônico e readiness passaram
+  com `applied_after=73`.
+- Backup `20260909T133721Z-14594`: `PASS`; deploy/readiness final e primeiro `/up`: HTTP `200`.
+- Testes tooling: `4 passed (11 assertions)`; infraestrutura + tooling: `9 passed (58 assertions)`.
+- Checkout comercial: `16 passed (183 assertions)`; S02: `2 passed (8 assertions)`.
+- `git diff --check` e `bash -n scripts/ops/*.sh`: PASS; não houve alteração funcional de produto.
 
 ## CONTEXT CHECKPOINT
 
-- context: alto, mas com evidência OPS-03 consolidada no relatório.
+- context: alto, com OPS-03B consolidado no relatório.
 - state: `docs/STATE.md` atualizado com fatos comprovados.
-- recommendation: `waiting_for_user`.
-- reason: OPS-03 terminou com blockers explícitos de N-1/rollback; próxima ação é uma decisão de
-  priorização antes de avançar para a correção do release anterior ou OPS-04.
+- recommendation: `clear`.
+- reason: a task foi selada; retomar somente para os gates restantes ou para validar a próxima RC
+  como N-1.

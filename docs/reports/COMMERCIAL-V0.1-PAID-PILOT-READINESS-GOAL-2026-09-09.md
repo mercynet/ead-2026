@@ -269,6 +269,8 @@ monitor, APP_KEY/secrets validation e proteção do remetente de alertas.
 atualizou o handoff final.
 `1b0f226 fix(ops): make error scan failures explicit` — erro 5xx/critical não pode mais emitir
 `error_scan=PASS`; regressão dedicada adicionada.
+`12c5516 docs(ops): classify external activation blockers` e `e15469a docs(ops): finalize
+paid-pilot handoff state` — códigos externos e handoff final selados.
 
 ## 22. Engineering Verdict
 

@@ -67,6 +67,7 @@ it('binds activation receipt fields to observed provenance and gate output', fun
         ->and($script)->toContain('docker image inspect "$app_image"')
         ->and($script)->toContain('MIGRATION_MANIFEST_SHA')
         ->and($script)->toContain('env -u COMPOSE_PROJECT_NAME -u COMPOSE_FILE -u COMPOSE_PROFILES')
+        ->and($script)->toContain('chown -R %s /var/www/html/.scribe')
         ->and($script)->toContain('independent synthetic stack configuration is required')
         ->and($script)->toContain('run_gate "$temp_dir/remote-backup.txt"')
         ->and($script)->toContain('run_gate "$temp_dir/alert-delivery.txt"')

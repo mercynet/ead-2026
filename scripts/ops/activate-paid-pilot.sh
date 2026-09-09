@@ -230,6 +230,15 @@ IFS='|' read -r web_digest web_revision web_manifest_sha <<<"$web_identity"
 
 scribe_docs_dir="${PAID_PILOT_SCRIBE_DOCS_DIR:-$repo_root/public/docs}"
 if [[ -x "$repo_root/vendor/bin/sail" ]]; then
+    if [[ -d "$repo_root/.scribe" ]]; then
+        scribe_owner="$(stat -c '%u:%g' "$repo_root/.scribe")"
+        [[ "$scribe_owner" =~ ^[0-9]+:[0-9]+$ ]] || {
+            printf 'Scribe cache owner is invalid\n' >&2
+            exit 1
+        }
+        printf 'chown -R %s /var/www/html/.scribe\n' "$scribe_owner" \
+            | (cd "$repo_root" && env -u COMPOSE_PROJECT_NAME -u COMPOSE_FILE -u COMPOSE_PROFILES ./vendor/bin/sail root-shell)
+    fi
     (cd "$repo_root" && env -u COMPOSE_PROJECT_NAME -u COMPOSE_FILE -u COMPOSE_PROFILES ./vendor/bin/sail composer docs)
 elif command -v composer >/dev/null 2>&1; then
     (cd "$repo_root" && composer docs)

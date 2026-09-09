@@ -34,6 +34,11 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'serve' => true,
+            'visibility' => 'private',
+            'permissions' => [
+                'file' => ['private' => 0600],
+                'dir' => ['private' => 0700],
+            ],
             'throw' => false,
             'report' => false,
         ],

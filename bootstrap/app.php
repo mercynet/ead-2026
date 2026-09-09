@@ -32,6 +32,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(
+            at: config('app.trusted_proxies', []),
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO,
+        );
+
+        $trustedHosts = config('app.trusted_hosts', []);
+        if ($trustedHosts !== []) {
+            $middleware->trustHosts(at: $trustedHosts, subdomains: false);
+        }
+
         $middleware->alias([
             'api.context' => \App\Modules\Core\Http\Middleware\InjectApiContext::class,
             'resolve.tenant' => \App\Modules\Core\Http\Middleware\ResolveTenant::class,

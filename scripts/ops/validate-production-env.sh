@@ -25,7 +25,9 @@ for key in APP_ENV APP_KEY APP_BUILD_SHA APP_DOMAIN APP_URL TRUSTED_PROXIES TRUS
     DB_DATABASE DB_ADMIN_PASSWORD DB_BOOTSTRAP_USERNAME DB_BOOTSTRAP_PASSWORD \
     DB_RUNTIME_USERNAME DB_RUNTIME_PASSWORD \
     DB_MIGRATION_USERNAME DB_MIGRATION_PASSWORD FILESYSTEM_DISK MEDIA_DISK \
-    MAIL_MAILER MAIL_HOST MAIL_PORT MAIL_FROM_ADDRESS CORS_ALLOWED_ORIGINS CADDY_TLS_DIRECTIVE; do
+    MAIL_MAILER MAIL_HOST MAIL_PORT MAIL_FROM_ADDRESS CORS_ALLOWED_ORIGINS CADDY_TLS_DIRECTIVE \
+    OPS04_ALERT_OWNER OPS04_ALERT_CHANNEL OPS04_REMOTE_BACKUP_DESTINATION \
+    OPS04_REMOTE_BACKUP_CREDENTIAL; do
     require_nonempty "$key"
 done
 
@@ -44,6 +46,15 @@ esac
 [[ "$(value DB_RUNTIME_USERNAME)" != "$(value DB_BOOTSTRAP_USERNAME)" ]] || { printf 'runtime and bootstrap DB users must differ\n' >&2; exit 1; }
 [[ "$(value DB_DATABASE)" != testing && "$(value DB_DATABASE)" != *e2e* ]] || { printf 'production DB name cannot be testing/e2e\n' >&2; exit 1; }
 [[ "$(value CORS_ALLOWED_ORIGINS)" != *\** ]] || { printf 'CORS origin wildcard is forbidden\n' >&2; exit 1; }
+[[ "$(value OPS04_ALERT_OWNER)" != *REPLACE_WITH_* ]] || { printf 'alert owner placeholder remains\n' >&2; exit 1; }
+[[ "$(value OPS04_REMOTE_BACKUP_DESTINATION)" != *REPLACE_WITH_* ]] || { printf 'remote backup destination placeholder remains\n' >&2; exit 1; }
+[[ "$(value OPS04_REMOTE_BACKUP_CREDENTIAL)" != *REPLACE_WITH_* ]] || { printf 'remote backup credential placeholder remains\n' >&2; exit 1; }
+[[ "$(value OPS04_ALERT_CHANNEL)" =~ ^[A-Za-z0-9._:/ -]+$ ]] || { printf 'alert channel contains unsafe characters\n' >&2; exit 1; }
+[[ "$(value MAIL_MAILER)" != smtp || "$(value MAIL_PASSWORD)" != *REPLACE_WITH_* ]] || { printf 'SMTP password placeholder remains\n' >&2; exit 1; }
+if [[ -n "$(value OPS04_ALERT_WEBHOOK_URL)" ]]; then
+    [[ "$(value OPS04_ALERT_WEBHOOK_URL)" == https://* ]] || { printf 'alert webhook must use https\n' >&2; exit 1; }
+    [[ "$(value OPS04_ALERT_WEBHOOK_URL)" != *REPLACE_WITH_* ]] || { printf 'alert webhook placeholder remains\n' >&2; exit 1; }
+fi
 if [[ "$(value APP_ENV)" == production ]]; then
     [[ "$(value CADDY_TLS_DIRECTIVE)" != internal ]] || { printf 'Caddy internal TLS is rehearsal-only\n' >&2; exit 1; }
 fi

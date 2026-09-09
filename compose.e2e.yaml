@@ -1,0 +1,8 @@
+# Disposable HTTP E2E override. Requires a private, uncommitted `.env.e2e`.
+services:
+    laravel.test:
+        env_file:
+            - .env.e2e
+        environment:
+            APP_KEY: ${APP_KEY:?APP_KEY must be provided for E2E}
+            DB_DISPOSABLE: ${DB_DISPOSABLE:-e2e}

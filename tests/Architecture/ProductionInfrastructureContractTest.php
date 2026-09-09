@@ -7,7 +7,6 @@
  * host; these assertions prevent the versioned baseline from drifting back
  * to the development Sail topology.
  */
-
 function productionContractFile(string $path): string
 {
     $contents = file_get_contents(base_path($path));
@@ -72,8 +71,8 @@ it('keeps the production compose isolated from development-only services and mou
     expect($compose)->not->toContain('.:/var/www/html')
         ->and($compose)->not->toContain('php artisan serve')
         ->and($compose)->not->toContain('mailpit')
-        ->and($compose)->toContain("production_storage:/var/www/html/storage")
-        ->and($compose)->toContain("production_db_data:/var/lib/mysql")
+        ->and($compose)->toContain('production_storage:/var/www/html/storage')
+        ->and($compose)->toContain('production_db_data:/var/lib/mysql')
         ->and($compose)->toContain("private:\n        driver: bridge\n        internal: true")
         ->and($compose)->toContain("profiles: ['worker']")
         ->and($compose)->toContain("command: ['php', 'artisan', 'schedule:work']");
@@ -104,4 +103,55 @@ it('defaults media and local storage to private disks', function (): void {
     expect($filesystems)->toContain("'visibility' => 'private'")
         ->and($filesystems)->toContain("'private' => 0600")
         ->and($mediaLibrary)->toContain("env('MEDIA_DISK', 'local')");
+});
+
+it('keeps OPS-04 readiness, telemetry and operational probes versioned', function (): void {
+    $bootstrap = productionContractFile('bootstrap/app.php');
+    $routes = productionContractFile('routes/web.php');
+    $env = productionContractFile('.env.production.example');
+    $e2eCompose = productionContractFile('compose.e2e.yaml');
+    $e2eEnv = productionContractFile('.env.e2e.example');
+    $scripts = array_map(
+        fn (string $path): string => productionContractFile($path),
+        [
+            'scripts/ops/ops04-alert.sh',
+            'scripts/ops/ops04-readiness.sh',
+            'scripts/ops/ops04-backup-monitor.sh',
+            'scripts/ops/ops04-error-scan.sh',
+            'scripts/ops/ops04-synthetic.sh',
+            'scripts/ops/ops04-deploy-observe.sh',
+            'scripts/ops/ops04-remote-backup.sh',
+            'scripts/ops/ops04-domain-tls.sh',
+            'scripts/ops/validate-production-env.sh',
+        ],
+    );
+
+    expect($bootstrap)->toContain('RequestTelemetry::class')
+        ->and($bootstrap)->toContain("health: '/up'")
+        ->and($bootstrap)->toContain('$exceptions->respond')
+        ->and($routes)->toContain("Route::get('/readiness'")
+        ->and($env)->toContain('OPS04_SCHEDULER_REQUIRED=true')
+        ->and($env)->toContain('OPS04_ALERT_OWNER=REPLACE_WITH_HUMAN_OWNER')
+        ->and($env)->toContain('OPS04_REMOTE_BACKUP_DESTINATION=REPLACE_WITH_REMOTE_DESTINATION')
+        ->and($env)->toContain('OPS04_REMOTE_BACKUP_CREDENTIAL=REPLACE_WITH_REMOTE_BACKUP_CREDENTIAL');
+
+    expect($e2eCompose)->toContain('.env.e2e')
+        ->and($e2eCompose)->toContain('APP_KEY: ${APP_KEY:?APP_KEY must be provided for E2E}')
+        ->and($e2eCompose)->toContain('DB_DISPOSABLE: ${DB_DISPOSABLE:-e2e}')
+        ->and($e2eEnv)->toContain('APP_ENV=e2e')
+        ->and($e2eEnv)->toContain('DB_DISPOSABLE=e2e')
+        ->and($e2eEnv)->toContain('APP_KEY=base64:REPLACE_WITH_E2E_ONLY_KEY')
+        ->and($scripts[2])->toContain('db_checksum')
+        ->and($scripts[2])->toContain('storage_checksum')
+        ->and($scripts[8])->toContain('alert webhook must use https');
+
+    expect($scripts[4])->toContain('env=e2e')
+        ->and($scripts[4])->toContain('disposable=e2e')
+        ->and($scripts[6])->toContain('REMOTE_BACKUP_EXTERNAL_BLOCKER')
+        ->and($scripts[7])->toContain('certificate_hostname_or_chain_invalid');
+
+    foreach ($scripts as $script) {
+        expect($script)->toStartWith('#!/usr/bin/env bash')
+            ->and($script)->toContain('set -euo pipefail');
+    }
 });

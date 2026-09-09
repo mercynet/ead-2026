@@ -3,6 +3,7 @@
 use App\Modules\Assessment\Http\Middleware\BlockLegacyStudentAssessment;
 use App\Modules\Core\Exceptions\TenantAlreadyExistsException;
 use App\Modules\Core\Http\Middleware\EnsureAreaAccess;
+use App\Modules\Core\Http\Middleware\RequestTelemetry;
 use App\Modules\Financial\Exceptions\CheckoutConflictException;
 use App\Modules\Financial\Exceptions\GatewayUnavailableException;
 use App\Shared\Exceptions\AccessDeniedException;
@@ -18,6 +19,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -37,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             | Request::HEADER_X_FORWARDED_PORT
             | Request::HEADER_X_FORWARDED_PROTO);
         $middleware->trustHosts();
+        $middleware->append(RequestTelemetry::class);
 
         $middleware->alias([
             'api.context' => \App\Modules\Core\Http\Middleware\InjectApiContext::class,
@@ -51,6 +54,25 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(SubstituteBindings::class, EnsureAreaAccess::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->context(function (): array {
+            $request = request();
+            $tenant = $request->attributes->get('tenant');
+            $user = $request->user('sanctum') ?? $request->user();
+
+            return [
+                'request_id' => $request->attributes->get('request_id'),
+                'tenant_id' => is_object($tenant) && isset($tenant->id) ? (int) $tenant->id : null,
+                'user_id' => is_object($user) && isset($user->id) ? (int) $user->id : null,
+            ];
+        });
+        $exceptions->respond(function (Response $response): Response {
+            $requestId = request()->attributes->get('request_id');
+            if (is_string($requestId)) {
+                $response->headers->set('X-Request-ID', $requestId);
+            }
+
+            return $response;
+        });
         $exceptions->render(function (TenantAlreadyExistsException $exception, Request $request) {
             return response()->json(['data' => null, 'errors' => [['code' => 'tenant_already_exists', 'message' => $exception->getMessage()]]], 409);
         });

@@ -255,8 +255,8 @@ quando SMTP/worker/reset por e-mail entram em promessa.
 ## 21. Commits
 
 `c410e9b feat(ops): harden paid-pilot monitoring and synthetic` — implementação/harness.
-Este relatório e `docs/STATE.md` serão selados no commit documental seguinte; nenhum push ou tag
-final será feito.
+`0dd2249 docs(ops): seal paid-pilot readiness evidence` — relatório, receipt OPS-04 e STATE;
+nenhum push ou tag final foi feito.
 
 ## 22. Engineering Verdict
 

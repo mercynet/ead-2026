@@ -23,8 +23,8 @@ humanas separadas.
 ## Último commit
 
 Implementação: `c410e9b feat(ops): harden paid-pilot monitoring and synthetic`.
-Relatório/STATE: working tree documental desta sessão, a ser selado no commit seguinte. Branch
-`main`, 10 commits à frente de `origin/main`, sem push.
+Relatório/STATE: `0dd2249 docs(ops): seal paid-pilot readiness evidence`. Branch `main`, 11 commits
+à frente de `origin/main`, sem push.
 
 ## Evidência atual
 

@@ -58,3 +58,19 @@ it('fails closed before any mutation when execute has no env file', function ():
         ->and($process->getErrorOutput())->toContain('env file not found')
         ->and($process->getOutput())->not->toContain('docker compose');
 });
+
+it('binds activation receipt fields to observed provenance and gate output', function (): void {
+    $script = file_get_contents(base_path('scripts/ops/activate-paid-pilot.sh'));
+
+    expect($script)->not->toBeFalse()
+        ->and($script)->toContain('release_sha="$(git -C "$repo_root" rev-parse "${APP_BUILD_SHA}^{commit}"')
+        ->and($script)->toContain('docker image inspect "$app_image"')
+        ->and($script)->toContain('MIGRATION_MANIFEST_SHA')
+        ->and($script)->toContain('run_gate "$temp_dir/remote-backup.txt"')
+        ->and($script)->toContain('run_gate "$temp_dir/alert-delivery.txt"')
+        ->and($script)->toContain('final_verdict=PASS')
+        ->and($script)->toContain('"final_verdict": "${final_verdict}"')
+        ->and($script)->not->toContain('"final_verdict": "${readiness_status}"')
+        ->and($script)->not->toContain('"remote_backup": "PASS"')
+        ->and($script)->not->toContain('"readiness": "PASS"');
+});

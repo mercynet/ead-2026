@@ -80,12 +80,15 @@ it('keeps the production compose isolated from development-only services and mou
 
 it('keeps image, proxy and database contracts production-oriented', function (): void {
     $dockerfile = productionContractFile('Dockerfile.production');
+    $compose = productionContractFile('compose.production.yaml');
     $caddyfile = productionContractFile('docker/caddy/Caddyfile');
     $mysqlInit = productionContractFile('docker/mysql/init-users.sh');
     $dockerignore = productionContractFile('.dockerignore');
 
     expect($dockerfile)->toContain('--no-dev')
         ->and($dockerfile)->toContain('"php-fpm", "-F"')
+        ->and($dockerfile)->toContain('org.opencontainers.image.revision')
+        ->and($dockerfile)->toContain('org.opencontainers.image.migrations.manifest.sha256')
         ->and($dockerfile)->not->toContain('artisan serve')
         ->and($caddyfile)->toContain('redir https://{host}{uri} permanent')
         ->and($caddyfile)->toContain('tls {$CADDY_TLS_DIRECTIVE}')
@@ -94,6 +97,8 @@ it('keeps image, proxy and database contracts production-oriented', function ():
         ->and($mysqlInit)->toContain('GRANT ALL PRIVILEGES ON')
         ->and($dockerignore)->toContain('.env*')
         ->and($dockerignore)->toContain('vendor');
+
+    expect($compose)->toContain('MIGRATION_MANIFEST_SHA: ${MIGRATION_MANIFEST_SHA:?MIGRATION_MANIFEST_SHA must identify the release manifest}');
 });
 
 it('defaults media and local storage to private disks', function (): void {
@@ -115,6 +120,7 @@ it('keeps OPS-04 readiness, telemetry and operational probes versioned', functio
         fn (string $path): string => productionContractFile($path),
         [
             'scripts/ops/ops04-alert.sh',
+            'scripts/ops/ops04-alert-canary.sh',
             'scripts/ops/ops04-readiness.sh',
             'scripts/ops/ops04-backup-monitor.sh',
             'scripts/ops/ops04-error-scan.sh',
@@ -133,7 +139,12 @@ it('keeps OPS-04 readiness, telemetry and operational probes versioned', functio
         ->and($env)->toContain('OPS04_SCHEDULER_REQUIRED=true')
         ->and($env)->toContain('OPS04_ALERT_OWNER=REPLACE_WITH_HUMAN_OWNER')
         ->and($env)->toContain('OPS04_REMOTE_BACKUP_DESTINATION=REPLACE_WITH_REMOTE_DESTINATION')
-        ->and($env)->toContain('OPS04_REMOTE_BACKUP_CREDENTIAL=REPLACE_WITH_REMOTE_BACKUP_CREDENTIAL');
+        ->and($env)->toContain('OPS04_REMOTE_BACKUP_CREDENTIAL=REPLACE_WITH_REMOTE_BACKUP_CREDENTIAL')
+        ->and($env)->toContain('MIGRATION_MANIFEST_SHA=REPLACE_WITH_RELEASE_MIGRATION_MANIFEST_SHA256')
+        ->and($env)->toContain('OPS04_EXPECTED_RC_SHA=REPLACE_WITH_RELEASE_GIT_SHA')
+        ->and($env)->toContain('OPS04_EXPECTED_COMPOSE_PROJECT=ead2026-production')
+        ->and($env)->toContain('OPS04_BACKUP_MANIFEST_KEY=REPLACE_WITH_BACKUP_MANIFEST_SIGNING_KEY')
+        ->and($env)->toContain('OPS04_REMOTE_BACKUP_VERIFY_ADAPTER=REPLACE_WITH_REMOTE_BACKUP_VERIFY_ADAPTER');
 
     expect($e2eCompose)->toContain('.env.e2e')
         ->and($e2eCompose)->toContain('APP_KEY: ${APP_KEY:?APP_KEY must be provided for E2E}')
@@ -141,19 +152,20 @@ it('keeps OPS-04 readiness, telemetry and operational probes versioned', functio
         ->and($e2eEnv)->toContain('APP_ENV=e2e')
         ->and($e2eEnv)->toContain('DB_DISPOSABLE=e2e')
         ->and($e2eEnv)->toContain('APP_KEY=base64:REPLACE_WITH_E2E_ONLY_KEY')
-        ->and($scripts[2])->toContain('db_checksum')
-        ->and($scripts[2])->toContain('storage_checksum')
-        ->and($scripts[1])->toContain('readiness_payload')
-        ->and($scripts[1])->toContain('migration_manifest')
-        ->and($scripts[4])->toContain('readiness_payload')
-        ->and($scripts[4])->toContain('"status":"ready"')
-        ->and($scripts[4])->toContain('Resultado: [1-9][0-9]* passou, 0 falhou')
-        ->and($scripts[8])->toContain('alert webhook must use https');
+        ->and($scripts[1])->toContain('alert_delivery_canary')
+        ->and($scripts[3])->toContain('db_checksum')
+        ->and($scripts[3])->toContain('storage_checksum')
+        ->and($scripts[2])->toContain('readiness_payload')
+        ->and($scripts[2])->toContain('migration_manifest')
+        ->and($scripts[5])->toContain('readiness_payload')
+        ->and($scripts[5])->toContain('"status":"ready"')
+        ->and($scripts[5])->toContain('Resultado: [1-9][0-9]* passou, 0 falhou')
+        ->and($scripts[9])->toContain('alert webhook must use https');
 
-    expect($scripts[4])->toContain('env=e2e')
-        ->and($scripts[4])->toContain('disposable=e2e')
-        ->and($scripts[6])->toContain('REMOTE_BACKUP_EXTERNAL_BLOCKER')
-        ->and($scripts[7])->toContain('certificate_hostname_or_chain_invalid');
+    expect($scripts[5])->toContain('env=e2e')
+        ->and($scripts[5])->toContain('disposable=e2e')
+        ->and($scripts[7])->toContain('REMOTE_BACKUP_EXTERNAL_BLOCKER')
+        ->and($scripts[8])->toContain('certificate_hostname_or_chain_invalid');
 
     foreach ($scripts as $script) {
         expect($script)->toStartWith('#!/usr/bin/env bash')

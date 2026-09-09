@@ -3,15 +3,19 @@
 set -euo pipefail
 
 [[ "${OPS03_REHEARSAL:-}" == true ]] || { printf 'OPS-03 readiness requires OPS03_REHEARSAL=true\n' >&2; exit 1; }
-[[ "${COMPOSE_PROJECT_NAME:-}" == *ops03* ]] || { printf 'OPS-03 readiness requires an ops03 Compose project\n' >&2; exit 1; }
-[[ -n "${PRODUCTION_STORAGE_VOLUME:-}" ]] || { printf 'OPS-03 readiness requires the storage volume name\n' >&2; exit 1; }
+[[ "${COMPOSE_PROJECT_NAME:-}" == ead2026-ops03 ]] || { printf 'OPS-03 readiness requires the canonical disposable Compose project\n' >&2; exit 1; }
+[[ "${PRODUCTION_STORAGE_VOLUME:-}" == ead2026-ops03-storage ]] || { printf 'OPS-03 readiness requires the canonical disposable storage volume\n' >&2; exit 1; }
 
 compose_file="${COMPOSE_FILE:-compose.production.yaml}"
 compose_env_args=()
 if [[ -n "${OPS03_ENV_FILE:-}" ]]; then
     compose_env_args+=(--env-file "$OPS03_ENV_FILE")
 fi
-docker volume inspect "$PRODUCTION_STORAGE_VOLUME" >/dev/null
+volume_identity="$(docker volume inspect --format '{{.Name}}|{{index .Labels \"com.docker.compose.project\"}}|{{index .Labels \"com.docker.compose.volume\"}}' "$PRODUCTION_STORAGE_VOLUME" 2>/dev/null)"
+[[ "$volume_identity" == "ead2026-ops03-storage|ead2026-ops03|production_storage" ]] || {
+    printf 'OPS-03 readiness storage volume identity is unsafe\n' >&2
+    exit 1
+}
 
 docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" ps --status running --services | grep -qx db
 docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" ps --status running --services | grep -qx app

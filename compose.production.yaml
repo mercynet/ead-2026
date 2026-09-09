@@ -8,6 +8,7 @@ services:
             target: app
             args:
                 APP_BUILD_SHA: ${APP_BUILD_SHA:?APP_BUILD_SHA must identify the release}
+                MIGRATION_MANIFEST_SHA: ${MIGRATION_MANIFEST_SHA:?MIGRATION_MANIFEST_SHA must identify the release manifest}
         image: ${APP_IMAGE:-ead2026/app}:${APP_BUILD_SHA:?APP_BUILD_SHA must identify the release}
         restart: unless-stopped
         expose:
@@ -70,6 +71,7 @@ services:
             target: web
             args:
                 APP_BUILD_SHA: ${APP_BUILD_SHA:?APP_BUILD_SHA must identify the release}
+                MIGRATION_MANIFEST_SHA: ${MIGRATION_MANIFEST_SHA:?MIGRATION_MANIFEST_SHA must identify the release manifest}
         image: ${WEB_IMAGE:-ead2026/web}:${APP_BUILD_SHA:?APP_BUILD_SHA must identify the release}
         restart: unless-stopped
         environment:

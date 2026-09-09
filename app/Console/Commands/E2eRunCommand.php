@@ -58,6 +58,9 @@ class E2eRunCommand extends Command
 
     private bool $aborted = false;
 
+    /** @var array<string, int> */
+    private array $baselineTableCounts = [];
+
     public function __construct(
         private readonly DestructiveDatabaseGuard $databaseGuard,
         private readonly FreshDatabaseRefresher $databaseRefresher,
@@ -123,6 +126,9 @@ class E2eRunCommand extends Command
             return self::FAILURE;
         }
 
+        $this->prepareRbac();
+        $this->baselineTableCounts = $this->databaseTableCounts();
+
         $this->components->info("E2E: {$spec['endpoint']}  →  {$base}");
 
         try {
@@ -164,6 +170,7 @@ class E2eRunCommand extends Command
                 $this->warn('--keep: fixtures efêmeras mantidas no banco.');
             } else {
                 $this->teardownFixtures();
+                $this->assertDatabaseRestored();
             }
         }
 
@@ -212,14 +219,6 @@ class E2eRunCommand extends Command
 
     private function bootFixtures(): void
     {
-        if (! Role::query()->where('name', 'admin')->exists()) {
-            $this->components->task('seed permissions + roles', function (): void {
-                (new PermissionsSeeder)->run();
-                (new RolesSeeder)->run();
-            });
-        }
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
-
         $suffix = bin2hex(random_bytes(8));
 
         $primary = Tenant::query()->create([
@@ -256,6 +255,17 @@ class E2eRunCommand extends Command
             'tokens' => $tokens,
             'fixtures' => [],
         ];
+    }
+
+    private function prepareRbac(): void
+    {
+        if (! Role::query()->where('name', 'admin')->exists()) {
+            $this->components->task('seed permissions + roles', function (): void {
+                (new PermissionsSeeder)->run();
+                (new RolesSeeder)->run();
+            });
+        }
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     private function makeUser(?int $tenantId, UserType $type, string $role, string $email): User
@@ -571,5 +581,49 @@ class E2eRunCommand extends Command
                 });
             })
             ->delete();
+    }
+
+    /**
+     * Snapshot only row counts; the command never emits row contents or PII.
+     *
+     * @return array<string, int>
+     */
+    private function databaseTableCounts(): array
+    {
+        $counts = [];
+        $schema = DB::connection()->getSchemaBuilder();
+
+        foreach ($schema->getTableListing(null, false) as $table) {
+            $counts[$table] = (int) DB::table($table)->count();
+        }
+
+        ksort($counts);
+
+        return $counts;
+    }
+
+    private function assertDatabaseRestored(): void
+    {
+        try {
+            $currentCounts = $this->databaseTableCounts();
+            $changed = [];
+
+            foreach (array_unique([...array_keys($this->baselineTableCounts), ...array_keys($currentCounts)]) as $table) {
+                $before = $this->baselineTableCounts[$table] ?? 0;
+                $after = $currentCounts[$table] ?? 0;
+
+                if ($before !== $after) {
+                    $changed[$table] = ['before' => $before, 'after' => $after];
+                }
+            }
+
+            if ($changed !== []) {
+                $this->error('teardown deixou resíduo no banco: '.json_encode($changed, JSON_THROW_ON_ERROR));
+                $this->failed++;
+            }
+        } catch (Throwable $e) {
+            $this->error('não foi possível verificar o snapshot do banco: '.$this->sanitize($e->getMessage()));
+            $this->failed++;
+        }
     }
 }

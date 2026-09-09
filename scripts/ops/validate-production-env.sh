@@ -33,13 +33,15 @@ reject_weak_secret() {
     esac
 }
 
-for key in APP_ENV APP_KEY APP_BUILD_SHA APP_DOMAIN APP_URL TRUSTED_PROXIES TRUSTED_HOSTS \
+for key in APP_ENV APP_KEY APP_BUILD_SHA MIGRATION_MANIFEST_SHA APP_DOMAIN APP_URL TRUSTED_PROXIES TRUSTED_HOSTS \
     DB_DATABASE DB_ADMIN_PASSWORD DB_BOOTSTRAP_USERNAME DB_BOOTSTRAP_PASSWORD \
     DB_RUNTIME_USERNAME DB_RUNTIME_PASSWORD \
     DB_MIGRATION_USERNAME DB_MIGRATION_PASSWORD FILESYSTEM_DISK MEDIA_DISK \
     MAIL_MAILER MAIL_HOST MAIL_PORT MAIL_FROM_ADDRESS CORS_ALLOWED_ORIGINS CADDY_TLS_DIRECTIVE \
     OPS04_ALERT_OWNER OPS04_ALERT_CHANNEL OPS04_REMOTE_BACKUP_DESTINATION \
-    OPS04_REMOTE_BACKUP_CREDENTIAL; do
+    OPS04_REMOTE_BACKUP_CREDENTIAL OPS04_EXPECTED_RC_SHA OPS04_EXPECTED_COMPOSE_PROJECT \
+    OPS04_EXPECTED_DB_DATABASE OPS04_EXPECTED_STORAGE_VOLUME OPS04_BACKUP_MANIFEST_KEY \
+    OPS04_REMOTE_BACKUP_ADAPTER OPS04_REMOTE_BACKUP_VERIFY_ADAPTER; do
     require_nonempty "$key"
 done
 
@@ -50,6 +52,8 @@ case "$(value APP_ENV)" in
 esac
 [[ "$(value APP_DEBUG)" == false ]] || { printf 'APP_DEBUG must be false\n' >&2; exit 1; }
 [[ "$(value APP_URL)" == https://* ]] || { printf 'APP_URL must use https\n' >&2; exit 1; }
+[[ "$(value APP_BUILD_SHA)" =~ ^[a-f0-9]{40}$ ]] || { printf 'APP_BUILD_SHA must be the full release SHA\n' >&2; exit 1; }
+[[ "$(value MIGRATION_MANIFEST_SHA)" != *REPLACE_WITH_* && "$(value MIGRATION_MANIFEST_SHA)" =~ ^[a-f0-9]{64}$ ]] || { printf 'migration manifest SHA is not provisioned\n' >&2; exit 1; }
 app_key="$(value APP_KEY)"
 [[ "$app_key" == base64:* ]] || { printf 'APP_KEY must be a base64 Laravel key\n' >&2; exit 1; }
 app_key_payload="${app_key#base64:}"
@@ -62,10 +66,17 @@ app_key_bytes="$(printf '%s' "$app_key_payload" | base64 --decode 2>/dev/null | 
 [[ "$(value DB_RUNTIME_USERNAME)" != "$(value DB_MIGRATION_USERNAME)" ]] || { printf 'runtime and migration DB users must differ\n' >&2; exit 1; }
 [[ "$(value DB_RUNTIME_USERNAME)" != "$(value DB_BOOTSTRAP_USERNAME)" ]] || { printf 'runtime and bootstrap DB users must differ\n' >&2; exit 1; }
 [[ "$(value DB_DATABASE)" != testing && "$(value DB_DATABASE)" != *e2e* ]] || { printf 'production DB name cannot be testing/e2e\n' >&2; exit 1; }
+[[ "$(value PRODUCTION_DB_VOLUME)" != *REPLACE_WITH_* && "$(value PRODUCTION_STORAGE_VOLUME)" != *REPLACE_WITH_* && "$(value PRODUCTION_CACHE_VOLUME)" != *REPLACE_WITH_* ]] || { printf 'production volume names must be provisioned\n' >&2; exit 1; }
 [[ "$(value CORS_ALLOWED_ORIGINS)" != *\** ]] || { printf 'CORS origin wildcard is forbidden\n' >&2; exit 1; }
 [[ "$(value OPS04_ALERT_OWNER)" != *REPLACE_WITH_* ]] || { printf 'alert owner placeholder remains\n' >&2; exit 1; }
 [[ "$(value OPS04_REMOTE_BACKUP_DESTINATION)" != *REPLACE_WITH_* ]] || { printf 'remote backup destination placeholder remains\n' >&2; exit 1; }
 [[ "$(value OPS04_REMOTE_BACKUP_CREDENTIAL)" != *REPLACE_WITH_* ]] || { printf 'remote backup credential placeholder remains\n' >&2; exit 1; }
+[[ "$(value OPS04_EXPECTED_RC_SHA)" != *REPLACE_WITH_* && "$(value OPS04_EXPECTED_RC_SHA)" =~ ^[0-9a-f]{7,40}$ ]] || { printf 'expected release SHA is not provisioned\n' >&2; exit 1; }
+[[ "$(value OPS04_EXPECTED_COMPOSE_PROJECT)" =~ ^[A-Za-z0-9._-]+$ ]] || { printf 'expected Compose project is invalid\n' >&2; exit 1; }
+[[ "$(value OPS04_EXPECTED_DB_DATABASE)" =~ ^[A-Za-z0-9_]+$ ]] || { printf 'expected database identity is invalid\n' >&2; exit 1; }
+[[ "$(value OPS04_EXPECTED_STORAGE_VOLUME)" =~ ^[A-Za-z0-9._-]+$ ]] || { printf 'expected storage volume identity is invalid\n' >&2; exit 1; }
+[[ "$(value OPS04_BACKUP_MANIFEST_KEY)" != *REPLACE_WITH_* ]] || { printf 'backup manifest signing key placeholder remains\n' >&2; exit 1; }
+[[ "$(value OPS04_REMOTE_BACKUP_ADAPTER)" != *REPLACE_WITH_* && "$(value OPS04_REMOTE_BACKUP_VERIFY_ADAPTER)" != *REPLACE_WITH_* ]] || { printf 'remote backup adapters are not provisioned\n' >&2; exit 1; }
 [[ "$(value OPS04_ALERT_CHANNEL)" =~ ^[A-Za-z0-9._:/ -]+$ ]] || { printf 'alert channel contains unsafe characters\n' >&2; exit 1; }
 for secret_key in DB_ADMIN_PASSWORD DB_BOOTSTRAP_PASSWORD DB_RUNTIME_PASSWORD DB_MIGRATION_PASSWORD OPS04_REMOTE_BACKUP_CREDENTIAL; do
     reject_weak_secret "$secret_key"

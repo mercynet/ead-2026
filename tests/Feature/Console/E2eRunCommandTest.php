@@ -34,6 +34,15 @@ it('returns zero when cleanup succeeds and no case fails', function (): void {
     ])->assertExitCode(0);
 });
 
+it('returns a non-zero exit code when a spec leaves an untracked fixture behind', function (): void {
+    Http::fake(['*' => Http::response(['data' => ['ok' => true]], 200)]);
+
+    $this->artisan('e2e:run', [
+        'spec' => '_fixtures/residue',
+        '--base' => 'http://e2e.test',
+    ])->assertExitCode(1);
+});
+
 it('continues after a successful fresh migration', function (): void {
     $freshener = Mockery::mock(FreshDatabaseRefresher::class);
     $freshener->shouldReceive('refresh')->once()->andReturnTrue();

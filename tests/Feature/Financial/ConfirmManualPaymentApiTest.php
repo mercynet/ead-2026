@@ -12,7 +12,8 @@ use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\Enrollment;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\DatabaseManager;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Event;
 use Spatie\Activitylog\Models\Activity;
 
 function pendingManualCashOrder(Tenant $tenant): array
@@ -241,11 +242,11 @@ it('keeps paid payment and pending outbox when publish fails, then recovers enro
     $failingDispatcher->shouldReceive('dispatch')->once()->andThrow(new RuntimeException('Listener failed with raw secret.'));
     app()->instance(OrderPaidOutboxService::class, new OrderPaidOutboxService(app(DatabaseManager::class), $failingDispatcher));
     $loggedContext = [];
-    Log::shouldReceive('warning')->once()->with('OrderPaid outbox publish failed.', Mockery::on(function (array $context) use (&$loggedContext): bool {
-        $loggedContext = $context;
-
-        return true;
-    }));
+    Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$loggedContext): void {
+        if ($event->level === 'warning' && $event->message === 'OrderPaid outbox publish failed.') {
+            $loggedContext = $event->context;
+        }
+    });
 
     $this->postJson("/api/v1/admin/orders/{$order->id}/confirm-manual-payment", [], $headers)
         ->assertSuccessful()
@@ -258,7 +259,7 @@ it('keeps paid payment and pending outbox when publish fails, then recovers enro
         ->and($outbox->dispatched_at)->toBeNull()
         ->and($outbox->attempt_count)->toBe(1)
         ->and($outbox->last_error_class)->toBe(RuntimeException::class)
-        ->and($loggedContext)->toBe(['order_id' => $order->id, 'outbox_id' => $outbox->id, 'exception_class' => RuntimeException::class])
+        ->and($loggedContext)->toMatchArray(['order_id' => $order->id, 'outbox_id' => $outbox->id, 'exception_class' => RuntimeException::class])
         ->and(json_encode($loggedContext))->not->toContain('secret');
 
     $recovery = new OrderPaidOutboxService(app(DatabaseManager::class), app(Dispatcher::class));

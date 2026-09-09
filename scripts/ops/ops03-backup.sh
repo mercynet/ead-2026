@@ -7,17 +7,42 @@ require_rehearsal() {
         printf 'OPS-03 backup requires OPS03_REHEARSAL=true\n' >&2
         exit 1
     }
-    [[ "${COMPOSE_PROJECT_NAME:-}" == *ops03* ]] || {
-        printf 'OPS-03 backup requires an ops03 Compose project\n' >&2
+    [[ "${COMPOSE_PROJECT_NAME:-}" == ead2026-ops03 ]] || {
+        printf 'OPS-03 backup requires the canonical disposable Compose project\n' >&2
         exit 1
     }
-    [[ "${DB_DATABASE:-}" == *ops03* ]] || {
-        printf 'OPS-03 backup requires an ops03 database name\n' >&2
+    [[ "${DB_DATABASE:-}" == ead2026_ops03 ]] || {
+        printf 'OPS-03 backup requires the canonical disposable database name\n' >&2
+        exit 1
+    }
+    [[ "${PRODUCTION_STORAGE_VOLUME:-}" == ead2026-ops03-storage ]] || {
+        printf 'OPS-03 backup requires the canonical disposable storage volume\n' >&2
+        exit 1
+    }
+    [[ "${APP_BUILD_SHA:-}" =~ ^[0-9a-f]{7,40}$ ]] || {
+        printf 'OPS-03 backup requires APP_BUILD_SHA provenance\n' >&2
+        exit 1
+    }
+    [[ -n "${OPS04_BACKUP_MANIFEST_KEY:-}" && "${OPS04_BACKUP_MANIFEST_KEY}" != *REPLACE_WITH_* ]] || {
+        printf 'OPS-03 backup requires a manifest signing key\n' >&2
         exit 1
     }
 }
 
 require_rehearsal
+
+for volume_identity in \
+    'ead2026-ops03-db|production_db_data' \
+    'ead2026-ops03-storage|production_storage' \
+    'ead2026-ops03-cache|production_cache'; do
+    volume_name="${volume_identity%%|*}"
+    compose_volume="${volume_identity##*|}"
+    inspected="$(docker volume inspect --format '{{.Name}}|{{index .Labels \"com.docker.compose.project\"}}|{{index .Labels \"com.docker.compose.volume\"}}' "$volume_name" 2>/dev/null || true)"
+    [[ "$inspected" == "$volume_name|ead2026-ops03|$compose_volume" ]] || {
+        printf 'disposable volume identity is unsafe: %s\n' "$volume_name" >&2
+        exit 1
+    }
+done
 
 backup_root="${1:-/tmp/ead2026-ops03-backups}"
 compose_file="${COMPOSE_FILE:-compose.production.yaml}"
@@ -42,10 +67,16 @@ write_manifest() {
         printf 'timestamp_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
         printf 'rc_sha=%s\n' "${APP_BUILD_SHA:-unknown}"
         printf 'migration_count=%s\n' "$expected_migrations"
+        printf 'producer=ops03-backup-v2\n'
+        printf 'compose_project=%s\n' "$COMPOSE_PROJECT_NAME"
+        printf 'database=%s\n' "$DB_DATABASE"
+        printf 'storage_volume=%s\n' "$PRODUCTION_STORAGE_VOLUME"
         printf 'db_checksum=%s\n' "${db_checksum:-}" 
         printf 'storage_checksum=%s\n' "${storage_checksum:-}"
         printf 'error=%s\n' "$error_message"
     } > "$manifest"
+    manifest_signature="$({ cat "$manifest"; printf 'manifest_key=%s\n' "$OPS04_BACKUP_MANIFEST_KEY"; } | sha256sum | awk '{print $1}')"
+    printf 'manifest_signature=%s\n' "$manifest_signature" >> "$manifest"
 }
 
 fail_backup() {

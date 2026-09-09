@@ -27,9 +27,11 @@ RUN composer dump-autoload \
 FROM php:8.4-fpm-bookworm AS app
 
 ARG APP_BUILD_SHA=unknown
+ARG MIGRATION_MANIFEST_SHA=unknown
 
 LABEL org.opencontainers.image.title="Sistema de EAD API" \
-    org.opencontainers.image.revision="$APP_BUILD_SHA"
+    org.opencontainers.image.revision="$APP_BUILD_SHA" \
+    org.opencontainers.image.migrations.manifest.sha256="$MIGRATION_MANIFEST_SHA"
 
 ENV APP_BUILD_SHA="$APP_BUILD_SHA" \
     APP_RUNTIME_IMAGE="production"
@@ -72,6 +74,13 @@ EXPOSE 9000
 CMD ["php-fpm", "-F"]
 
 FROM caddy:2.9-alpine AS web
+
+ARG APP_BUILD_SHA=unknown
+ARG MIGRATION_MANIFEST_SHA=unknown
+
+LABEL org.opencontainers.image.title="Sistema de EAD API web" \
+    org.opencontainers.image.revision="$APP_BUILD_SHA" \
+    org.opencontainers.image.migrations.manifest.sha256="$MIGRATION_MANIFEST_SHA"
 
 COPY --from=app /var/www/html/public /srv/public
 COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile

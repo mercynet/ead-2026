@@ -47,6 +47,35 @@ print_gate() {
     printf 'gate=%s command=%s\n' "$1" "$2"
 }
 
+run_gate() {
+    local output_file="$1"
+    local expected_pattern="$2"
+    local gate_name="$3"
+    shift 3
+
+    if ! "$@" >"$output_file" 2>&1; then
+        sed -n '1,240p' "$output_file" >&2
+        printf 'gate=%s status=FAIL\n' "$gate_name" >&2
+        exit 1
+    fi
+    if ! grep -Eq "$expected_pattern" "$output_file"; then
+        sed -n '1,240p' "$output_file" >&2
+        printf 'gate=%s status=FAIL reason=unexpected_output\n' "$gate_name" >&2
+        exit 1
+    fi
+    sed -n '1,240p' "$output_file"
+}
+
+scribe_docs_hash() {
+    local docs_dir="$1"
+
+    find "$docs_dir" -type f ! -name '.release-identity' -print0 \
+        | sort -z \
+        | xargs -0r sha256sum \
+        | sha256sum \
+        | awk '{print $1}'
+}
+
 if [[ "$mode" == dry-run ]]; then
     printf 'paid_pilot_activation=DRY_RUN\n'
     printf 'mutation=none\n'
@@ -59,10 +88,12 @@ if [[ "$mode" == dry-run ]]; then
     else
         print_external_pending "env_file:$env_file"
     fi
-    print_gate verify-rc "APP_BUILD_SHA from env + git provenance when checkout is available"
+    print_gate verify-rc "HEAD, clean checkout, image labels and digests bound to APP_BUILD_SHA"
     print_gate destructive-guards "explicit PAID_PILOT_ALLOW_MUTATION and PAID_PILOT_ACTIVATION_CONFIRM"
     print_gate backup-prerequisite "$script_dir/ops04-backup-monitor.sh"
     print_gate remote-backup "$script_dir/ops04-remote-backup.sh <latest-local-backup>"
+    print_gate alert-delivery "$script_dir/ops04-alert-canary.sh"
+    print_gate scribe "composer docs + content hash bound to APP_BUILD_SHA"
     print_gate migration "docker compose --env-file <env> -f <compose> -p <project> run --rm app php artisan ops:migrate --force --no-interaction"
     print_gate services "docker compose ... up -d db app scheduler web"
     print_gate readiness "$script_dir/ops04-readiness.sh"
@@ -104,16 +135,33 @@ set -u
     printf 'APP_BUILD_SHA must be a git SHA\n' >&2
     exit 1
 }
+[[ "${APP_BUILD_SHA}" =~ ^[0-9a-f]{40}$ ]] || {
+    printf 'APP_BUILD_SHA must be the full 40-character release SHA\n' >&2
+    exit 1
+}
 [[ "${APP_DOMAIN:-}" =~ ^[A-Za-z0-9.-]+$ ]] || {
     printf 'APP_DOMAIN must be a safe hostname for the receipt\n' >&2
     exit 1
 }
 
 if git -C "$repo_root" rev-parse --git-dir >/dev/null 2>&1; then
-    git -C "$repo_root" cat-file -e "${APP_BUILD_SHA}^{commit}" || {
+    release_sha="$(git -C "$repo_root" rev-parse "${APP_BUILD_SHA}^{commit}" 2>/dev/null || true)"
+    head_sha="$(git -C "$repo_root" rev-parse HEAD)"
+    [[ "$release_sha" == "$head_sha" ]] || {
+        printf 'release SHA must equal the checked-out HEAD\n' >&2
+        exit 1
+    }
+    [[ -z "$(git -C "$repo_root" status --porcelain --untracked-files=all)" ]] || {
+        printf 'release checkout must be clean before activation\n' >&2
+        exit 1
+    }
+    [[ -n "$release_sha" ]] || {
         printf 'release SHA is not present in the checkout\n' >&2
         exit 1
     }
+else
+    printf 'release checkout provenance is unavailable\n' >&2
+    exit 1
 fi
 
 compose_file="${COMPOSE_FILE:-compose.production.yaml}"
@@ -122,6 +170,77 @@ compose_env=(--env-file "$env_file")
 compose=(docker compose "${compose_env[@]}" -f "$compose_file" -p "$compose_project")
 temp_dir="$(mktemp -d)"
 trap 'rm -rf "$temp_dir"' EXIT
+
+[[ "${MIGRATION_MANIFEST_SHA:-}" =~ ^[a-f0-9]{64}$ ]] || {
+    printf 'MIGRATION_MANIFEST_SHA must be a SHA-256 release identity\n' >&2
+    exit 1
+}
+release_manifest="$repo_root/release/migrations.manifest.json"
+[[ -s "$release_manifest" ]] || {
+    printf 'release migration manifest is missing from the checkout\n' >&2
+    exit 1
+}
+[[ "$(sha256sum "$release_manifest" | awk '{print $1}')" == "$MIGRATION_MANIFEST_SHA" ]] || {
+    printf 'release migration manifest hash does not match the env identity\n' >&2
+    exit 1
+}
+[[ "${OPS04_EXPECTED_RC_SHA:-}" == "$APP_BUILD_SHA" ]] || {
+    printf 'backup monitor expected RC SHA must match APP_BUILD_SHA\n' >&2
+    exit 1
+}
+[[ "${OPS04_EXPECTED_COMPOSE_PROJECT:-}" == "$compose_project" ]] || {
+    printf 'backup monitor expected Compose project must match activation\n' >&2
+    exit 1
+}
+[[ "${OPS04_EXPECTED_DB_DATABASE:-}" == "${DB_DATABASE}" ]] || {
+    printf 'backup monitor expected database must match activation\n' >&2
+    exit 1
+}
+[[ "${OPS04_EXPECTED_STORAGE_VOLUME:-}" == "${PRODUCTION_STORAGE_VOLUME}" ]] || {
+    printf 'backup monitor expected storage volume must match activation\n' >&2
+    exit 1
+}
+
+"${compose[@]}" config --quiet
+
+app_image="${APP_IMAGE:-ead2026/app}:${APP_BUILD_SHA}"
+web_image="${WEB_IMAGE:-ead2026/web}:${APP_BUILD_SHA}"
+app_identity="$(docker image inspect "$app_image" --format '{{.Id}}|{{index .Config.Labels "org.opencontainers.image.revision"}}|{{index .Config.Labels "org.opencontainers.image.migrations.manifest.sha256"}}')"
+web_identity="$(docker image inspect "$web_image" --format '{{.Id}}|{{index .Config.Labels "org.opencontainers.image.revision"}}|{{index .Config.Labels "org.opencontainers.image.migrations.manifest.sha256"}}')"
+IFS='|' read -r app_digest app_revision app_manifest_sha <<<"$app_identity"
+IFS='|' read -r web_digest web_revision web_manifest_sha <<<"$web_identity"
+[[ "$app_digest" =~ ^sha256:[a-f0-9]{64}$ && "$web_digest" =~ ^sha256:[a-f0-9]{64}$ ]] || {
+    printf 'release images do not expose immutable digests\n' >&2
+    exit 1
+}
+[[ "$app_revision" == "$APP_BUILD_SHA" && "$web_revision" == "$APP_BUILD_SHA" ]] || {
+    printf 'release image revision labels do not match APP_BUILD_SHA\n' >&2
+    exit 1
+}
+[[ "$app_manifest_sha" == "$MIGRATION_MANIFEST_SHA" && "$web_manifest_sha" == "$MIGRATION_MANIFEST_SHA" ]] || {
+    printf 'release image migration manifest labels do not match the release manifest\n' >&2
+    exit 1
+}
+
+scribe_docs_dir="${PAID_PILOT_SCRIBE_DOCS_DIR:-$repo_root/public/docs}"
+if [[ -x "$repo_root/vendor/bin/sail" ]]; then
+    (cd "$repo_root" && ./vendor/bin/sail composer docs)
+elif command -v composer >/dev/null 2>&1; then
+    (cd "$repo_root" && composer docs)
+else
+    printf 'Scribe generator is not available in the release checkout\n' >&2
+    exit 1
+fi
+[[ -s "$scribe_docs_dir/collection.json" ]] || {
+    printf 'Scribe collection was not generated\n' >&2
+    exit 1
+}
+scribe_hash="$(scribe_docs_hash "$scribe_docs_dir")"
+printf '%s\n' "$APP_BUILD_SHA" > "$scribe_docs_dir/.release-identity"
+[[ -z "$(git -C "$repo_root" status --porcelain --untracked-files=all)" ]] || {
+    printf 'Scribe generation changed tracked release files\n' >&2
+    exit 1
+}
 
 support_owner="${PAID_PILOT_SUPPORT_OWNER_ID:-}"
 human_approval="${PAID_PILOT_HUMAN_APPROVAL_REF:-}"
@@ -141,20 +260,42 @@ backup_root="${OPS04_BACKUP_ROOT:-}"
     exit 1
 }
 export OPS04_BACKUP_ROOT="$backup_root"
-"$script_dir/ops04-backup-monitor.sh"
+run_gate "$temp_dir/backup-monitor.txt" '^backup_monitor=PASS ' backup-monitor "$script_dir/ops04-backup-monitor.sh"
 latest_manifest="$(find "$backup_root" -type f -name manifest.txt -print0 | xargs -0r ls -1t | head -n 1)"
 [[ -n "$latest_manifest" ]] || { printf 'latest backup manifest not found\n' >&2; exit 1; }
 latest_backup_dir="$(dirname "$latest_manifest")"
-"$script_dir/ops04-remote-backup.sh" "$latest_backup_dir"
+run_gate "$temp_dir/remote-backup.txt" '^remote_backup=PASS ' remote-backup "$script_dir/ops04-remote-backup.sh" "$latest_backup_dir"
+run_gate "$temp_dir/alert-delivery.txt" '^alert_delivery_canary=PASS ' alert-delivery "$script_dir/ops04-alert-canary.sh"
 
-"${compose[@]}" exec -T app php artisan ops:migrate --manifest-only --no-interaction > "$temp_dir/migration-manifest.txt"
-migration_manifest_hash="$(sha256sum "$temp_dir/migration-manifest.txt" | awk '{print $1}')"
-"${compose[@]}" run --rm app php artisan ops:migrate --force --no-interaction
-"${compose[@]}" up -d db app scheduler web
-"$script_dir/ops04-readiness.sh"
-"$script_dir/ops04-deploy-observe.sh"
-"$script_dir/ops04-domain-tls.sh" live
-"$script_dir/ops04-synthetic.sh"
+"${compose[@]}" up -d db app
+run_gate "$temp_dir/migration-manifest.txt" '^migration_manifest=PASS$' migration-manifest \
+    "${compose[@]}" exec -T app php artisan ops:migrate --manifest-only --no-interaction
+migration_manifest_hash="$("${compose[@]}" exec -T app sha256sum /var/www/html/release/migrations.manifest.json | awk '{print $1}')"
+[[ "$migration_manifest_hash" == "$MIGRATION_MANIFEST_SHA" ]] || {
+    printf 'runtime migration manifest is not the release manifest\n' >&2
+    exit 1
+}
+"${compose[@]}" run --rm --env-from-file "$env_file" app sh -c 'DB_USERNAME="$DB_MIGRATION_USERNAME" DB_PASSWORD="$DB_MIGRATION_PASSWORD" php artisan ops:migrate --force --no-interaction'
+"${compose[@]}" up -d scheduler web
+run_gate "$temp_dir/readiness.txt" '^readiness_probe=PASS ' readiness "$script_dir/ops04-readiness.sh"
+run_gate "$temp_dir/observability.txt" '^deploy_observability=PASS$' observability "$script_dir/ops04-deploy-observe.sh"
+run_gate "$temp_dir/domain-tls.txt" '^domain_tls=PASS ' domain-tls "$script_dir/ops04-domain-tls.sh" live
+run_gate "$temp_dir/synthetic.txt" '^synthetic=PASS ' synthetic "$script_dir/ops04-synthetic.sh"
+
+readiness_status="$(sed -n 's/^readiness_probe=//p' "$temp_dir/readiness.txt" | head -n 1)"
+observability_status="$(sed -n 's/^deploy_observability=//p' "$temp_dir/observability.txt" | head -n 1)"
+remote_backup_status="$(sed -n 's/^remote_backup=\([^ ]*\).*/\1/p' "$temp_dir/remote-backup.txt" | head -n 1)"
+alert_delivery_status="$(sed -n 's/^alert_delivery_canary=\([^ ]*\).*/\1/p' "$temp_dir/alert-delivery.txt" | head -n 1)"
+tls_status="$(sed -n 's/^domain_tls=\([^ ]*\).*/\1/p' "$temp_dir/domain-tls.txt" | head -n 1)"
+synthetic_status="$(sed -n 's/^synthetic=\([^ ]*\).*/\1/p' "$temp_dir/synthetic.txt" | head -n 1)"
+scheduler_status="$(sed -n 's/^scheduler=\([^ ]*\).*/\1/p' "$temp_dir/readiness.txt" | head -n 1)"
+[[ "$readiness_status" == PASS && "$observability_status" == PASS && "$remote_backup_status" == PASS \
+    && "$alert_delivery_status" == PASS && "$tls_status" == PASS && "$synthetic_status" == PASS \
+    && "$scheduler_status" == required-and-running ]] || {
+    printf 'activation gates did not produce a complete PASS set\n' >&2
+    exit 1
+}
+final_verdict=PASS
 
 receipt_file="${receipt_file:-$repo_root/paid-pilot-activation-receipt.json}"
 mkdir -p "$(dirname "$receipt_file")"
@@ -163,21 +304,27 @@ cat > "$receipt_file" <<EOF
 {
   "timestamp_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "rc_sha": "${APP_BUILD_SHA}",
+  "head_sha": "${head_sha}",
+  "app_image_digest": "${app_digest}",
+  "web_image_digest": "${web_digest}",
+  "app_image_revision": "${app_revision}",
+  "web_image_revision": "${web_revision}",
   "migration_manifest_sha256": "${migration_manifest_hash}",
+  "scribe_docs_sha256": "${scribe_hash}",
   "environment_identity": "${APP_DOMAIN}",
   "environment": "${APP_ENV}",
-  "readiness": "PASS",
+  "readiness": "${readiness_status}",
   "backup_reference": "${backup_reference}",
   "restore_reference": "${restore_reference}",
-  "remote_backup": "PASS",
-  "tls": "PASS",
-  "synthetic": "PASS",
-  "alert_channel_configured": "yes",
-  "scheduler": "PASS",
+  "remote_backup": "${remote_backup_status}",
+  "tls": "${tls_status}",
+  "synthetic": "${synthetic_status}",
+  "alert_channel_configured": "${alert_delivery_status}",
+  "scheduler": "${scheduler_status}",
   "support_owner_id": "${support_owner}",
   "rpo_rto_accepted": "${PAID_PILOT_RPO_RTO_ACCEPTED:-no}",
   "human_approval_reference": "${human_approval}",
-  "final_verdict": "PASS"
+  "final_verdict": "${final_verdict}"
 }
 EOF
 printf 'paid_pilot_activation=PASS\nreceipt=%s\n' "$receipt_file"

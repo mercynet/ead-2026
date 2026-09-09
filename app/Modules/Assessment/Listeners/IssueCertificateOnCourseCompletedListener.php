@@ -22,7 +22,7 @@ class IssueCertificateOnCourseCompletedListener
                 'tenant_id' => $event->enrollment->tenant_id,
                 'enrollment_id' => $event->enrollment->id,
                 'course_id' => $event->course->id,
-                'exception' => $exception,
+                'exception_class' => $exception::class,
             ]);
         }
     }

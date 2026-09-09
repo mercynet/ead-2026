@@ -158,7 +158,7 @@ Smoke comercial pós-restore/deploy passou em MZRT provisioning + entitlements (
 
 ## 25. Commits
 
-Commit local de encerramento: `901435e` (`feat(ops): rehearse backup restore deploy and rollback`), contendo as correções, automação, relatório e state. Não houve push nem tag de release.
+Commit funcional local de encerramento: `887ac94` (`feat(ops): rehearse backup restore deploy and rollback`), contendo as correções e automação. O checkpoint documental segue localmente; não houve push nem tag de release.
 
 ## 26. Remaining Blockers
 

@@ -23,7 +23,8 @@ backup/storage, SMTP e decisão `MediaProvider` permanecem abertos.
 
 ## Último commit
 
-HEAD local: `901435e` em `main`, commit local do OPS-03; não houve push nem tag.
+Último commit funcional local do OPS-03: `887ac94` em `main`; um checkpoint documental seguirá
+este commit. Não houve push nem tag.
 
 ## Evidência atual
 

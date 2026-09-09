@@ -58,6 +58,7 @@ COPY . .
 
 RUN rm -f config/scribe.php \
     && php artisan package:discover --ansi \
+    && php artisan ops:migrate --write-manifest --manifest=release/migrations.manifest.json --no-interaction \
     && mkdir -p storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && find storage bootstrap/cache -type d -exec chmod 0700 {} \; \

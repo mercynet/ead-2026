@@ -25,7 +25,6 @@ compose_env_args=()
 if [[ -n "${OPS03_ENV_FILE:-}" ]]; then
     compose_env_args+=(--env-file "$OPS03_ENV_FILE")
 fi
-expected_migrations="${OPS03_EXPECTED_MIGRATIONS:-73}"
 backup_id="$(date -u +%Y%m%dT%H%M%SZ)-${RANDOM}"
 partial_dir="${backup_root}/${backup_id}.partial"
 backup_dir="${backup_root}/${backup_id}"
@@ -62,6 +61,10 @@ fail_backup() {
 trap 'fail_backup "unexpected backup failure"' ERR
 
 mkdir -p "$backup_root"
+
+manifest_migration_output="$(docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T app php artisan ops:migrate --manifest-only --no-interaction)"
+expected_migrations="$(printf '%s\n' "$manifest_migration_output" | sed -n 's/^expected=//p')"
+[[ -n "$expected_migrations" ]] || fail_backup 'release migration manifest was not validated'
 
 if ! docker compose "${compose_env_args[@]}" -f "$compose_file" -p "$COMPOSE_PROJECT_NAME" exec -T db sh -c \
     'MYSQL_PWD="$DB_MIGRATION_PASSWORD" mysqldump --single-transaction --routines --triggers --events --no-tablespaces -u"$DB_MIGRATION_USERNAME" "$MYSQL_DATABASE" | gzip -c' \

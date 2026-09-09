@@ -52,6 +52,11 @@ services:
         depends_on:
             db:
                 condition: service_healthy
+        healthcheck:
+            test: ['CMD', 'php', 'artisan', 'ops:migrate', '--manifest-only', '--no-interaction']
+            interval: 10s
+            timeout: 5s
+            retries: 6
 
     web:
         build:
@@ -76,7 +81,7 @@ services:
             - edge
         depends_on:
             app:
-                condition: service_started
+                condition: service_healthy
         healthcheck:
             test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://127.0.0.1/up || exit 1']
             interval: 30s

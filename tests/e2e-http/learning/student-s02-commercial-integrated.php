@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Ecosystem\Models\Plugin;
+use App\Modules\Ecosystem\Models\PluginActivation;
+use App\Modules\Ecosystem\Models\TenantPluginConfig;
+use App\Modules\Ecosystem\Models\TenantPluginConfigRevision;
 use App\Modules\Ecosystem\Services\EcosystemDefaultGatewayProvisioner;
 use App\Modules\Financial\Models\Order;
 use App\Modules\Financial\Models\OrderItem;
@@ -27,6 +31,7 @@ return [
     'endpoint' => 'POST /api/v1/instructor/courses',
 
     'setup' => function (array $ctx): array {
+        $cashPluginExisted = Plugin::query()->where('slug', 'cash')->exists();
         app(EcosystemDefaultGatewayProvisioner::class)->provision(
             $ctx['tenant']->id,
             $ctx['users']['admin']->id,
@@ -78,6 +83,7 @@ return [
             'studentBToken' => $studentBToken,
             'foreignStudent' => $foreignStudent,
             'foreignStudentToken' => $foreignStudentToken,
+            'cashPluginExisted' => $cashPluginExisted,
             ...$negativeFixtures,
         ];
     },
@@ -458,6 +464,23 @@ return [
         CourseModule::query()->whereIn('course_id', $courseIds)->delete();
         Course::query()->whereIn('id', $courseIds)->forceDelete();
         Storage::disk(config('filesystems.default'))->delete('tenants/'.$ctx['tenant']->id.'/materials/e2e-s02.pdf');
+
+        $cashPlugin = Plugin::query()->where('slug', 'cash')->first();
+        if ($cashPlugin !== null) {
+            $configIds = TenantPluginConfig::query()
+                ->where('plugin_id', $cashPlugin->id)
+                ->whereIn('tenant_id', $tenantIds)
+                ->pluck('id');
+            TenantPluginConfigRevision::query()->whereIn('tenant_plugin_config_id', $configIds)->delete();
+            TenantPluginConfig::query()->whereIn('id', $configIds)->delete();
+            PluginActivation::query()
+                ->where('plugin_id', $cashPlugin->id)
+                ->whereIn('tenant_id', $tenantIds)
+                ->delete();
+            if (($ctx['fixtures']['cashPluginExisted'] ?? true) === false) {
+                $cashPlugin->delete();
+            }
+        }
 
         foreach (['instructorB', 'studentB', 'foreignStudent'] as $fixture) {
             $user = $ctx['fixtures'][$fixture] ?? null;

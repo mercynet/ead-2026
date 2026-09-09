@@ -77,7 +77,8 @@ app_key_bytes="$(printf '%s' "$app_key_payload" | base64 --decode 2>/dev/null | 
 [[ "$(value OPS04_EXPECTED_STORAGE_VOLUME)" =~ ^[A-Za-z0-9._-]+$ ]] || { printf 'expected storage volume identity is invalid\n' >&2; exit 1; }
 [[ "$(value OPS04_BACKUP_MANIFEST_KEY)" != *REPLACE_WITH_* ]] || { printf 'backup manifest signing key placeholder remains\n' >&2; exit 1; }
 [[ "$(value OPS04_REMOTE_BACKUP_ADAPTER)" != *REPLACE_WITH_* && "$(value OPS04_REMOTE_BACKUP_VERIFY_ADAPTER)" != *REPLACE_WITH_* ]] || { printf 'remote backup adapters are not provisioned\n' >&2; exit 1; }
-[[ "$(value OPS04_ALERT_CHANNEL)" =~ ^[A-Za-z0-9._:/ -]+$ ]] || { printf 'alert channel contains unsafe characters\n' >&2; exit 1; }
+alert_channel="$(value OPS04_ALERT_CHANNEL)"
+[[ "$alert_channel" =~ ^[A-Za-z0-9._:/\ -]+$ ]] || { printf 'alert channel contains unsafe characters\n' >&2; exit 1; }
 for secret_key in DB_ADMIN_PASSWORD DB_BOOTSTRAP_PASSWORD DB_RUNTIME_PASSWORD DB_MIGRATION_PASSWORD OPS04_REMOTE_BACKUP_CREDENTIAL; do
     reject_weak_secret "$secret_key"
 done

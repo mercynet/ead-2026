@@ -128,6 +128,22 @@ it('rejects a non-disposable storage volume before invoking docker', function ()
     }
 });
 
+it('uses valid Docker label templates for every disposable volume guard', function (): void {
+    foreach ([
+        'scripts/ops/ops03-backup.sh',
+        'scripts/ops/ops03-deploy.sh',
+        'scripts/ops/ops03-destroy.sh',
+        'scripts/ops/ops03-readiness.sh',
+        'scripts/ops/ops03-restore.sh',
+    ] as $script) {
+        $contents = file_get_contents(base_path($script));
+
+        expect($contents)
+            ->toContain('{{index .Labels "com.docker.compose.project"}}')
+            ->not->toContain('\\"com.docker.compose.project\\"');
+    }
+});
+
 it('accepts only the inspected canonical disposable storage volume', function (): void {
     $fixture = makeOps03RestoreSafetyFixture();
 

@@ -11,7 +11,7 @@ compose_env_args=()
 if [[ -n "${OPS03_ENV_FILE:-}" ]]; then
     compose_env_args+=(--env-file "$OPS03_ENV_FILE")
 fi
-volume_identity="$(docker volume inspect --format '{{.Name}}|{{index .Labels \"com.docker.compose.project\"}}|{{index .Labels \"com.docker.compose.volume\"}}' "$PRODUCTION_STORAGE_VOLUME" 2>/dev/null)"
+volume_identity="$(docker volume inspect --format '{{.Name}}|{{index .Labels "com.docker.compose.project"}}|{{index .Labels "com.docker.compose.volume"}}' "$PRODUCTION_STORAGE_VOLUME" 2>/dev/null)"
 [[ "$volume_identity" == "ead2026-ops03-storage|ead2026-ops03|production_storage" ]] || {
     printf 'OPS-03 readiness storage volume identity is unsafe\n' >&2
     exit 1

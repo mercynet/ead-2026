@@ -538,12 +538,27 @@ class E2eRunCommand extends Command
     {
         try {
             /** @var array<string, User> $users */
-            $users = $this->ctx['users'] ?? [];
+            $users = [];
+            foreach ([$this->ctx['users'] ?? [], $this->fixtureValues($this->ctx['fixtures'] ?? [])] as $values) {
+                foreach ($values as $value) {
+                    if ($value instanceof User) {
+                        $users[$value->getKey()] = $value;
+                    }
+                }
+            }
             /** @var array<int, Tenant> $tenants */
-            $tenants = array_filter([
+            $tenants = [];
+            foreach ([
                 $this->ctx['tenant'] ?? null,
                 $this->ctx['otherTenant'] ?? null,
-            ], fn (mixed $tenant): bool => $tenant instanceof Tenant);
+                ...$this->fixtureValues($this->ctx['fixtures'] ?? []),
+            ] as $value) {
+                if ($value instanceof Tenant) {
+                    $tenants[$value->getKey()] = $value;
+                }
+            }
+            $users = array_values($users);
+            $tenants = array_values($tenants);
             $userIds = array_values(array_map(fn (User $user): int => $user->id, $users));
             $tenantIds = array_map(fn (Tenant $tenant): int => $tenant->id, $tenants);
 
@@ -562,6 +577,23 @@ class E2eRunCommand extends Command
             $this->warn('teardown parcial: '.$this->sanitize($e->getMessage()));
             $this->failed++;
         }
+    }
+
+    /**
+     * @return list<mixed>
+     */
+    private function fixtureValues(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [$value];
+        }
+
+        $values = [];
+        foreach ($value as $item) {
+            $values = [...$values, ...$this->fixtureValues($item)];
+        }
+
+        return $values;
     }
 
     /**

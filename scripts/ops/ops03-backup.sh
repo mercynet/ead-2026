@@ -37,7 +37,7 @@ for volume_identity in \
     'ead2026-ops03-cache|production_cache'; do
     volume_name="${volume_identity%%|*}"
     compose_volume="${volume_identity##*|}"
-    inspected="$(docker volume inspect --format '{{.Name}}|{{index .Labels \"com.docker.compose.project\"}}|{{index .Labels \"com.docker.compose.volume\"}}' "$volume_name" 2>/dev/null || true)"
+    inspected="$(docker volume inspect --format '{{.Name}}|{{index .Labels "com.docker.compose.project"}}|{{index .Labels "com.docker.compose.volume"}}' "$volume_name" 2>/dev/null || true)"
     [[ "$inspected" == "$volume_name|ead2026-ops03|$compose_volume" ]] || {
         printf 'disposable volume identity is unsafe: %s\n' "$volume_name" >&2
         exit 1

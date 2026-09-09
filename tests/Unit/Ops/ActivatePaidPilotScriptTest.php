@@ -71,6 +71,7 @@ it('binds activation receipt fields to observed provenance and gate output', fun
         ->and($script)->toContain('independent synthetic stack configuration is required')
         ->and($script)->toContain('run_gate "$temp_dir/remote-backup.txt"')
         ->and($script)->toContain('run_gate "$temp_dir/alert-delivery.txt"')
+        ->and($script)->toContain('s/^readiness_probe=\\([^ ]*\\).*/\\1/')
         ->and($script)->toContain('"$scheduler_status" == PASS')
         ->and($script)->toContain('final_verdict=PASS')
         ->and($script)->toContain('"final_verdict": "${final_verdict}"')

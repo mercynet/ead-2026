@@ -297,7 +297,7 @@ run_gate "$temp_dir/observability.txt" '^deploy_observability=PASS$' observabili
 run_gate "$temp_dir/domain-tls.txt" '^domain_tls=PASS ' domain-tls "$script_dir/ops04-domain-tls.sh" live
 run_gate "$temp_dir/synthetic.txt" '^synthetic=PASS ' synthetic "$script_dir/ops04-synthetic.sh"
 
-readiness_status="$(sed -n 's/^readiness_probe=//p' "$temp_dir/readiness.txt" | head -n 1)"
+readiness_status="$(sed -n 's/^readiness_probe=\([^ ]*\).*/\1/p' "$temp_dir/readiness.txt" | head -n 1)"
 observability_status="$(sed -n 's/^deploy_observability=//p' "$temp_dir/observability.txt" | head -n 1)"
 remote_backup_status="$(sed -n 's/^remote_backup=\([^ ]*\).*/\1/p' "$temp_dir/remote-backup.txt" | head -n 1)"
 alert_delivery_status="$(sed -n 's/^alert_delivery_canary=\([^ ]*\).*/\1/p' "$temp_dir/alert-delivery.txt" | head -n 1)"

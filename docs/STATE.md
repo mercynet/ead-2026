@@ -4,11 +4,13 @@
 
 2026-09-30: entregues `STUDENT-PAID-ORDERS` e `PAYMENT-WEBHOOK`; fechadas as lacunas da
 validação adversarial. A listagem de pedidos agora documenta e rejeita cursor malformado, falhas
-de resolução/verificação de gateway retornam `gateway_unavailable` recuperável, e o checkout
-registra falhas de publicação do outbox sem expor segredo. O harness HTTP E2E cobre sucesso,
-replay, falha, assinatura inválida e matrícula após webhook pago com gateway determinístico em
-`APP_ENV=testing|e2e`. Dependências vulneráveis foram atualizadas e o finding PHPStan
-preexistente foi removido.
+de resolução/verificação/dispatch de gateway retornam `gateway_unavailable` recuperável, e o
+checkout registra falhas de publicação do outbox sem expor segredo. O limiter do webhook usa IP
+sem particionamento por slug controlável. O harness HTTP E2E cobre sucesso, replay, falha,
+assinatura inválida e matrícula após webhook pago com gateway determinístico em
+`APP_ENV=testing|e2e`. O sanitizador do runner cobre segredos e assinaturas; Scribe filtra campos
+proibidos e marca headers obrigatórios. Dependências vulneráveis foram atualizadas e o finding
+PHPStan preexistente foi removido.
 
 ## Próximos passos (1-3)
 
@@ -26,20 +28,24 @@ owners/canal de alerta, backup remoto, host/domínio/TLS/secrets, rollback e pro
 
 ## Último commit
 
-`fbd1b0a` contém o hardening adversarial de webhook/cursor, a prova integrada
-webhook→outbox→enrollment, logging seguro de falhas de outbox, a cobertura E2E correspondente e a
-reconciliação do roadmap. Está commitado em `main`; o push e a auditoria independente final ainda
+`7aedb72` contém o hardening de segurança da segunda auditoria: limiter por IP, 503 para falha de
+dispatch, sanitização ampliada, filtro geral de parâmetros proibidos e generator OpenAPI para
+headers obrigatórios. Está commitado em `main`; o push e a auditoria independente final ainda
 estão pendentes.
 
 ## Evidência atual
 
-- Testes focados finais: `38 passed (369 assertions)`.
-- Suíte completa: `790 passed (6169 assertions)`.
-- Architecture: `44 passed (1478 assertions)`; invariantes do diff verdes.
+- Testes focados do lote anterior: `38 passed (369 assertions)`.
+- Testes focados do hardening: `12 passed (68 assertions)`.
+- Suíte completa: `794 passed (6193 assertions)`.
+- Architecture afetada: `11 passed (699 assertions)`; execução direta dos invariantes verdes.
 - Pint, lint do spec E2E, `git diff --check` e Scribe passaram. O Scribe foi executado com saída
   temporária em `/tmp` porque o cache/output padrão do container novo ficou pertencendo a
   `nobody`; a extração de rotas, HTML, Postman e OpenAPI concluiu sem erro.
-- Composer validate e Composer audit passaram nos gates anteriores; o pre-push repetirá a auditoria.
+- PHPStan: `0 errors`. Composer validate e Composer audit passaram nos gates anteriores; o
+  pre-push repetirá a auditoria.
+- O script `scripts/ai/verify-changes.sh` encontrou permissão do log local do container; os mesmos
+  invariantes foram executados diretamente com `LOG_CHANNEL=stderr` e passaram.
 - PHPStan: `0 errors` após remover o `array_values()` redundante em
   `app/Console/Commands/E2eRunCommand.php:562`.
 - `composer insights` continua vermelho por findings legados espalhados no repositório; não houve

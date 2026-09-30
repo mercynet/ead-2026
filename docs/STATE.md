@@ -41,5 +41,5 @@ financeiros e atualização do contrato de assinaturas de webhook. O working tre
 
 - context: alto, estimado; handoff atualizado após commit/push e reconciliação Asaas.
 - state: working tree limpo; Stripe, Mercado Pago, PagSeguro/PagBank e Asaas estão committed e publicados. E2E HTTP e PIX-nativo continuam pendentes.
-- recommendation: waiting_for_user.
-- reason: implementar PIX-nativo exige escolher provedor ou autorizar semântica manual local; o repositório não define essa decisão.
+- recommendation: clear.
+- reason: working tree limpo e handoff publicado; ao retomar, decidir o provedor/semântica do PIX-nativo lendo AGENTS.md + este STATE.md.

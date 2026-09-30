@@ -76,6 +76,17 @@ it('enforces the admin enrollment surface, tenant isolation, and scope-safe inpu
         ->assertUnprocessable()
         ->assertJsonPath('errors.0.code', 'validation_error');
 
+    $globalDeveloper = User::factory()->developer()->create();
+
+    $this->postJson('/api/v1/admin/enrollments', [
+        'course_id' => $otherCourse->id,
+        'user_id' => $globalDeveloper->id,
+    ], $headers)
+        ->assertNotFound()
+        ->assertJsonPath('errors.0.code', 'not_found');
+
+    expect(Enrollment::query()->count())->toBe(0);
+
     $this->getJson('/api/v1/admin/enrollments/999999', $headers)
         ->assertNotFound()
         ->assertJsonPath('errors.0.code', 'not_found');

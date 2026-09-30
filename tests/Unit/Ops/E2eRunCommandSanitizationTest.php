@@ -48,3 +48,23 @@ it('redacts sensitive values when a JSON assertion fails', function (): void {
 
     expect($output->fetch())->not->toContain('token-secret-from-response');
 });
+
+it('redacts PII when a JSON assertion fails', function (): void {
+    $command = app(E2eRunCommand::class);
+    $output = new BufferedOutput;
+    $command->setOutput(new OutputStyle(new ArrayInput([]), $output));
+    $reportCase = new \ReflectionMethod($command, 'reportCase');
+    $reportCase->setAccessible(true);
+
+    $reportCase->invoke($command, 'PII assertion', [[
+        'json: data.user',
+        false,
+        ['email' => 'expected@example.test'],
+        ['email' => 'person@example.test', 'cpf' => '12345678900'],
+    ]]);
+
+    expect($output->fetch())
+        ->not->toContain('expected@example.test')
+        ->not->toContain('person@example.test')
+        ->not->toContain('12345678900');
+});

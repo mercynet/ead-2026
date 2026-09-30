@@ -489,7 +489,7 @@ class E2eRunCommand extends Command
             $text = json_encode($value) ?: gettype($value);
         }
 
-        if ($label !== null && preg_match('/(?:token|secret|password|signature|api[_-]?key|authorization)/i', $label) === 1) {
+        if ($label !== null && preg_match('/(?:token|secret|password|signature|api[_-]?key|authorization|email|cpf|phone|telephone|mobile|card|json:)/i', $label) === 1) {
             return '[REDACTED]';
         }
 
@@ -505,7 +505,7 @@ class E2eRunCommand extends Command
         $text = preg_replace('/Bearer\s+[A-Za-z0-9|._~+\/=-]+/', 'Bearer [REDACTED]', $text) ?? $text;
 
         $text = preg_replace(
-            '/("(?:token|plainTextToken|access_token|password|current_password|secret|webhook_secret|client_secret|api_key|signature)"\s*:\s*")[^"]*(")/i',
+            '/("(?:token|plainTextToken|access_token|password|current_password|secret|webhook_secret|client_secret|api_key|signature|email|cpf|phone|telephone|mobile|card|card_number|name)"\s*:\s*")[^"]*(")/i',
             '$1[REDACTED]$2',
             $text,
         ) ?? $text;

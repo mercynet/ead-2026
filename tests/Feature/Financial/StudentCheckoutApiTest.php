@@ -5,6 +5,7 @@ use App\Modules\Core\Models\Tenant;
 use App\Modules\Ecosystem\Models\Plugin;
 use App\Modules\Ecosystem\Models\PluginActivation;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
+use App\Modules\Financial\Actions\Student\StoreCheckoutAction;
 use App\Modules\Financial\Contracts\GatewayConfigurationDefinition;
 use App\Modules\Financial\Enums\PaymentChargeStatus;
 use App\Modules\Financial\Enums\PaymentConfirmationMode;
@@ -12,13 +13,18 @@ use App\Modules\Financial\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Financial\Gateways\Data\ChargeIntent;
 use App\Modules\Financial\Gateways\Data\ChargeResult;
 use App\Modules\Financial\Gateways\PaymentGatewayManager;
+use App\Modules\Financial\Gateways\TenantGatewayResolver;
 use App\Modules\Financial\Models\Order;
+use App\Modules\Financial\Models\OrderItem;
 use App\Modules\Financial\Models\OrderPaidOutbox;
 use App\Modules\Financial\Models\Payment;
 use App\Modules\Financial\Services\Outbox\OrderPaidOutboxService;
+use App\Modules\Learning\Contracts\CourseCheckoutCatalog;
 use App\Modules\Learning\Models\Course;
+use App\Shared\Http\ApiContext;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\QueryException;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
 
@@ -153,6 +159,68 @@ it('replays exact key without another charge and rejects conflicting keys', func
     $other = checkoutCourse($tenant);
     assertApiErrorEnvelope($this->postJson('/api/v1/student/checkout', ['course_id' => $other->id], checkoutRequestHeaders($headers, $key)), 409, 'idempotency_conflict');
     assertApiErrorEnvelope($this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers, '4b4e1dc1-0ef6-46d8-9bea-aa992d719744')), 409, 'checkout_already_exists');
+});
+
+it('replays the persisted order after a concurrent idempotency insert loses the unique race', function (): void {
+    $tenant = makeTenant();
+    [$student] = actingAsUserType(UserType::Student, $tenant);
+    $course = checkoutCourse($tenant);
+    $key = '3b4e1dc1-0ef6-46d8-9bea-aa992d719744';
+    $offering = app(CourseCheckoutCatalog::class)->resolve($tenant->id, $student->id, $course->id);
+
+    $order = Order::query()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $student->id,
+        'order_number' => 'ORD-CONCURRENT-REPLAY',
+        'status' => 'paid',
+        'origin_type' => 'direct',
+        'subtotal_cents' => $course->price_cents,
+        'tax_cents' => 0,
+        'total_cents' => $course->price_cents,
+        'source_key' => $offering->purchaseCycleKey,
+        'idempotency_key' => $key,
+    ]);
+    OrderItem::query()->create([
+        'order_id' => $order->id,
+        'itemable_type' => 'course',
+        'itemable_id' => $course->id,
+        'item_snapshot' => $offering->snapshot,
+        'price_cents' => $course->price_cents,
+    ]);
+    Payment::query()->create([
+        'order_id' => $order->id,
+        'status' => 'completed',
+        'gateway_slug' => 'cash',
+        'confirmation_mode' => 'manual',
+        'charge_state' => 'resolved',
+    ]);
+
+    $previous = new \PDOException('Duplicate entry for key orders_tenant_user_idempotency_unique', 1062);
+    $previous->errorInfo = ['23000', 1062, 'Duplicate entry for key orders_tenant_user_idempotency_unique'];
+    $database = Mockery::mock(DatabaseManager::class);
+    $attempt = 0;
+    $database->shouldReceive('transaction')->twice()->ordered()->andReturnUsing(function (callable $callback) use (&$attempt, $previous): mixed {
+        $attempt++;
+        if ($attempt === 1) {
+            throw new QueryException('mysql', 'insert into orders', [], $previous);
+        }
+
+        return $callback();
+    });
+
+    $action = new StoreCheckoutAction(
+        $database,
+        app(CourseCheckoutCatalog::class),
+        app(TenantGatewayResolver::class),
+        app(OrderPaidOutboxService::class),
+    );
+
+    $replayed = $action->handle(new ApiContext($student, $tenant), $course->id, $key);
+
+    expect($replayed->id)->toBe($order->id)
+        ->and($replayed->wasRecentlyCreated)->toBeFalse()
+        ->and(Order::query()->count())->toBe(1)
+        ->and($attempt)->toBe(2);
 });
 
 it('replays a resolved payment without resolving a currently active gateway', function (): void {

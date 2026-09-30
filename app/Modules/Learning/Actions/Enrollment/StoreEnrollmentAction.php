@@ -2,6 +2,7 @@
 
 namespace App\Modules\Learning\Actions\Enrollment;
 
+use App\Modules\Core\Enums\UserType;
 use App\Modules\Core\Models\User;
 use App\Modules\Learning\Enums\EnrollmentBillingType;
 use App\Modules\Learning\Models\Course;
@@ -16,7 +17,7 @@ class StoreEnrollmentAction
         private readonly EnrollStudentInCourseAction $enrollStudentInCourseAction,
     ) {}
 
-    public function handle(ApiContext $context, array $attributes): Enrollment
+    public function handle(ApiContext $context, array $attributes, bool $requireTenantStudent = false): Enrollment
     {
         $tenant = $context->requiredTenant();
         $authenticatedUser = $context->requiredUser();
@@ -28,8 +29,13 @@ class StoreEnrollmentAction
         $userId = (int) ($attributes['user_id'] ?? $authenticatedUser->id);
         $targetUser = User::query()
             ->whereKey($userId)
-            ->where(fn ($query) => $query->whereNull('tenant_id')->orWhere('tenant_id', $tenant->id))
-            ->firstOrFail();
+            ->where('tenant_id', $tenant->id);
+
+        if ($requireTenantStudent) {
+            $targetUser->where('user_type', UserType::Student->value);
+        }
+
+        $targetUser = $targetUser->firstOrFail();
 
         $billingType = $attributes['billing_type'] ?? null;
 

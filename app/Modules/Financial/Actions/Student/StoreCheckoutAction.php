@@ -21,6 +21,7 @@ use App\Modules\Learning\Contracts\CourseCheckoutCatalog;
 use App\Modules\Learning\Contracts\CourseCheckoutOffering;
 use App\Shared\Http\ApiContext;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -98,72 +99,101 @@ class StoreCheckoutAction
     /** @return array{order: Order, payment: Payment, token: string|null, created: bool} */
     private function claim(ApiContext $context, CourseCheckoutOffering $offering, string $idempotencyKey): array
     {
-        $claim = $this->database->transaction(function () use ($context, $offering, $idempotencyKey): array|CheckoutConflictException {
-            $existing = Order::query()->whereBelongsTo($context->requiredTenant(), 'tenant')->whereBelongsTo($context->requiredUser(), 'user')
-                ->where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
+        try {
+            $claim = $this->database->transaction(function () use ($context, $offering, $idempotencyKey): array|CheckoutConflictException {
+                $existing = Order::query()->whereBelongsTo($context->requiredTenant(), 'tenant')->whereBelongsTo($context->requiredUser(), 'user')
+                    ->where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
 
-            if ($existing !== null) {
-                if ($existing->source_key !== $offering->purchaseCycleKey) {
-                    throw new CheckoutConflictException('idempotency_conflict', 'Chave de idempotência já usada para outra compra.');
+                if ($existing !== null) {
+                    return $this->claimExistingOrder($existing, $offering);
                 }
 
-                $payment = $existing->payments()->lockForUpdate()->firstOrFail();
-                if ($payment->charge_state === PaymentChargeState::Resolved->value) {
-                    return ['order' => $existing, 'payment' => $payment, 'token' => null, 'created' => false];
+                if (! $offering->isEligible) {
+                    throw new CheckoutConflictException('already_enrolled', 'Você já possui matrícula atual neste curso.');
                 }
-                if ($payment->charge_state === PaymentChargeState::Unknown->value) {
-                    throw new CheckoutConflictException('payment_reconciliation_required', 'Pagamento requer reconciliação.');
+
+                $duplicate = Order::query()->whereBelongsTo($context->requiredTenant(), 'tenant')->whereBelongsTo($context->requiredUser(), 'user')
+                    ->where('source_key', $offering->purchaseCycleKey)->whereIn('status', ['pending', 'paid'])->lockForUpdate()->exists();
+                if ($duplicate) {
+                    throw new CheckoutConflictException('checkout_already_exists', 'Já existe checkout ativo para esta compra.');
                 }
-                if ($payment->charge_state === PaymentChargeState::Processing->value) {
-                    if ($payment->charge_claimed_at !== null && $payment->charge_claimed_at->gt(now()->subMinutes(self::PROCESSING_TIMEOUT_MINUTES))) {
-                        throw new CheckoutConflictException('checkout_in_progress', 'Checkout em processamento.');
+
+                $gateway = null;
+                if ($offering->priceCents > 0) {
+                    try {
+                        $gateway = $this->gatewayResolver->resolve($context->requiredTenant());
+                    } catch (Throwable) {
+                        throw new GatewayUnavailableException('Gateway de pagamento indisponível.');
                     }
-                    $payment->fill(['charge_state' => PaymentChargeState::Unknown->value, 'charge_claim_token' => null, 'charge_claimed_at' => null])->save();
-
-                    return new CheckoutConflictException('payment_reconciliation_required', 'Pagamento requer reconciliação.');
-                }
-                if ($payment->charge_state !== PaymentChargeState::Created->value) {
-                    throw new CheckoutConflictException('payment_reconciliation_required', 'Pagamento requer reconciliação.');
                 }
 
-                return $this->claimPayment($existing, $payment, false);
-            }
+                $order = $this->createOrder($context, $offering, $idempotencyKey, $gateway);
+                $payment = $order->payments()->firstOrFail();
+                if ($offering->priceCents === 0) {
+                    $this->outbox->record($this->orderPaidEvent($order));
 
-            if (! $offering->isEligible) {
-                throw new CheckoutConflictException('already_enrolled', 'Você já possui matrícula atual neste curso.');
-            }
-
-            $duplicate = Order::query()->whereBelongsTo($context->requiredTenant(), 'tenant')->whereBelongsTo($context->requiredUser(), 'user')
-                ->where('source_key', $offering->purchaseCycleKey)->whereIn('status', ['pending', 'paid'])->lockForUpdate()->exists();
-            if ($duplicate) {
-                throw new CheckoutConflictException('checkout_already_exists', 'Já existe checkout ativo para esta compra.');
-            }
-
-            $gateway = null;
-            if ($offering->priceCents > 0) {
-                try {
-                    $gateway = $this->gatewayResolver->resolve($context->requiredTenant());
-                } catch (Throwable) {
-                    throw new GatewayUnavailableException('Gateway de pagamento indisponível.');
+                    return ['order' => $order, 'payment' => $payment, 'token' => null, 'created' => true];
                 }
+
+                return $this->claimPayment($order, $payment, true);
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isIdempotencyUniqueViolation($exception)) {
+                throw $exception;
             }
 
-            $order = $this->createOrder($context, $offering, $idempotencyKey, $gateway);
-            $payment = $order->payments()->firstOrFail();
-            if ($offering->priceCents === 0) {
-                $this->outbox->record($this->orderPaidEvent($order));
+            $claim = $this->database->transaction(function () use ($context, $offering, $idempotencyKey, $exception): array|CheckoutConflictException {
+                $existing = Order::query()->whereBelongsTo($context->requiredTenant(), 'tenant')->whereBelongsTo($context->requiredUser(), 'user')
+                    ->where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
 
-                return ['order' => $order, 'payment' => $payment, 'token' => null, 'created' => true];
-            }
+                if ($existing === null) {
+                    throw $exception;
+                }
 
-            return $this->claimPayment($order, $payment, true);
-        });
+                return $this->claimExistingOrder($existing, $offering);
+            });
+        }
 
         if ($claim instanceof CheckoutConflictException) {
             throw $claim;
         }
 
         return $claim;
+    }
+
+    /** @return array{order: Order, payment: Payment, token: string|null, created: bool}|CheckoutConflictException */
+    private function claimExistingOrder(Order $existing, CourseCheckoutOffering $offering): array|CheckoutConflictException
+    {
+        if ($existing->source_key !== $offering->purchaseCycleKey) {
+            throw new CheckoutConflictException('idempotency_conflict', 'Chave de idempotência já usada para outra compra.');
+        }
+
+        $payment = $existing->payments()->lockForUpdate()->firstOrFail();
+        if ($payment->charge_state === PaymentChargeState::Resolved->value) {
+            return ['order' => $existing, 'payment' => $payment, 'token' => null, 'created' => false];
+        }
+        if ($payment->charge_state === PaymentChargeState::Unknown->value) {
+            throw new CheckoutConflictException('payment_reconciliation_required', 'Pagamento requer reconciliação.');
+        }
+        if ($payment->charge_state === PaymentChargeState::Processing->value) {
+            if ($payment->charge_claimed_at !== null && $payment->charge_claimed_at->gt(now()->subMinutes(self::PROCESSING_TIMEOUT_MINUTES))) {
+                throw new CheckoutConflictException('checkout_in_progress', 'Checkout em processamento.');
+            }
+            $payment->fill(['charge_state' => PaymentChargeState::Unknown->value, 'charge_claim_token' => null, 'charge_claimed_at' => null])->save();
+
+            return new CheckoutConflictException('payment_reconciliation_required', 'Pagamento requer reconciliação.');
+        }
+        if ($payment->charge_state !== PaymentChargeState::Created->value) {
+            throw new CheckoutConflictException('payment_reconciliation_required', 'Pagamento requer reconciliação.');
+        }
+
+        return $this->claimPayment($existing, $payment, false);
+    }
+
+    private function isIdempotencyUniqueViolation(QueryException $exception): bool
+    {
+        return (int) ($exception->errorInfo[1] ?? 0) === 1062
+            && str_contains($exception->getMessage(), 'orders_tenant_user_idempotency_unique');
     }
 
     /** @return array{order: Order, payment: Payment, token: string, created: bool} */

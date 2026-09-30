@@ -39,7 +39,7 @@ class EnrollmentController extends Controller
     {
         Gate::forUser($context->requiredUser())->authorize('learning.enrollments.create', [$context->requiredTenant()]);
 
-        return EnrollmentResource::make($this->storeEnrollmentAction->handle($context, $request->validated()))
+        return EnrollmentResource::make($this->storeEnrollmentAction->handle($context, $request->validated(), requireTenantStudent: true))
             ->response()
             ->setStatusCode(201);
     }

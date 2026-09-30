@@ -20,7 +20,9 @@ use App\Modules\Financial\Models\Payment;
 use App\Modules\Financial\Services\Outbox\OrderPaidOutboxService;
 use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\Enrollment;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 
@@ -225,6 +227,25 @@ it('rejects an invalid webhook signature before queueing', function (): void {
     Queue::assertNothingPushed();
 });
 
+it('shares the webhook rate limit across gateway slugs for the same client IP', function (): void {
+    $limiter = app(RateLimiter::class)->limiter('payment-webhook');
+    $firstRequest = Request::create('/api/v1/webhooks/gateways/stripe', 'POST', [], [], [], [
+        'REMOTE_ADDR' => '203.0.113.44',
+    ]);
+    $secondRequest = Request::create('/api/v1/webhooks/gateways/mercadopago', 'POST', [], [], [], [
+        'REMOTE_ADDR' => '203.0.113.44',
+    ]);
+
+    expect($limiter)->toBeInstanceOf(\Closure::class);
+    assert($limiter instanceof \Closure);
+
+    $firstLimit = $limiter($firstRequest);
+    $secondLimit = $limiter($secondRequest);
+
+    expect($firstLimit->key)->toBe($secondLimit->key)
+        ->and($firstLimit->maxAttempts)->toBe(120);
+});
+
 it('returns gateway unavailable when historical gateway configuration cannot be resolved', function (): void {
     Queue::fake();
     $fixture = webhookPaymentFixture();
@@ -254,6 +275,25 @@ it('returns gateway unavailable when the webhook adapter cannot verify a signatu
 
     assertApiErrorEnvelope($response, 503, 'gateway_unavailable');
     Queue::assertNothingPushed();
+});
+
+it('returns gateway unavailable when webhook job dispatch fails', function (): void {
+    $fixture = webhookPaymentFixture();
+    $failingDispatcher = Mockery::mock(\Illuminate\Contracts\Bus\Dispatcher::class);
+    $failingDispatcher->shouldReceive('dispatch')
+        ->once()
+        ->with(Mockery::type(ProcessPaymentWebhookJob::class))
+        ->andThrow(new RuntimeException('Queue secret must not escape.'));
+    app()->instance(\Illuminate\Contracts\Bus\Dispatcher::class, $failingDispatcher);
+
+    $response = signedWebhookRequest([
+        'status' => 'paid',
+        'order_number' => $fixture['order']->order_number,
+        'external_id' => $fixture['payment']->external_id,
+    ], $fixture['secret']);
+
+    assertApiErrorEnvelope($response, 503, 'gateway_unavailable');
+    expect($response->getContent())->not->toContain('Queue secret');
 });
 
 it('verifies the generic HMAC fallback when the adapter has no webhook interface', function (): void {

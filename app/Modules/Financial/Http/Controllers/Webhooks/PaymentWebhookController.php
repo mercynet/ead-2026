@@ -29,7 +29,11 @@ class PaymentWebhookController extends Controller
      *
      * @urlParam gateway_slug string required Identificador do gateway. Example: stripe
      *
-     * @header X-Webhook-Signature string required Assinatura HMAC ou assinatura validada pelo adapter. Example: sha256=abc123
+     * @header X-Webhook-Signature sha256=abc123
+     *
+     * @response 202 scenario="Aceito" {"data":{"accepted":true}}
+     * @response 422 scenario="Webhook inválido" {"data":null,"errors":[{"code":"validation_error","message":"Webhook inválido."}]}
+     * @response 503 scenario="Gateway indisponível" {"data":null,"errors":[{"code":"gateway_unavailable","message":"Gateway de pagamento indisponível."}]}
      */
     public function store(StorePaymentWebhookRequest $request, string $gatewaySlug): JsonResponse
     {

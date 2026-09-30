@@ -182,7 +182,9 @@ return [
 
         // Additional generators to use when generating the OpenAPI spec.
         // Should extend `Knuckles\Scribe\Writing\OpenApiSpecGenerators\OpenApiGenerator`.
-        'generators' => [],
+        'generators' => [
+            App\Shared\Documentation\Scribe\OpenApi\RequiredHeaderGenerator::class,
+        ],
     ],
 
     'groups' => [

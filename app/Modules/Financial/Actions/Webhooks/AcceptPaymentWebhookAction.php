@@ -72,13 +72,17 @@ class AcceptPaymentWebhookAction
             throw $this->invalidWebhook();
         }
 
-        $this->dispatcher->dispatch(new ProcessPaymentWebhookJob(
-            paymentId: $payment->id,
-            gatewaySlug: $gatewaySlug,
-            status: $payload['status'],
-            externalId: $payload['external_id'] ?? null,
-            orderNumber: $payload['order_number'] ?? null,
-        ));
+        try {
+            $this->dispatcher->dispatch(new ProcessPaymentWebhookJob(
+                paymentId: $payment->id,
+                gatewaySlug: $gatewaySlug,
+                status: $payload['status'],
+                externalId: $payload['external_id'] ?? null,
+                orderNumber: $payload['order_number'] ?? null,
+            ));
+        } catch (Throwable $exception) {
+            throw $this->gatewayUnavailable($gatewaySlug, $payment->id, $exception);
+        }
     }
 
     /**

@@ -19,7 +19,7 @@ class StoreCheckoutController extends Controller
      *
      * Cria ou reproduz idempotentemente checkout do curso para aluno autenticado.
      *
-     * @header Idempotency-Key string required UUID único da tentativa. Example: 3b4e1dc1-0ef6-46d8-9bea-aa992d719744
+     * @header Idempotency-Key 3b4e1dc1-0ef6-46d8-9bea-aa992d719744
      *
      * @response 201 scenario="Novo checkout" {"data":{"id":1,"status":"pending","origin_type":"direct"}}
      */

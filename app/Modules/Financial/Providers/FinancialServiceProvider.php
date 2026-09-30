@@ -53,7 +53,7 @@ class FinancialServiceProvider extends ServiceProvider
     private function registerRateLimiters(): void
     {
         RateLimiter::for('payment-webhook', fn (Request $request): Limit => Limit::perMinute(120)->by(
-            (string) $request->route('gateway_slug').'|'.(string) $request->ip()
+            (string) ($request->ip() ?: 'unknown')
         ));
     }
 

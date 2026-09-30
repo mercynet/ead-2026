@@ -2,9 +2,13 @@
 
 namespace App\Modules\Financial\Jobs;
 
+use App\Modules\Core\Models\Tenant;
 use App\Modules\Financial\Enums\PaymentChargeState;
+use App\Modules\Financial\Enums\PaymentChargeStatus;
 use App\Modules\Financial\Enums\PaymentConfirmationMode;
 use App\Modules\Financial\Events\OrderPaidEvent;
+use App\Modules\Financial\Gateways\Contracts\PaymentGatewayWebhookStatusInterface;
+use App\Modules\Financial\Gateways\TenantGatewayResolver;
 use App\Modules\Financial\Models\Order;
 use App\Modules\Financial\Models\OrderPaidOutbox;
 use App\Modules\Financial\Models\Payment;
@@ -30,9 +34,18 @@ class ProcessPaymentWebhookJob implements ShouldQueue
         public readonly ?string $orderNumber = null,
     ) {}
 
-    public function handle(DatabaseManager $database, OrderPaidOutboxService $outbox): void
+    public function handle(DatabaseManager $database, OrderPaidOutboxService $outbox, ?TenantGatewayResolver $gatewayResolver = null): void
     {
-        $paidOutbox = $database->transaction(function () use ($outbox): ?OrderPaidOutbox {
+        if ($this->status === 'synchronize' && $gatewayResolver === null) {
+            return;
+        }
+
+        $status = $this->resolvedStatus($gatewayResolver);
+        if ($status === null) {
+            return;
+        }
+
+        $paidOutbox = $database->transaction(function () use ($outbox, $status): ?OrderPaidOutbox {
             $payment = Payment::query()->whereKey($this->paymentId)->lockForUpdate()->first();
 
             if ($payment === null
@@ -50,13 +63,13 @@ class ProcessPaymentWebhookJob implements ShouldQueue
                 return null;
             }
 
-            if ($this->status === 'failed') {
+            if ($status === 'failed') {
                 $this->markFailed($order, $payment);
 
                 return null;
             }
 
-            if ($this->status !== 'paid') {
+            if ($status !== 'paid') {
                 return null;
             }
 
@@ -102,6 +115,49 @@ class ProcessPaymentWebhookJob implements ShouldQueue
                 'exception_class' => $exception::class,
             ]);
         }
+    }
+
+    private function resolvedStatus(?TenantGatewayResolver $gatewayResolver): ?string
+    {
+        if ($this->status !== 'synchronize') {
+            return in_array($this->status, ['paid', 'failed'], true) ? $this->status : null;
+        }
+
+        if ($this->externalId === null) {
+            return null;
+        }
+
+        if ($gatewayResolver === null) {
+            return null;
+        }
+
+        $payment = Payment::query()->with('order.tenant')->find($this->paymentId);
+        $tenant = $payment?->order?->tenant;
+
+        if (! $payment instanceof Payment || ! $tenant instanceof Tenant) {
+            return null;
+        }
+
+        if ($payment->tenant_plugin_config_id === null || $payment->gateway_configuration_version === null) {
+            return null;
+        }
+
+        $gateway = $gatewayResolver->resolveExact(
+            $tenant,
+            $payment->tenant_plugin_config_id,
+            $payment->gateway_configuration_version,
+            $this->gatewaySlug,
+        );
+
+        if (! $gateway->adapter instanceof PaymentGatewayWebhookStatusInterface) {
+            return null;
+        }
+
+        return match ($gateway->adapter->resolveWebhookStatus($gateway->credentials, $this->externalId)) {
+            PaymentChargeStatus::Paid => 'paid',
+            PaymentChargeStatus::Failed => 'failed',
+            PaymentChargeStatus::Pending => null,
+        };
     }
 
     private function markFailed(Order $order, Payment $payment): void

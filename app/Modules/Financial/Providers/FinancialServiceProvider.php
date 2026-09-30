@@ -3,8 +3,12 @@
 namespace App\Modules\Financial\Providers;
 
 use App\Modules\Financial\Contracts\GatewayConfigurationRegistry;
+use App\Modules\Financial\Gateways\Adapters\AsaasPaymentGateway;
 use App\Modules\Financial\Gateways\Adapters\CashPaymentGateway;
 use App\Modules\Financial\Gateways\Adapters\E2eWebhookGateway;
+use App\Modules\Financial\Gateways\Adapters\MercadoPagoPaymentGateway;
+use App\Modules\Financial\Gateways\Adapters\PagSeguroPaymentGateway;
+use App\Modules\Financial\Gateways\Adapters\StripePaymentGateway;
 use App\Modules\Financial\Gateways\PaymentGatewayManager;
 use App\Modules\Financial\Listeners\CreateEnrollmentFinancialMirrorListener;
 use App\Modules\Financial\Policies\OrderPolicy;
@@ -23,6 +27,10 @@ class FinancialServiceProvider extends ServiceProvider
     {
         $this->app->singleton(PaymentGatewayManager::class);
         $this->app->alias(PaymentGatewayManager::class, GatewayConfigurationRegistry::class);
+        $this->app->singleton(AsaasPaymentGateway::class);
+        $this->app->singleton(MercadoPagoPaymentGateway::class);
+        $this->app->singleton(PagSeguroPaymentGateway::class);
+        $this->app->singleton(StripePaymentGateway::class);
     }
 
     public function boot(PaymentGatewayManager $paymentGatewayManager): void
@@ -31,6 +39,10 @@ class FinancialServiceProvider extends ServiceProvider
         if (app()->environment(['testing', 'e2e'])) {
             $paymentGatewayManager->register(new E2eWebhookGateway);
         }
+        $paymentGatewayManager->register($this->app->make(StripePaymentGateway::class));
+        $paymentGatewayManager->register($this->app->make(MercadoPagoPaymentGateway::class));
+        $paymentGatewayManager->register($this->app->make(PagSeguroPaymentGateway::class));
+        $paymentGatewayManager->register($this->app->make(AsaasPaymentGateway::class));
 
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->registerGates();

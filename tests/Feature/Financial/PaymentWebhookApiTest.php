@@ -7,6 +7,9 @@ use App\Modules\Ecosystem\Models\PluginActivation;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
 use App\Modules\Financial\Contracts\GatewayConfigurationDefinition;
 use App\Modules\Financial\Enums\PaymentConfirmationMode;
+use App\Modules\Financial\Gateways\Adapters\AsaasPaymentGateway;
+use App\Modules\Financial\Gateways\Adapters\MercadoPagoPaymentGateway;
+use App\Modules\Financial\Gateways\Adapters\PagSeguroPaymentGateway;
 use App\Modules\Financial\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Financial\Gateways\Contracts\PaymentGatewayWebhookInterface;
 use App\Modules\Financial\Gateways\Data\ChargeIntent;
@@ -22,8 +25,10 @@ use App\Modules\Learning\Models\Course;
 use App\Modules\Learning\Models\Enrollment;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 
 class WebhookCapableFakeGateway implements PaymentGatewayInterface, PaymentGatewayWebhookInterface
@@ -70,7 +75,7 @@ class WebhookCapableFakeGateway implements PaymentGatewayInterface, PaymentGatew
         return isset($config['webhook_secret']) && is_string($config['webhook_secret']);
     }
 
-    public function verifyWebhookSignature(array $credentials, string $payload, string $signature): bool
+    public function verifyWebhookSignature(array $credentials, string $payload, string $signature, array $context = []): bool
     {
         $provided = str_starts_with($signature, 'sha256=') ? substr($signature, 7) : $signature;
 
@@ -131,14 +136,15 @@ class ThrowingWebhookGateway extends WebhookCapableFakeGateway
         return 'webhook-throwing';
     }
 
-    public function verifyWebhookSignature(array $credentials, string $payload, string $signature): bool
+    public function verifyWebhookSignature(array $credentials, string $payload, string $signature, array $context = []): bool
     {
         throw new RuntimeException('Webhook provider unavailable.');
     }
 }
 
+/** @param array<string, mixed> $gatewayCredentials */
 /** @return array{tenant: Tenant, order: Order, payment: Payment, config: TenantPluginConfig, secret: string} */
-function webhookPaymentFixture(string $status = 'pending', ?PaymentGatewayInterface $gateway = null): array
+function webhookPaymentFixture(string $status = 'pending', ?PaymentGatewayInterface $gateway = null, array $gatewayCredentials = []): array
 {
     $tenant = makeTenant();
     $user = User::factory()->student()->forTenant($tenant)->create();
@@ -156,7 +162,7 @@ function webhookPaymentFixture(string $status = 'pending', ?PaymentGatewayInterf
         'tenant_id' => $tenant->id,
         'plugin_id' => $plugin->id,
         'enabled' => true,
-        'config' => ['webhook_secret' => $secret],
+        'config' => $gatewayCredentials !== [] ? $gatewayCredentials : ['webhook_secret' => $secret],
     ]);
 
     $order = Order::factory()->create([
@@ -188,6 +194,25 @@ function signedWebhookRequest(array $payload, string $secret, string $gatewaySlu
         'CONTENT_TYPE' => 'application/json',
         'HTTP_X_WEBHOOK_SIGNATURE' => 'sha256='.hash_hmac('sha256', $raw, $secret),
     ], $raw);
+}
+
+/** @return array{private: string, public: string} */
+function pagSeguroFeatureSigningKeys(): array
+{
+    $privateKey = openssl_pkey_new([
+        'private_key_type' => OPENSSL_KEYTYPE_EC,
+        'curve_name' => 'prime256v1',
+    ]);
+    if ($privateKey === false || ! openssl_pkey_export($privateKey, $privatePem)) {
+        throw new RuntimeException('Não foi possível gerar a chave de teste.');
+    }
+
+    $details = openssl_pkey_get_details($privateKey);
+    if (! is_array($details) || ! is_string($details['key'] ?? null)) {
+        throw new RuntimeException('Não foi possível extrair a chave pública de teste.');
+    }
+
+    return ['private' => $privatePem, 'public' => $details['key']];
 }
 
 it('accepts a signed webhook without authentication and queues processing', function (): void {
@@ -308,6 +333,165 @@ it('verifies the generic HMAC fallback when the adapter has no webhook interface
 
     $response->assertAccepted()->assertJsonPath('data.accepted', true);
     Queue::assertPushed(ProcessPaymentWebhookJob::class);
+});
+
+it('accepts a native Mercado Pago order notification and queues authoritative synchronization', function (): void {
+    Queue::fake();
+    $gateway = new MercadoPagoPaymentGateway(app(Factory::class), 'https://mercadopago.test');
+    app(PaymentGatewayManager::class)->register($gateway);
+    $secret = 'mercadopago-webhook-secret';
+    $fixture = webhookPaymentFixture(
+        gateway: $gateway,
+        gatewayCredentials: [
+            'access_token' => 'APP_USR-test-token',
+            'webhook_secret' => $secret,
+        ],
+    );
+    $externalId = 'ORD01JYH1Z1YJN4HZ8J3Q0RB3YP6D';
+    $fixture['payment']->update(['external_id' => $externalId]);
+    $timestamp = (int) floor(microtime(true) * 1000);
+    $requestId = 'request-mp-123';
+    $raw = json_encode([
+        'action' => 'order.processed',
+        'api_version' => 'v1',
+        'id' => 'notification-123',
+        'type' => 'order',
+        'data' => ['id' => $externalId],
+    ], JSON_THROW_ON_ERROR);
+    $manifest = 'id:'.strtolower($externalId).';request-id:'.$requestId.';ts:'.$timestamp.';';
+    $signature = 'ts='.$timestamp.',v1='.hash_hmac('sha256', $manifest, $secret);
+
+    $response = $this->call('POST', '/api/v1/webhooks/gateways/mercadopago?data.id='.$externalId.'&type=order', [], [], [], [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_X_SIGNATURE' => $signature,
+        'HTTP_X_REQUEST_ID' => $requestId,
+    ], $raw);
+
+    $response->assertAccepted()->assertJsonPath('data.accepted', true);
+    Queue::assertPushed(ProcessPaymentWebhookJob::class, function (ProcessPaymentWebhookJob $job) use ($fixture, $externalId): bool {
+        return $job->paymentId === $fixture['payment']->id
+            && $job->gatewaySlug === 'mercadopago'
+            && $job->status === 'synchronize'
+            && $job->externalId === $externalId;
+    });
+});
+
+it('accepts a native PagBank checkout notification with ECDSA signature', function (): void {
+    Queue::fake();
+    $keys = pagSeguroFeatureSigningKeys();
+    $gateway = new PagSeguroPaymentGateway(app(Factory::class), 'https://pagseguro.test');
+    app(PaymentGatewayManager::class)->register($gateway);
+    $fixture = webhookPaymentFixture(
+        gateway: $gateway,
+        gatewayCredentials: [
+            'access_token' => 'pagbank-access-token',
+            'webhook_public_key' => $keys['public'],
+        ],
+    );
+    $externalId = 'CHEC_TEST-123';
+    $fixture['payment']->update(['external_id' => $externalId]);
+    $raw = json_encode([
+        'id' => $externalId,
+        'reference_id' => $fixture['order']->order_number,
+        'charges' => [['status' => 'PAID']],
+    ], JSON_THROW_ON_ERROR);
+    $signature = '';
+    expect(openssl_sign($raw, $signature, $keys['private'], OPENSSL_ALGO_SHA256))->toBeTrue();
+
+    $response = $this->call('POST', '/api/v1/webhooks/gateways/pagseguro', [], [], [], [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_X_PAYLOAD_SIGNATURE' => base64_encode($signature),
+        'HTTP_X_PRODUCT_ID' => $externalId,
+        'HTTP_X_PRODUCT_ORIGIN' => 'CHECKOUT',
+    ], $raw);
+
+    $response->assertAccepted()->assertJsonPath('data.accepted', true);
+    Queue::assertPushed(ProcessPaymentWebhookJob::class, function (ProcessPaymentWebhookJob $job) use ($fixture, $externalId): bool {
+        return $job->paymentId === $fixture['payment']->id
+            && $job->gatewaySlug === 'pagseguro'
+            && $job->status === 'paid'
+            && $job->externalId === $externalId;
+    });
+});
+
+it('accepts a native Asaas checkout notification with its webhook access token', function (): void {
+    Queue::fake();
+    $gateway = new AsaasPaymentGateway(app(Factory::class), 'https://asaas.test/v3');
+    app(PaymentGatewayManager::class)->register($gateway);
+    $webhookToken = str_repeat('asaas-webhook-token-', 2);
+    $fixture = webhookPaymentFixture(
+        gateway: $gateway,
+        gatewayCredentials: [
+            'access_token' => '$aact_hmlg_test-token',
+            'webhook_token' => $webhookToken,
+        ],
+    );
+    $externalId = 'checkout-asaas-123';
+    $fixture['payment']->update(['external_id' => $externalId]);
+    $raw = json_encode([
+        'id' => 'evt-asaas-123',
+        'event' => 'CHECKOUT_PAID',
+        'checkout' => [
+            'id' => $externalId,
+            'status' => 'PAID',
+            'externalReference' => $fixture['order']->order_number,
+        ],
+    ], JSON_THROW_ON_ERROR);
+
+    $response = $this->call('POST', '/api/v1/webhooks/gateways/asaas', [], [], [], [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_ASAAS_ACCESS_TOKEN' => $webhookToken,
+    ], $raw);
+
+    $response->assertOk()->assertJsonPath('data.accepted', true);
+    Queue::assertPushed(ProcessPaymentWebhookJob::class, function (ProcessPaymentWebhookJob $job) use ($fixture, $externalId): bool {
+        return $job->paymentId === $fixture['payment']->id
+            && $job->gatewaySlug === 'asaas'
+            && $job->status === 'paid'
+            && $job->externalId === $externalId
+            && $job->orderNumber === $fixture['order']->order_number;
+    });
+});
+
+it('resolves the native Mercado Pago order before applying its webhook status', function (): void {
+    $gateway = new MercadoPagoPaymentGateway(app(Factory::class), 'https://mercadopago.test');
+    app(PaymentGatewayManager::class)->register($gateway);
+    $fixture = webhookPaymentFixture(
+        gateway: $gateway,
+        gatewayCredentials: [
+            'access_token' => 'APP_USR-test-token',
+            'webhook_secret' => 'mercadopago-webhook-secret',
+        ],
+    );
+    $externalId = 'ORD01JYH1Z1YJN4HZ8J3Q0RB3YP6D';
+    $fixture['payment']->update(['external_id' => $externalId]);
+    Http::fake([
+        'https://mercadopago.test/v1/orders/'.$externalId => Http::response([
+            'id' => $externalId,
+            'status' => 'processed',
+            'status_detail' => 'accredited',
+        ]),
+    ]);
+
+    $job = new ProcessPaymentWebhookJob(
+        paymentId: $fixture['payment']->id,
+        gatewaySlug: 'mercadopago',
+        status: 'synchronize',
+        externalId: $externalId,
+    );
+    $job->handle(
+        app(DatabaseManager::class),
+        app(OrderPaidOutboxService::class),
+        app(\App\Modules\Financial\Gateways\TenantGatewayResolver::class),
+    );
+
+    expect($fixture['order']->fresh()->status)->toBe('paid')
+        ->and($fixture['payment']->fresh()->status)->toBe('completed');
+    Http::assertSent(function ($request) use ($externalId): bool {
+        return $request->method() === 'GET'
+            && $request->url() === 'https://mercadopago.test/v1/orders/'.$externalId
+            && $request->header('Authorization')[0] === 'Bearer APP_USR-test-token';
+    });
 });
 
 it('moves a pending payment to paid and records one durable paid outbox event', function (): void {

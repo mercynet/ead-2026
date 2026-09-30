@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'base_url' => env('STRIPE_API_BASE_URL', 'https://api.stripe.com/v1'),
+    ],
+
+    'mercadopago' => [
+        'base_url' => env('MERCADOPAGO_API_BASE_URL', 'https://api.mercadopago.com'),
+    ],
+
+    'pagseguro' => [
+        'base_url' => env('PAGSEGURO_API_BASE_URL', 'https://api.pagseguro.com'),
+    ],
+
+    'asaas' => [
+        'base_url' => env('ASAAS_API_BASE_URL', 'https://api.asaas.com/v3'),
+    ],
+
 ];

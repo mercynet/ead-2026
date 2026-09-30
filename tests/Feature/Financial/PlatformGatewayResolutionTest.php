@@ -110,7 +110,7 @@ it('throws when no active platform gateway exists', function (): void {
 });
 
 it('throws when the active platform gateway has no registered adapter', function (): void {
-    PlatformPaymentGateway::factory()->gateway('pagseguro')->create();
+    PlatformPaymentGateway::factory()->gateway('unregistered-gateway')->create();
 
     expect(fn () => platformResolver()->resolve())
         ->toThrow(GatewayResolutionException::class, 'sem adaptador registrado');

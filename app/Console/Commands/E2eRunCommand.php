@@ -153,7 +153,7 @@ class E2eRunCommand extends Command
                 }
             }
         } catch (Throwable $e) {
-            $this->error('Erro no runner: '.$this->sanitize($e->getMessage()));
+            $this->error('Erro no runner: '.$this->exceptionSummary($e));
             $this->failed++;
         } finally {
             if (isset($spec['cleanup']) && is_callable($spec['cleanup'])) {
@@ -162,7 +162,7 @@ class E2eRunCommand extends Command
                 } catch (Throwable $e) {
                     // Resíduo não removido é falha do runner: sem isto o exit code
                     // seria 0 mesmo deixando fixtures no banco (falso sucesso).
-                    $this->error('cleanup do spec FALHOU (pode ter deixado resíduo): '.$this->sanitize($e->getMessage()));
+                    $this->error('cleanup do spec FALHOU (pode ter deixado resíduo): '.$this->exceptionSummary($e));
                     $this->failed++;
                 }
             }
@@ -306,7 +306,7 @@ class E2eRunCommand extends Command
         try {
             $path = $this->resolveCasePath($case, $specPath);
         } catch (Throwable $e) {
-            $this->reportCase($name, [['path', false, 'non-empty string', $this->sanitize($e->getMessage())]]);
+            $this->reportCase($name, [['path', false, 'non-empty string', $this->exceptionSummary($e)]]);
 
             return;
         }
@@ -342,7 +342,7 @@ class E2eRunCommand extends Command
                 'delete' => $request->delete($base.$path, $body),
             };
         } catch (Throwable $e) {
-            $this->reportCase($name, [['request', false, 'reachable app', $this->sanitize($e->getMessage())]]);
+            $this->reportCase($name, [['request', false, 'reachable app', $this->exceptionSummary($e)]]);
 
             return;
         }
@@ -362,7 +362,7 @@ class E2eRunCommand extends Command
                     $this->ctx['fixtures'] = array_merge($this->ctx['fixtures'], $captured);
                 }
             } catch (Throwable $e) {
-                $checks[] = ['capture', false, 'array', $this->sanitize($e->getMessage())];
+                $checks[] = ['capture', false, 'array', $this->exceptionSummary($e)];
             }
         }
 
@@ -377,7 +377,7 @@ class E2eRunCommand extends Command
         // é falha do app — registra o corpo (sanitizado) e aciona o circuit breaker.
         if ($response->serverError() && ! (is_int($expectedStatus) && $expectedStatus >= 500)) {
             $checks[] = ['no unexpected 5xx', false, '<5xx', $response->status()];
-            $checks[] = ['response body', false, 'non-5xx JSON', $this->sanitize(mb_substr($response->body(), 0, 1000))];
+            $checks[] = ['response body', false, 'non-5xx JSON', '[REDACTED]'];
 
             if (! $this->option('continue-on-error')) {
                 $this->aborted = true;
@@ -500,19 +500,81 @@ class E2eRunCommand extends Command
      * Redige tokens/segredos de qualquer texto que vá para o output (corpo 5xx,
      * mensagens de exceção). O runner nunca deve imprimir Bearer ou senha.
      */
+    private function exceptionSummary(Throwable $exception): string
+    {
+        return sprintf('exception=%s code=%d', $exception::class, $exception->getCode());
+    }
+
     private function sanitize(string $text): string
+    {
+        $decoded = json_decode($text, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $sanitized = json_encode(
+                $this->sanitizeStructured($decoded),
+                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE,
+            );
+
+            return $sanitized === false ? '[REDACTED]' : $sanitized;
+        }
+
+        return $this->sanitizeText($text);
+    }
+
+    private function sanitizeStructured(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return is_string($value) ? $this->sanitizeText($value) : $value;
+        }
+
+        $sanitized = [];
+        foreach ($value as $key => $item) {
+            $normalizedKey = strtolower((string) $key);
+            $sanitized[$key] = $this->isSensitiveKey($normalizedKey)
+                ? '[REDACTED]'
+                : $this->sanitizeStructured($item);
+        }
+
+        return $sanitized;
+    }
+
+    private function isSensitiveKey(string $key): bool
+    {
+        foreach ((array) config('lgpd.pii', []) as $fields) {
+            foreach ((array) $fields as $field) {
+                if ($key === strtolower((string) $field)) {
+                    return true;
+                }
+            }
+        }
+
+        return preg_match(
+            '/(?:token|secret|password|signature|api[_-]?key|authorization|cookie|credential|card|message|exception|trace|detail)/i',
+            $key,
+        ) === 1;
+    }
+
+    private function sanitizeText(string $text): string
     {
         $text = preg_replace('/Bearer\s+[A-Za-z0-9|._~+\/=-]+/', 'Bearer [REDACTED]', $text) ?? $text;
 
         $text = preg_replace(
-            '/("(?:token|plainTextToken|access_token|password|current_password|secret|webhook_secret|client_secret|api_key|signature|email|cpf|phone|telephone|mobile|card|card_number|name|headline|bio|avatar|linkedin_url|twitter_url)"\s*:\s*")[^"]*(")/i',
-            '$1[REDACTED]$2',
+            '/((?:["\']?)(?:token|plainTextToken|access_token|password|current_password|secret|webhook_secret|client_secret|api_key|signature|email|cpf|phone|telephone|mobile|card|card_number|name|headline|bio|avatar|linkedin_url|twitter_url)(?:["\']?)\s*(?:=|:|\bis\b|\s+)\s*)(\"(?:\\\\.|[^\"\\\\])*\"|\'(?:\\\\.|[^\'\\\\])*\'|[^\s,;}\\]]+)/i',
+            '$1[REDACTED]',
             $text,
         ) ?? $text;
 
-        return preg_replace(
+        $text = preg_replace(
             '/((?:X-(?:Webhook-)?Signature|X-Api-Key|Authorization)\s*:\s*)[^\s,}]+/i',
             '$1[REDACTED]',
+            $text,
+        ) ?? $text;
+
+        $text = preg_replace('/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i', '[REDACTED_EMAIL]', $text) ?? $text;
+        $text = preg_replace('/(?<!\d)\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}(?!\d)/', '[REDACTED_CPF]', $text) ?? $text;
+
+        return preg_replace(
+            '/\bhttps?:\/\/[^\s"\',}]+/i',
+            '[REDACTED_URL]',
             $text,
         ) ?? $text;
     }
@@ -586,7 +648,7 @@ class E2eRunCommand extends Command
             $this->deleteFixtureActivities($tenantIds, $userIds);
         } catch (Throwable $e) {
             // Teardown incompleto deixa fixtures órfãs; sinalizar via exit code.
-            $this->warn('teardown parcial: '.$this->sanitize($e->getMessage()));
+            $this->warn('teardown parcial: '.$this->exceptionSummary($e));
             $this->failed++;
         }
     }
@@ -666,7 +728,7 @@ class E2eRunCommand extends Command
                 $this->failed++;
             }
         } catch (Throwable $e) {
-            $this->error('não foi possível verificar o snapshot do banco: '.$this->sanitize($e->getMessage()));
+            $this->error('não foi possível verificar o snapshot do banco: '.$this->exceptionSummary($e));
             $this->failed++;
         }
     }

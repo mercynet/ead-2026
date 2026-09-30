@@ -24,13 +24,14 @@ class AcceptPaymentWebhookAction
     ) {}
 
     /**
-     * @param  array{status: string, order_number?: string, external_id?: string}  $payload
+     * @param  array{status: 'paid'|'failed'|'synchronize', order_number?: string, external_id?: string}  $payload
      */
     public function handle(
         string $gatewaySlug,
         string $rawPayload,
         array $payload,
         ?string $signature,
+        array $signatureContext = [],
     ): void {
         $payment = $this->payment($gatewaySlug, $payload);
         if ($payment === null || $payment->order === null) {
@@ -63,6 +64,7 @@ class AcceptPaymentWebhookAction
                 $gateway->credentials,
                 $rawPayload,
                 $signature,
+                $signatureContext,
             );
         } catch (Throwable $exception) {
             throw $this->gatewayUnavailable($gatewaySlug, $payment->id, $exception);
@@ -86,7 +88,7 @@ class AcceptPaymentWebhookAction
     }
 
     /**
-     * @param  array{status: string, order_number?: string, external_id?: string}  $payload
+     * @param  array{status: 'paid'|'failed'|'synchronize', order_number?: string, external_id?: string}  $payload
      */
     private function payment(string $gatewaySlug, array $payload): ?Payment
     {
@@ -120,6 +122,6 @@ class AcceptPaymentWebhookAction
             'exception_class' => $exception::class,
         ]);
 
-        return new GatewayUnavailableException('Gateway de pagamento indisponível.');
+        return new GatewayUnavailableException;
     }
 }

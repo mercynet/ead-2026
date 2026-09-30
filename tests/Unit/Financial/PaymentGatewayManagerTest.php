@@ -80,10 +80,12 @@ it('registers adapters and looks them up by identifier', function (): void {
 
     expect($manager->get('stripe'))->toBe($stripe)
         ->and($manager->get('mercadopago'))->toBe($mp)
-        ->and($manager->get('pagseguro'))->toBeNull()
+        ->and($manager->get('pagseguro'))->not->toBeNull()
+        ->and($manager->get('asaas'))->not->toBeNull()
         ->and($manager->has('stripe'))->toBeTrue()
-        ->and($manager->has('pagseguro'))->toBeFalse()
-        ->and(array_keys($manager->all()))->toBe(['cash', 'e2e-webhook', 'stripe', 'mercadopago']);
+        ->and($manager->has('pagseguro'))->toBeTrue()
+        ->and($manager->has('asaas'))->toBeTrue()
+        ->and(array_keys($manager->all()))->toBe(['cash', 'e2e-webhook', 'stripe', 'mercadopago', 'pagseguro', 'asaas']);
 });
 
 it('is bound as a singleton in the container', function (): void {

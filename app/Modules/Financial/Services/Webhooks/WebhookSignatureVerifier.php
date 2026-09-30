@@ -9,19 +9,21 @@ class WebhookSignatureVerifier
 {
     /**
      * @param  array<string, mixed>  $credentials
+     * @param  array<string, mixed>  $context
      */
     public function verify(
         PaymentGatewayInterface $gateway,
         array $credentials,
         string $payload,
         ?string $signature,
+        array $context = [],
     ): bool {
         if ($signature === null || $signature === '') {
             return false;
         }
 
         if ($gateway instanceof PaymentGatewayWebhookInterface) {
-            return $gateway->verifyWebhookSignature($credentials, $payload, $signature);
+            return $gateway->verifyWebhookSignature($credentials, $payload, $signature, $context);
         }
 
         $secret = $credentials['webhook_secret'] ?? null;

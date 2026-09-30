@@ -62,7 +62,7 @@ class StoreCheckoutAction
             );
         } catch (Throwable) {
             $this->releaseClaim($payment, $token);
-            throw new GatewayUnavailableException('Gateway de pagamento indisponível.');
+            throw new GatewayUnavailableException;
         }
 
         try {
@@ -74,7 +74,7 @@ class StoreCheckoutAction
                 description: 'Compra de curso',
             ));
             if ($gateway->confirmationMode() === PaymentConfirmationMode::Manual && $result->status !== PaymentChargeStatus::Pending) {
-                throw new \UnexpectedValueException('Manual gateway returned an invalid charge result.');
+                throw new \UnexpectedValueException('O gateway manual retornou um resultado de cobrança inválido.');
             }
         } catch (Throwable $exception) {
             try {
@@ -93,7 +93,7 @@ class StoreCheckoutAction
                 'exception_class' => $exception::class,
             ]);
 
-            throw new GatewayUnavailableException('Gateway de pagamento indisponível.');
+            throw new GatewayUnavailableException;
         }
 
         try {
@@ -154,7 +154,7 @@ class StoreCheckoutAction
                     try {
                         $gateway = $this->gatewayResolver->resolve($context->requiredTenant());
                     } catch (Throwable) {
-                        throw new GatewayUnavailableException('Gateway de pagamento indisponível.');
+                        throw new GatewayUnavailableException;
                     }
                 }
 
@@ -310,7 +310,7 @@ class StoreCheckoutAction
             ->update(['charge_state' => PaymentChargeState::Created->value, 'charge_claim_token' => null, 'charge_claimed_at' => null]);
     }
 
-    private function markUnknown(Payment $payment, string $token): void
+    protected function markUnknown(Payment $payment, string $token): void
     {
         Payment::query()->whereKey($payment->id)->where('charge_state', PaymentChargeState::Processing->value)->where('charge_claim_token', $token)
             ->where('tenant_plugin_config_id', $payment->tenant_plugin_config_id)->where('gateway_configuration_version', $payment->gateway_configuration_version)

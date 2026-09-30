@@ -22,15 +22,23 @@ Domínio **em fundação** (ledger interno `Order*` + contrato de gateway pronto
   `Journey: STUDENT-PAID | Area: student | Depends on: POST /api/v1/student/checkout`
 - [x] **PAYMENT-WEBHOOK** — `POST /api/v1/webhooks/gateways/{gateway_slug}` valida assinatura, rejeita gateways manuais, enfileira `ProcessPaymentWebhookJob` e aplica transições idempotentes `pending → paid|failed`, com `OrderPaidEvent` no outbox durável. Cobertura Feature/Scribe/Architecture e spec E2E HTTP declarativo; execução requer stack `e2e` dedicada.
   `Journey: STUDENT-PAID | Area: public technical webhook | Depends on: POST /api/v1/student/checkout`
+- [x] Tradução PT-BR de exceções de gateway: mensagem canônica de indisponibilidade, identidade de configuração e resultado manual inválido, com cobertura unitária e preservação do contrato 503.
+- [x] Adapter first-party Stripe via `PaymentGatewayInterface`: PaymentIntent em cents, idempotência, client secret, normalização de status e assinatura de webhook, com cobertura unitária e registro no `PaymentGatewayManager`.
+  `Journey: STUDENT-PAID | Area: neutral + public technical webhook | Depends on: POST /api/v1/student/checkout`
+- [x] Adapter first-party Mercado Pago via Orders API: checkout redirect em decimal string derivado de cents, idempotência, assinatura `x-signature` com contexto `data.id`/`x-request-id` e webhook nativo com consulta autoritativa da Order antes da transição do ledger.
+  `Journey: STUDENT-PAID | Area: neutral + public technical webhook | Depends on: POST /api/v1/student/checkout`
+- [x] Adapter first-party PagSeguro/PagBank via Checkout API: checkout em cents, idempotência, link `PAY`, webhook nativo com status `charges[].status` e assinatura `x-payload-signature` ECDSA/SHA-256 com chave pública.
+  `Journey: STUDENT-PAID | Area: neutral + public technical webhook | Depends on: POST /api/v1/student/checkout`
+- [x] Adapter first-party Asaas via Checkout PIX: valor decimal serializado sem `float`, correlação por `externalReference`, checkout hospedado e webhook nativo autenticado por `asaas-access-token`.
+  `Journey: STUDENT-PAID | Area: neutral + public technical webhook | Depends on: POST /api/v1/student/checkout`
 
 ## In Progress
 
-_Nenhuma task em progresso._
+_(nenhuma)_
 
 ## Pending
 
-- [ ] Tradução PT-BR de exceções de gateway.
-- [ ] Adaptadores first-party Stripe, Mercado Pago, PagSeguro, PIX-nativo e Asaas via `PaymentGatewayInterface`.
+- [ ] Adapter first-party PIX-nativo via `PaymentGatewayInterface`.
 - [ ] Gateways adicionais como plugins financeiros; contrato atual já prevê.
 - [ ] Comissão de instrutor: `commission_rate` + `CommissionLog`.
 - [ ] Portar/revisar `Order`, `OrderItem`, `Payment` e `OrderOriginType`, mantendo cents inteiros.

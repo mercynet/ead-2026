@@ -97,3 +97,29 @@ it('redacts scalar PII when a database assertion fails', function (): void {
         ->not->toContain('expected@example.test')
         ->not->toContain('person@example.test');
 });
+
+it('redacts free text and nested JSON messages before they reach runner output', function (): void {
+    $command = app(E2eRunCommand::class);
+    $sanitize = new \ReflectionMethod($command, 'sanitize');
+    $sanitize->setAccessible(true);
+
+    $raw = 'request failed for person@example.test with cpf 123.456.789-00 PSP secret tenant-secret';
+    $sanitized = $sanitize->invoke($command, $raw);
+
+    expect($sanitized)
+        ->not->toContain('person@example.test')
+        ->not->toContain('123.456.789-00')
+        ->not->toContain('tenant-secret');
+
+    $nested = json_encode([
+        'message' => 'contact person@example.test',
+        'nested' => ['email' => 'nested@example.test', 'bio' => 'private bio'],
+    ], JSON_THROW_ON_ERROR);
+
+    $sanitizedNested = $sanitize->invoke($command, $nested);
+
+    expect($sanitizedNested)
+        ->not->toContain('person@example.test')
+        ->not->toContain('nested@example.test')
+        ->not->toContain('private bio');
+});

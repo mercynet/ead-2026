@@ -22,7 +22,7 @@ final readonly class ResolvedGateway
         public string $configurationVersion,
     ) {
         if ($tenantPluginConfigId <= 0 || $configurationVersion === '') {
-            throw new \InvalidArgumentException('Gateway configuration identity is required.');
+            throw new \InvalidArgumentException('A identidade da configuração do gateway é obrigatória.');
         }
     }
 

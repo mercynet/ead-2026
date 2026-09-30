@@ -333,6 +333,35 @@ it('marks adapter exceptions unknown and never retries their charge', function (
     expect($gateway->charges)->toBe(1);
 });
 
+it('keeps the gateway error contract when marking an adapter failure unknown also fails', function (): void {
+    $tenant = makeTenant();
+    [$student, $headers] = actingAsUserType(UserType::Student, $tenant);
+    checkoutGateway($tenant, new CheckoutAutomaticGateway(throws: true));
+    $course = checkoutCourse($tenant);
+    $key = '3b4e1dc1-0ef6-46d8-9bea-aa992d719744';
+
+    $action = Mockery::mock(StoreCheckoutAction::class, [
+        app(DatabaseManager::class),
+        app(CourseCheckoutCatalog::class),
+        app(TenantGatewayResolver::class),
+        app(OrderPaidOutboxService::class),
+    ])->makePartial();
+    $action->shouldAllowMockingProtectedMethods()
+        ->shouldReceive('markUnknown')
+        ->once()
+        ->andThrow(new RuntimeException('database unavailable'));
+    $this->app->instance(StoreCheckoutAction::class, $action);
+
+    assertApiErrorEnvelope(
+        $this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers, $key)),
+        503,
+        'gateway_unavailable',
+    );
+
+    expect(Payment::query()->firstOrFail()->charge_state)->toBe('processing')
+        ->and($student->exists)->toBeTrue();
+});
+
 it('does not misreport payment persistence failures as gateway outages', function (): void {
     $tenant = makeTenant();
     [, $headers] = actingAsUserType(UserType::Student, $tenant);

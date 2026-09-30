@@ -81,8 +81,9 @@ function seedGatewayPlugin(
     string $activationStatus = 'active',
     bool $configEnabled = true,
     array $config = ['secret_key' => 'sk_test_x'],
+    string $gatewaySlug = 'stripe',
 ): Plugin {
-    $plugin = Plugin::factory()->published()->gateway('stripe')->create();
+    $plugin = Plugin::factory()->published()->gateway($gatewaySlug)->create();
 
     PluginActivation::factory()->create([
         'tenant_id' => $tenant->id,
@@ -156,7 +157,7 @@ it('does not resolve when the tenant config is disabled', function (): void {
 it('throws when the active gateway has no registered adapter', function (): void {
     $tenant = makeTenant();
     // adaptador NÃO registrado
-    seedGatewayPlugin($tenant);
+    seedGatewayPlugin($tenant, gatewaySlug: 'unregistered-gateway');
 
     expect(fn () => resolver()->resolve($tenant))
         ->toThrow(GatewayResolutionException::class, 'sem adaptador registrado');

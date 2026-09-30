@@ -1,6 +1,9 @@
 <?php
 
 use App\Console\Commands\E2eRunCommand;
+use Illuminate\Console\OutputStyle;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 uses(Tests\TestCase::class);
 
@@ -27,4 +30,21 @@ it('redacts gateway secrets and signatures from runner output', function (): voi
         ->not->toContain('token-secret')
         ->not->toContain('header-secret')
         ->not->toContain('api-header-secret');
+});
+
+it('redacts sensitive values when a JSON assertion fails', function (): void {
+    $command = app(E2eRunCommand::class);
+    $output = new BufferedOutput;
+    $command->setOutput(new OutputStyle(new ArrayInput([]), $output));
+    $reportCase = new \ReflectionMethod($command, 'reportCase');
+    $reportCase->setAccessible(true);
+
+    $reportCase->invoke($command, 'sensitive assertion', [[
+        'json: data.token',
+        false,
+        'expected',
+        'token-secret-from-response',
+    ]]);
+
+    expect($output->fetch())->not->toContain('token-secret-from-response');
 });

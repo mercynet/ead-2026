@@ -71,8 +71,8 @@ class Payment extends Model
             'order_id' => 'integer',
             'tenant_plugin_config_id' => 'integer',
             'charge_claimed_at' => 'datetime',
-            'gateway_response' => 'array',
-            'metadata' => 'array',
+            'gateway_response' => 'encrypted:array',
+            'metadata' => 'encrypted:array',
         ];
     }
 }

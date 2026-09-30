@@ -88,7 +88,7 @@ class Order extends Model
             'subtotal_cents' => 'integer',
             'tax_cents' => 'integer',
             'total_cents' => 'integer',
-            'metadata' => 'array',
+            'metadata' => 'encrypted:array',
         ];
     }
 }

@@ -468,14 +468,14 @@ class E2eRunCommand extends Command
                 $this->line(sprintf(
                     '    <fg=red>✗ %s</>  esperado=%s  obtido=%s',
                     $label,
-                    $this->stringify($expected),
-                    $this->stringify($actual),
+                    $this->stringify($expected, $label),
+                    $this->stringify($actual, $label),
                 ));
             }
         }
     }
 
-    private function stringify(mixed $value): string
+    private function stringify(mixed $value, ?string $label = null): string
     {
         if (is_null($value)) {
             return 'null';
@@ -484,10 +484,16 @@ class E2eRunCommand extends Command
             return $value ? 'true' : 'false';
         }
         if (is_scalar($value)) {
-            return (string) $value;
+            $text = (string) $value;
+        } else {
+            $text = json_encode($value) ?: gettype($value);
         }
 
-        return json_encode($value) ?: gettype($value);
+        if ($label !== null && preg_match('/(?:token|secret|password|signature|api[_-]?key|authorization)/i', $label) === 1) {
+            return '[REDACTED]';
+        }
+
+        return $this->sanitize($text);
     }
 
     /**

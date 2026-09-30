@@ -486,9 +486,9 @@ atual seguem não provados. A cobrança permanece fechada.
 
 ## 40. Fechamento da campanha de recuperação — 2026-09-09
 
-Esta seção sela a campanha antes da última execução de activation. O commit que contém este selo é
-o novo ponto de partida obrigatório para a cadeia `HEAD → imagem → manifest → receipt`; não será
-aceito reaproveitar uma imagem ou receipt de um commit anterior.
+Esta seção registra a execução final contra o commit selado `0eefb482af5ae4dcdcc0d857f949efdf391c5a`.
+A cadeia `HEAD → imagem → manifest → receipt` foi reconstruída nesse ponto; não foi reaproveitada
+imagem ou receipt de commit anterior.
 
 ### Evidência interna consolidada
 
@@ -497,9 +497,10 @@ aceito reaproveitar uma imagem ou receipt de um commit anterior.
 - Preflight ocorre antes de mutação; migração usa arquivo de ambiente, sem senha em `argv`; imagens
   carregam revision do commit e SHA do manifest; activation consome estados observados, não PASS
   hardcoded.
-- O backup final observado antes deste selo foi `20260909T215558Z-3279`, com monitor, readback
-  remoto independente e canário de alerta em `PASS`; o restore anterior validou `73/73` migrations,
-  o marcador de storage e a readiness sem tocar volume produtivo.
+- O backup de pré-activation foi `20260909T220350Z-21345`, com monitor, readback remoto independente
+  e canário de alerta em `PASS`. Depois da activation, uma nova encarnação descartável restaurou
+  exatamente esse backup; o deploy pós-restore passou com `73/73` migrations. O snapshot pós-restore
+  foi `20260909T221034Z-5542`.
 - A qualification stack separada passou `mzrt/tenant-lifecycle` `10/10` e
   `ops04/synthetic-pilot` `29/29`; o grupo ops/assessment/financial passou `33/33` com `245`
   assertions. Architecture passou `43` testes com `1459` assertions após a convergência Scribe.
@@ -510,18 +511,68 @@ aceito reaproveitar uma imagem ou receipt de um commit anterior.
 
 ### Execução final e limites da prova
 
-A execução final deve reconstruir app/web a partir do HEAD deste selo, reiniciar apenas a stack
-descartável `ead2026-ops03`, gerar backup novo, rodar readiness, Scribe, TLS local, synthetic,
-monitor, readback, alerta, deploy-observe e escrever receipt somente com os estados observados.
-Um `final_verdict=PASS` nesse receipt prova a qualificação da stack descartável e a integridade da
-cadeia de proveniência; não é autorização para produção e não cria `PROVEN_CURRENT` para host,
-DNS/TLS público, secrets, privilégios DB, backup off-host, canal real de alertas ou scheduler
-recorrente.
+A execução final reconstruiu app/web a partir desse HEAD, reiniciou somente `ead2026-ops03`, gerou
+backup novo, rodou readiness, Scribe, TLS local, synthetic, monitor, readback, alerta,
+deploy-observe e escreveu receipt somente com os estados observados. O receipt local
+`/tmp/ead2026-ops03-current/paid-pilot-activation-receipt.json` reportou:
 
-O clean-room deve executar os mesmos gates sem depender do shell interativo. A política de
-rollback N-1 continua `NOT_PROVEN` até existir uma segunda execução independente; RPO/RTO, owners,
-política de rollback, claims/exclusões comerciais e aprovação de promoção continuam decisões
-humanas. Não abrir cobrança, não fazer push/tag e não executar deploy produtivo.
+- `rc_sha=head_sha=0eefb482af5ae4dcdcc0d857f949efdf391c5a`;
+- app `sha256:58c458791317c2e98028cd9c638970357348356845ae249dee0b1d38c76575a7` e web
+  `sha256:443bdcf668c06b94d5b8d460b104bdc955c0e549d1a73c22a90352286a56184`;
+- manifest `2dd9bc56739e2df0ac697b3c5b5cfeee6de537be8a7b3404c07a608d8162dc78` e Scribe
+  `d3d18d2e5fa900e9cfbd9a926de33194d4f0cd6328032990a27c27429a54f239`;
+- `readiness=PASS`, `remote_backup=PASS`, `tls=PASS`, `synthetic=PASS`, `alert_channel_configured=PASS`,
+  `scheduler=PASS` e `final_verdict=PASS` em `environment=rehearsal`, `environment_identity=localhost`.
+
+O clean-room repetiu os gates sem depender do shell interativo e terminou `clean_room=PASS`, com
+labels de imagem, readiness, monitor, readback, alerta, TLS, observabilidade e synthetic verdes.
+Esse `final_verdict=PASS` prova a qualificação da stack descartável e a integridade da cadeia de
+proveniência; não é autorização para produção e não cria `PROVEN_CURRENT` para host, DNS/TLS
+público, secrets, privilégios DB, backup off-host, canal real de alertas ou scheduler recorrente.
+
+O recovery game-day pós-activation terminou `recovery_game_day=PASS` e
+`post_restore_clean_room=PASS`. A comparação independente do snapshot encontrou SQL normalizado
+idêntico (`1098` linhas, `0` hunks, hash `ad6d9ef78296cc48d20dfe6ef5e53863923736cd2893a7d90c06ea8f2e3a6fbd`)
+e storage persistente idêntico (hash de conteúdo e de paths
+`a3faaa0a9ad8052907f112516aed6dca10be7c027a63115379dcc674ea00af9d`). A única diferença foi
+`storage/framework/*`, cache/view efêmero removido por `optimize:clear`; `storage/app/private` e
+o restante persistente permaneceram iguais.
+
+A failure matrix/red-team final executada contra os scripts atuais terminou
+`red_team_matrix=PASS cases=8`: cada caso negativo abortou com exit code não-zero e sem mutação
+fora do escopo descartável. Foram cobertos restore com volume errado, deploy sem backup, destroy
+com projeto errado, manifest com assinatura errada, verificação remota usando o mesmo adapter,
+alerta sem provider, synthetic com serviço inexistente e activation sem confirmação.
+
+O rollback N-1 também foi executado na stack descartável: app/web alternaram para
+`427c07a257c2f6b197ecf4a5a62840112eb00c19`, ambos os labels foram observados e readiness/migration
+`73/73` passaram; em seguida o release `0eefb482af5ae4dcdcc0d857f949efdf391c5a` foi restaurado,
+com os digests do receipt, readiness e migration `73/73` novamente verdes. O procedimento não
+removeu nem alterou volumes.
+
+A política operacional de promoção, RPO/RTO, owners, claims/exclusões comerciais e aprovação
+continuam decisões humanas. Não abrir cobrança, não fazer push/tag e não executar deploy produtivo.
+
+### Matriz de claims reconstruída após a qualificação
+
+A matriz foi recalculada a partir das evidências finais, sem herdar automaticamente os rótulos da
+seção histórica 35. As mudanças de estado são limitadas à prova da rehearsal descartável:
+
+| Claims reavaliados | Estado final | Base da mudança |
+|---|---|---|
+| Restore current/functional | `PROVEN_WITH_LIMITATION` | restore do backup `220350` em nova encarnação, deploy `PASS`, SQL/storage persistentes equivalentes |
+| Migration manifest/current schema | `PROVEN_WITH_LIMITATION` | imagem vinculada ao HEAD, manifest observado, migration `73/73` |
+| Deploy readiness | `PROVEN_WITH_LIMITATION` | preflight antes da mutação e deploy-observe pós-restore `PASS` |
+| Current readiness 200 | `PROVEN_WITH_LIMITATION` | `/up` e `/readiness` HTTP `200`, checks app/db/storage/manifest/outbox `PASS` |
+| Current synthetic pilot | `PROVEN_WITH_LIMITATION` | HTTP real `10/10` + `29/29`, repetido antes e depois do restore |
+| Activation orchestrator gates | `PROVEN_WITH_LIMITATION` | execute consumiu backup/readiness/TLS/alerta/synthetic observados |
+| Activation receipt | `PROVEN_WITH_LIMITATION` | receipt `final_verdict=PASS`, `rc_sha=head_sha` e digests vinculados |
+| N-1 rollback | `PROVEN_WITH_LIMITATION` | app/web `427c07a` passaram readiness/migration e retornaram ao release `0eefb48` na rehearsal |
+| Alert delivery channel | `EXTERNAL_PENDING` | somente canário/adapters locais; owner e canal real não provisionados |
+| Engineering/paid-pilot readiness | `INVALIDATED` | prova local não cobre host, secrets, scheduler e aprovação produtivos |
+
+Contagem final dos 29 claims: `PROVEN_CURRENT=0`, `PROVEN_WITH_LIMITATION=26`,
+`NOT_PROVEN=0`, `INVALIDATED=2`, `EXTERNAL_PENDING=1`, `HUMAN_PENDING=0`.
 
 ### Verdict selado
 
@@ -530,8 +581,9 @@ humanas. Não abrir cobrança, não fazer push/tag e não executar deploy produt
 | Launch Package | `LAUNCH_PACKAGE_VALID_WITH_GAPS` |
 | Engineering | `ENGINEERING_NOT_READY` |
 | Paid Pilot | `PAID_PILOT_NOT_READY` |
-| Claims atuais | `PROVEN_WITH_LIMITATION`, `NOT_PROVEN`, `INVALIDATED` ou `EXTERNAL_PENDING`; nenhum `PROVEN_CURRENT` produtivo |
+| Claims atuais | `26 PROVEN_WITH_LIMITATION`, `0 NOT_PROVEN`, `2 INVALIDATED`, `1 EXTERNAL_PENDING`; nenhum `PROVEN_CURRENT` produtivo |
 
 Os gaps externos e as decisões humanas são bloqueadores legítimos, não falhas ocultas pela
-qualificação local. A campanha só pode ser promovida depois de repetir a validação em ambiente
-aprovado, obter o aceite humano e reemitir uma matriz de claims independente.
+qualificação local. Não resta workstream interno material nesta campanha; a promoção só pode
+ocorrer depois de validar o ambiente externo aprovado, obter o aceite humano e reemitir uma matriz
+de claims independente.

@@ -22,6 +22,7 @@ it('requires auth:sanctum on every api/v1 route not deliberately public', functi
         'GET api/v1/learning/catalog/courses',
         'GET api/v1/learning/catalog/courses/{slug}',
         'GET api/v1/assessment/certificates/verify/{certificateNumber}',
+        'POST api/v1/webhooks/gateways/{gateway_slug}',
     ];
 
     /** @var array<string> $unprotected */
@@ -72,6 +73,7 @@ it('keeps the public allowlist free of stale entries', function (): void {
         'GET api/v1/learning/catalog/courses',
         'GET api/v1/learning/catalog/courses/{slug}',
         'GET api/v1/assessment/certificates/verify/{certificateNumber}',
+        'POST api/v1/webhooks/gateways/{gateway_slug}',
     ];
 
     /** @var array<string> $actualSignatures */
@@ -107,6 +109,19 @@ it('uses the named rate limiters on invitation routes (no shared anonymous bucke
         ->toContain('throttle:invitation-accept')
         ->and($middlewareFor('POST', 'api/v1/core/invitations'))
         ->toContain('throttle:invitation-create');
+});
+
+it('uses a named rate limiter on the public payment webhook', function (): void {
+    /** @var RoutingRoute $route */
+    foreach (Route::getRoutes() as $route) {
+        if ($route->uri() === 'api/v1/webhooks/gateways/{gateway_slug}' && in_array('POST', $route->methods(), true)) {
+            expect($route->gatherMiddleware())->toContain('throttle:payment-webhook');
+
+            return;
+        }
+    }
+
+    throw new RuntimeException('Payment webhook route not found.');
 });
 
 it('keeps canonical and legacy auth routes on identical middleware and throttling', function (): void {

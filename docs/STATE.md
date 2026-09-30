@@ -2,57 +2,42 @@
 
 ## Sessão
 
-2026-09-09: auditoria adversarial do Commercial v0.1/Paid Pilot e campanha de recuperação de
-confiança concluídas. O baseline, a revalidação e o fechamento da campanha estão em
-`docs/reports/COMMERCIAL-V0.1-FULL-ADVERSARIAL-VALIDATION-2026-09-09.md`. Foram preservados os
-29 claims auditados; a execução atual revalidou o código e uma qualification stack descartável,
- mas não emitiu `PROVEN_CURRENT`. Verdicts continuam `LAUNCH_PACKAGE_VALID_WITH_GAPS`,
-`ENGINEERING_NOT_READY`, `PAID_PILOT_NOT_READY`.
+2026-09-30: entregues `STUDENT-PAID-ORDERS` e `PAYMENT-WEBHOOK`. A nova rota pública valida
+assinatura, rejeita gateway manual, enfileira `ProcessPaymentWebhookJob` e aplica transições
+idempotentes de pagamento com `OrderPaidEvent` no outbox.
 
 ## Próximos passos (1-3)
 
-1. Executar a última cadeia selada `HEAD → imagem → manifest → receipt` somente na stack descartável;
-   não reutilizar artefatos de commit anterior.
-2. Provisionar e validar independentemente host, DNS/TLS público, secrets reais, privilégios DB,
-   owner/canal de alertas, destino off-host e scheduler recorrente.
-3. Obter aceite humano de RPO/RTO, owners, política de rollback e claims/exclusões comerciais;
-   não abrir cobrança antes de todos os gates externos e humanos.
+1. Subir uma stack `e2e` dedicada e executar `financial/payment-webhook` e `financial/student-orders`.
+2. Implementar a próxima task Financial: tradução PT-BR de exceções de gateway ou adapter PSP,
+   conforme prioridade do roadmap.
+3. Retomar os gates externos de host/DNS/TLS/secrets/DB/backup/alertas e aceite humano operacional.
 
 ## Decisões abertas
 
-Aceite humano de RPO ≤24h/RTO ≤4h úteis, owners e canal de alerta, destino/adapter de backup remoto,
-host/domínio/TLS/secrets reais, política de rollback e data de promoção comercial. Student
-Assessment, certificates e PSP automático continuam fora da promessa v0.1.
+O contrato de assinatura desta fatia é: adapter pode implementar `PaymentGatewayWebhookInterface`;
+caso contrário, usa HMAC-SHA256 com `webhook_secret`. A validação E2E real depende de stack dedicada;
+PSP first-party ainda não foi escolhido/implementado. Permanecem as decisões humanas de RPO/RTO,
+owners/canal de alerta, backup remoto, host/domínio/TLS/secrets, rollback e promoção comercial.
 
 ## Último commit
 
-O selo documental atual será o próximo commit local em `main`, após o qual a última execução deve
-reconstruir as imagens e emitir um receipt novo. As remediações recentes incluem
-`f507f9124c397a06f2c0e4f77654ec78ab8eab3d`, `4871373d86808bb585623298c3a3c573eabc4b2a`,
-`92e021d`, `162ef6f`, `1d85ba0`, `748775d`, `7fee7eb` e `427c07a`; não houve push, tag ou deploy
-produtivo.
+`0eefb482af5ae4dcdcc0d857f949efdfef391c5a` em `main`; branch está 41 commits à frente de `origin/main`.
+As duas fatias desta sessão estão somente na working tree: não commitadas, staged ou pushed.
 
 ## Evidência atual
 
-- Architecture: `43 passed (1456 assertions)`.
-- Ops/Assessment/Financial focados: `33 passed (245 assertions)`; confirmação manual financeira
-  voltou a regression-green.
-- E2E HTTP real em stack dedicada: `mzrt/tenant-lifecycle` `10/10`; `ops04/synthetic-pilot`
-  `29/29`, incluindo confirmação manual, outbox/enrollment, isolamento e teardown sem resíduos.
-- Qualification stack atual: `/readiness` `status=ready`; app/db/storage/manifest/outbox `pass`;
-  migration `73/73`; scheduler requerido e running.
-- OPS-03 descartável atual: backup assinado `PASS`, restore `PASS` e readiness `PASS`; marcador
-  criado depois do backup foi removido pelo restore. Nenhum volume produtivo foi tocado.
-- Proveniência: imagens app/web foram construídas do último commit de código e carregam revision +
-  SHA do manifest; activation dry-run passou com `mutation=none` e sem receipt. A execução final
-  será feita somente depois do selo documental acima.
-- `bash -n scripts/ops/*.sh`, Pint e `git diff --check` passam no delta atual. A lista detalhada
-  de F-01–F-13 e os limites externos estão no relatório pós-remediação.
+- Payment webhook: `4 passed (21 assertions)`.
+- Financial regression focada com orders/checkout/confirmação/webhook: `38 passed (440 assertions)`.
+- Architecture: `44 passed (1478 assertions)`.
+- Pint, lint do spec E2E, `git diff --check` e Scribe passaram; Scribe gerou a rota pública.
+- PHPStan: somente finding preexistente em `app/Console/Commands/E2eRunCommand.php:562`.
+- E2E HTTP declarativo preparado em `tests/e2e-http/financial/payment-webhook.php` e
+  `tests/e2e-http/financial/student-orders.php`; runner recusou ambos fora de `APP_ENV=testing|e2e`.
 
 ## CONTEXT CHECKPOINT
 
-- context: alto, estimado; campanha e evidências atuais foram seladas no report.
-- state: `docs/STATE.md` atualizado após a revalidação e os testes finais.
+- context: médio, estimado; houve muitas leituras/testes, mas o handoff foi reduzido.
+- state: `docs/STATE.md` atualizado após a implementação e validação.
 - recommendation: `continue`.
-- reason: resta apenas executar a cadeia final contra o HEAD documental selado; depois dela, os
-  únicos bloqueios remanescentes serão externos/humanos. Não abrir cobrança.
+- reason: a próxima ação interna é autônoma; somente a execução E2E externa depende da stack dedicada.

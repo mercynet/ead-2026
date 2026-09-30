@@ -1,6 +1,6 @@
 ---
 domain: financial
-last-updated: 2026-07-29
+last-updated: 2026-09-30
 ---
 
 # Tasks — Financial
@@ -18,6 +18,10 @@ Domínio **em fundação** (ledger interno `Order*` + contrato de gateway pronto
 - [x] **Admin gateway do tenant (implementação canônica: Ecosystem).** `GET` lista gateways e schemas; `PUT` atualiza ativação/configuração em `/api/v1/admin/payment-gateways/{plugin}`. `GatewayConfigurationRegistry` em `Financial\Contracts` publica o schema; persistência valida configuração, trata adaptador indisponível e mantém no máximo um gateway habilitado por tenant por troca atômica. Segredos são cifrados, write-only e redigidos na resposta. Slice coberto por testes e gates; Financial consome contrato/resolução.
 - [x] `POST /api/v1/admin/orders/{id}/confirm-manual-payment` para `cash`: classificação autoritativa, confirmação transacional/idempotente, auditoria de status e gravação de outbox durável na transação. Publicação após commit é best-effort; drainer recupera pendências.
 - [x] `POST /api/v1/student/checkout`: preço e snapshot autoritativos, idempotência, cobrança automática/manual e replay. Máquina de claim/replay cobre interleaving, token perdedor, gateway histórico após rotação/desabilitação e outbox do vencedor. Oracle Gate 2 PASS.
+- [x] **STUDENT-PAID-ORDERS** — `GET /api/v1/student/orders` e `GET /api/v1/student/orders/{id}` para histórico/detalhe do próprio ledger, com cursor pagination, Resource seguro, isolamento por tenant e usuário e cobertura Feature/Scribe/Architecture. E2E HTTP declarativo preparado em `tests/e2e-http/financial/student-orders.php`; execução requer stack `e2e` dedicada.
+  `Journey: STUDENT-PAID | Area: student | Depends on: POST /api/v1/student/checkout`
+- [x] **PAYMENT-WEBHOOK** — `POST /api/v1/webhooks/gateways/{gateway_slug}` valida assinatura, rejeita gateways manuais, enfileira `ProcessPaymentWebhookJob` e aplica transições idempotentes `pending → paid|failed`, com `OrderPaidEvent` no outbox durável. Cobertura Feature/Scribe/Architecture e spec E2E HTTP declarativo; execução requer stack `e2e` dedicada.
+  `Journey: STUDENT-PAID | Area: public technical webhook | Depends on: POST /api/v1/student/checkout`
 
 ## In Progress
 
@@ -25,8 +29,6 @@ _Nenhuma task em progresso._
 
 ## Pending
 
-- [ ] `GET /api/v1/student/orders` e `GET /api/v1/student/orders/{id}`.
-- [ ] `POST /api/v1/webhooks/gateways/{gateway_slug}` + `ProcessPaymentWebhookJob`.
 - [ ] Tradução PT-BR de exceções de gateway.
 - [ ] Adaptadores first-party Stripe, Mercado Pago, PagSeguro, PIX-nativo e Asaas via `PaymentGatewayInterface`.
 - [ ] Gateways adicionais como plugins financeiros; contrato atual já prevê.

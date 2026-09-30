@@ -383,6 +383,16 @@ return [
         'user_types' => ['developer', 'student'],
     ],
 
+    'financial.orders.list' => [
+        'label' => 'Listar próprios pedidos',
+        'user_types' => ['developer', 'student'],
+    ],
+
+    'financial.orders.view' => [
+        'label' => 'Visualizar próprio pedido',
+        'user_types' => ['developer', 'student'],
+    ],
+
     // ─────────────────────────────────────────────
     // Ecosystem — Entitlements
     // ─────────────────────────────────────────────

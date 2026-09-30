@@ -24,8 +24,9 @@ owners/canal de alerta, backup remoto, host/domínio/TLS/secrets, rollback e pro
 
 ## Último commit
 
-`0244a85` é o commit base desta sessão; as correções de validação, o adapter E2E, a atualização
-de `composer.lock` e o ajuste PHPStan estão na working tree e ainda aguardam o commit/push final.
+`7578f9c72ea3fbcee31073e520dbf7d5e84f3689` contém as correções de validação, o adapter E2E, a
+atualização de `composer.lock` e o ajuste PHPStan; está commitado em `main`, 43 commits à frente
+de `origin/main`, aguardando push.
 
 ## Evidência atual
 
@@ -43,7 +44,8 @@ de `composer.lock` e o ajuste PHPStan estão na working tree e ainda aguardam o 
 ## CONTEXT CHECKPOINT
 
 - context: alto, estimado; handoff atualizado com evidência final da sessão.
-- state: `docs/STATE.md` será selado no commit final após o push e a validação independente.
-- recommendation: `clear`.
-- reason: a implementação e os gates locais estão concluídos; resta apenas push e auditoria final
+- state: `docs/STATE.md` atualizado após o commit de implementação; push e auditoria independente
+  ainda estão pendentes.
+- recommendation: `continue`.
+- reason: a implementação e os gates locais estão concluídos; resta push e auditoria final
   independente, além da execução E2E numa stack dedicada.

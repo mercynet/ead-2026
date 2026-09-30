@@ -9,6 +9,7 @@ use App\Modules\Financial\Enums\PaymentConfirmationMode;
 use App\Modules\Financial\Events\OrderPaidEvent;
 use App\Modules\Financial\Exceptions\CheckoutConflictException;
 use App\Modules\Financial\Exceptions\GatewayUnavailableException;
+use App\Modules\Financial\Exceptions\PaymentPersistenceException;
 use App\Modules\Financial\Gateways\Data\ChargeIntent;
 use App\Modules\Financial\Gateways\Data\ChargeResult;
 use App\Modules\Financial\Gateways\Data\ResolvedGateway;
@@ -84,9 +85,24 @@ class StoreCheckoutAction
             [$order, $paid] = $this->persistResult($claim['order']->id, $payment, $token, $result);
         } catch (CheckoutConflictException $exception) {
             throw $exception;
-        } catch (Throwable) {
-            $this->markUnknown($payment, $token);
-            throw new GatewayUnavailableException('Gateway de pagamento indisponível.');
+        } catch (Throwable $exception) {
+            try {
+                $this->markUnknown($payment, $token);
+            } catch (Throwable $markUnknownException) {
+                Log::critical('Checkout payment state could not be marked unknown.', [
+                    'order_id' => $claim['order']->id,
+                    'payment_id' => $payment->id,
+                    'exception_class' => $markUnknownException::class,
+                ]);
+            }
+
+            Log::error('Checkout payment result could not be persisted.', [
+                'order_id' => $claim['order']->id,
+                'payment_id' => $payment->id,
+                'exception_class' => $exception::class,
+            ]);
+
+            throw new PaymentPersistenceException;
         }
 
         if ($paid) {

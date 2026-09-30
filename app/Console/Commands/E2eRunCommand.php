@@ -489,7 +489,7 @@ class E2eRunCommand extends Command
             $text = json_encode($value) ?: gettype($value);
         }
 
-        if ($label !== null && preg_match('/(?:token|secret|password|signature|api[_-]?key|authorization|email|cpf|phone|telephone|mobile|card|json:)/i', $label) === 1) {
+        if ($label !== null && preg_match('/(?:token|secret|password|signature|api[_-]?key|authorization|email|cpf|phone|telephone|mobile|card|json:|db:)/i', $label) === 1) {
             return '[REDACTED]';
         }
 

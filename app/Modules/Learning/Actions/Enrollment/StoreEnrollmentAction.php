@@ -29,10 +29,12 @@ class StoreEnrollmentAction
         $userId = (int) ($attributes['user_id'] ?? $authenticatedUser->id);
         $targetUser = User::query()
             ->whereKey($userId)
-            ->where('tenant_id', $tenant->id);
+            ->where(fn ($query) => $query->whereNull('tenant_id')->orWhere('tenant_id', $tenant->id));
 
         if ($requireTenantStudent) {
-            $targetUser->where('user_type', UserType::Student->value);
+            $targetUser
+                ->where('tenant_id', $tenant->id)
+                ->where('user_type', UserType::Student->value);
         }
 
         $targetUser = $targetUser->firstOrFail();

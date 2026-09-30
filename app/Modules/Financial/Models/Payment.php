@@ -2,6 +2,7 @@
 
 namespace App\Modules\Financial\Models;
 
+use App\Modules\Financial\Support\EncryptedArrayCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -71,8 +72,8 @@ class Payment extends Model
             'order_id' => 'integer',
             'tenant_plugin_config_id' => 'integer',
             'charge_claimed_at' => 'datetime',
-            'gateway_response' => 'encrypted:array',
-            'metadata' => 'encrypted:array',
+            'gateway_response' => EncryptedArrayCast::class,
+            'metadata' => EncryptedArrayCast::class,
         ];
     }
 }

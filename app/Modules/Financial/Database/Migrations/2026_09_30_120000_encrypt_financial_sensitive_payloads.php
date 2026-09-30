@@ -22,7 +22,9 @@ return new class extends Migration
         $this->decryptTable('orders', 'metadata');
         $this->decryptTable('payments', 'gateway_response');
         $this->decryptTable('payments', 'metadata');
-        $this->changeColumnsToJson();
+
+        // Keep TEXT so both the previous JSON text cast and the current
+        // encrypted cast's plaintext fallback can read a rolled-back payload.
     }
 
     private function changeColumnsToText(): void
@@ -33,17 +35,6 @@ return new class extends Migration
         Schema::table('payments', function (Blueprint $table): void {
             $table->text('gateway_response')->nullable()->change();
             $table->text('metadata')->nullable()->change();
-        });
-    }
-
-    private function changeColumnsToJson(): void
-    {
-        Schema::table('orders', function (Blueprint $table): void {
-            $table->json('metadata')->nullable()->change();
-        });
-        Schema::table('payments', function (Blueprint $table): void {
-            $table->json('gateway_response')->nullable()->change();
-            $table->json('metadata')->nullable()->change();
         });
     }
 

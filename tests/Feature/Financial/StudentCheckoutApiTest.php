@@ -40,7 +40,12 @@ class CheckoutAutomaticGateway implements PaymentGatewayInterface
 
     public ?\Closure $duringCharge = null;
 
-    public function __construct(public PaymentChargeStatus $result = PaymentChargeStatus::Pending, public bool $throws = false, private readonly string $id = 'checkout-fake') {}
+    public function __construct(
+        public PaymentChargeStatus $result = PaymentChargeStatus::Pending,
+        public bool $throws = false,
+        private readonly string $id = 'checkout-fake',
+        private readonly array $raw = ['psp_secret' => 'hidden'],
+    ) {}
 
     public function identifier(): string
     {
@@ -77,7 +82,7 @@ class CheckoutAutomaticGateway implements PaymentGatewayInterface
             throw new RuntimeException('PSP secret '.$credentials['secret']);
         }
 
-        return new ChargeResult($this->result, 'psp_'.$intent->reference, 'https://psp.test/pay', 'client_secret', ['psp_secret' => 'hidden']);
+        return new ChargeResult($this->result, 'psp_'.$intent->reference, 'https://psp.test/pay', 'client_secret', $this->raw);
     }
 }
 
@@ -325,6 +330,24 @@ it('marks adapter exceptions unknown and never retries their charge', function (
     expect(Payment::query()->firstOrFail()->charge_state)->toBe('unknown');
 
     assertApiErrorEnvelope($this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers, $key)), 409, 'payment_reconciliation_required');
+    expect($gateway->charges)->toBe(1);
+});
+
+it('does not misreport payment persistence failures as gateway outages', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+    $gateway = new CheckoutAutomaticGateway(PaymentChargeStatus::Paid, false, 'checkout-fake', ['invalid' => INF]);
+    checkoutGateway($tenant, $gateway);
+    $course = checkoutCourse($tenant);
+    $key = '3b4e1dc1-0ef6-46d8-9bea-aa992d719744';
+
+    assertApiErrorEnvelope(
+        $this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers, $key)),
+        500,
+        'internal_error',
+    );
+
+    expect(Payment::query()->firstOrFail()->charge_state)->toBe('unknown');
     expect($gateway->charges)->toBe(1);
 });
 

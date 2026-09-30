@@ -42,3 +42,15 @@ it('encrypts financial metadata at rest while keeping it available to domain cod
         ->and($payment->fresh()->metadata)->toBe(['client_secret' => 'client-secret-at-rest'])
         ->and($payment->order->fresh()->metadata)->toBe(['internal_secret' => 'order-secret-at-rest']);
 });
+
+it('reads plaintext JSON text left by a safe financial migration rollback', function (): void {
+    $payment = Payment::factory()->create();
+
+    DB::table('payments')->where('id', $payment->id)->update([
+        'gateway_response' => json_encode(['rollback' => true], JSON_THROW_ON_ERROR),
+        'metadata' => json_encode(['rollback' => true], JSON_THROW_ON_ERROR),
+    ]);
+
+    expect($payment->fresh()->gateway_response)->toBe(['rollback' => true])
+        ->and($payment->fresh()->metadata)->toBe(['rollback' => true]);
+});

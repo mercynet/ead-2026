@@ -4,6 +4,7 @@ namespace App\Modules\Financial\Models;
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Core\Models\User;
+use App\Modules\Financial\Support\EncryptedArrayCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -88,7 +89,7 @@ class Order extends Model
             'subtotal_cents' => 'integer',
             'tax_cents' => 'integer',
             'total_cents' => 'integer',
-            'metadata' => 'encrypted:array',
+            'metadata' => EncryptedArrayCast::class,
         ];
     }
 }

@@ -68,3 +68,22 @@ it('redacts PII when a JSON assertion fails', function (): void {
         ->not->toContain('person@example.test')
         ->not->toContain('12345678900');
 });
+
+it('redacts scalar PII when a database assertion fails', function (): void {
+    $command = app(E2eRunCommand::class);
+    $output = new BufferedOutput;
+    $command->setOutput(new OutputStyle(new ArrayInput([]), $output));
+    $reportCase = new \ReflectionMethod($command, 'reportCase');
+    $reportCase->setAccessible(true);
+
+    $reportCase->invoke($command, 'database PII assertion', [[
+        'db: user email',
+        false,
+        'expected@example.test',
+        'person@example.test',
+    ]]);
+
+    expect($output->fetch())
+        ->not->toContain('expected@example.test')
+        ->not->toContain('person@example.test');
+});

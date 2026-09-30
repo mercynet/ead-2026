@@ -6,6 +6,7 @@ use App\Modules\Core\Http\Middleware\EnsureAreaAccess;
 use App\Modules\Core\Http\Middleware\RequestTelemetry;
 use App\Modules\Financial\Exceptions\CheckoutConflictException;
 use App\Modules\Financial\Exceptions\GatewayUnavailableException;
+use App\Modules\Financial\Exceptions\PaymentPersistenceException;
 use App\Shared\Exceptions\AccessDeniedException;
 use App\Shared\Exceptions\AreaAccessDeniedException;
 use App\Shared\Exceptions\InvalidCredentialsException;
@@ -83,6 +84,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (GatewayUnavailableException $exception, Request $request) {
             return response()->json(['data' => null, 'errors' => [['code' => 'gateway_unavailable', 'message' => 'Gateway de pagamento indisponível.']]], 503);
+        });
+        $exceptions->render(function (PaymentPersistenceException $exception, Request $request) {
+            return response()->json(['data' => null, 'errors' => [['code' => 'internal_error', 'message' => 'Não foi possível concluir o checkout.']]], 500);
         });
         $exceptions->render(function (TenantContextRequiredException $exception, Request $request) {
             return response()->json([

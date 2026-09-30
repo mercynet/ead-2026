@@ -74,12 +74,57 @@ class WebhookCapableFakeGateway implements PaymentGatewayInterface, PaymentGatew
     }
 }
 
+class WebhookHmacFallbackFakeGateway implements PaymentGatewayInterface
+{
+    public function identifier(): string
+    {
+        return 'webhook-hmac-fake';
+    }
+
+    public function label(): string
+    {
+        return 'Webhook HMAC fake';
+    }
+
+    public function confirmationMode(): PaymentConfirmationMode
+    {
+        return PaymentConfirmationMode::Automatic;
+    }
+
+    public function configurationSchema(): GatewayConfigurationDefinition
+    {
+        return new GatewayConfigurationDefinition(
+            identifier: $this->identifier(),
+            label: $this->label(),
+            fields: [
+                'webhook_secret' => [
+                    'label' => 'Segredo do webhook',
+                    'input' => 'password',
+                    'required' => true,
+                    'secret' => true,
+                    'rules' => ['string', 'min:8'],
+                ],
+            ],
+        );
+    }
+
+    public function charge(array $credentials, ChargeIntent $intent): ChargeResult
+    {
+        return new ChargeResult(status: \App\Modules\Financial\Enums\PaymentChargeStatus::Pending);
+    }
+
+    public function validateConfiguration(array $config): bool
+    {
+        return isset($config['webhook_secret']) && is_string($config['webhook_secret']);
+    }
+}
+
 /** @return array{tenant: Tenant, order: Order, payment: Payment, config: TenantPluginConfig, secret: string} */
-function webhookPaymentFixture(string $status = 'pending'): array
+function webhookPaymentFixture(string $status = 'pending', ?PaymentGatewayInterface $gateway = null): array
 {
     $tenant = makeTenant();
     $user = User::factory()->student()->forTenant($tenant)->create();
-    $gateway = new WebhookCapableFakeGateway;
+    $gateway ??= new WebhookCapableFakeGateway;
     app(PaymentGatewayManager::class)->register($gateway);
 
     $plugin = Plugin::factory()->published()->gateway($gateway->identifier())->create();
@@ -117,11 +162,11 @@ function webhookPaymentFixture(string $status = 'pending'): array
 }
 
 /** @param array<string, string> $payload */
-function signedWebhookRequest(array $payload, string $secret): \Illuminate\Testing\TestResponse
+function signedWebhookRequest(array $payload, string $secret, string $gatewaySlug = 'webhook-fake'): \Illuminate\Testing\TestResponse
 {
     $raw = json_encode($payload, JSON_THROW_ON_ERROR);
 
-    return test()->call('POST', '/api/v1/webhooks/gateways/webhook-fake', [], [], [], [
+    return test()->call('POST', "/api/v1/webhooks/gateways/{$gatewaySlug}", [], [], [], [
         'CONTENT_TYPE' => 'application/json',
         'HTTP_X_WEBHOOK_SIGNATURE' => 'sha256='.hash_hmac('sha256', $raw, $secret),
     ], $raw);
@@ -162,6 +207,20 @@ it('rejects an invalid webhook signature before queueing', function (): void {
 
     assertApiErrorEnvelope($response, 422, 'validation_error');
     Queue::assertNothingPushed();
+});
+
+it('verifies the generic HMAC fallback when the adapter has no webhook interface', function (): void {
+    Queue::fake();
+    $fixture = webhookPaymentFixture(gateway: new WebhookHmacFallbackFakeGateway);
+
+    $response = signedWebhookRequest([
+        'status' => 'paid',
+        'order_number' => $fixture['order']->order_number,
+        'external_id' => $fixture['payment']->external_id,
+    ], $fixture['secret'], 'webhook-hmac-fake');
+
+    $response->assertAccepted()->assertJsonPath('data.accepted', true);
+    Queue::assertPushed(ProcessPaymentWebhookJob::class);
 });
 
 it('moves a pending payment to paid and records one durable paid outbox event', function (): void {

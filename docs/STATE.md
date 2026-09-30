@@ -2,9 +2,11 @@
 
 ## Sessão
 
-2026-09-30: entregues `STUDENT-PAID-ORDERS` e `PAYMENT-WEBHOOK`. A nova rota pública valida
-assinatura, rejeita gateway manual, enfileira `ProcessPaymentWebhookJob` e aplica transições
-idempotentes de pagamento com `OrderPaidEvent` no outbox.
+2026-09-30: entregues `STUDENT-PAID-ORDERS` e `PAYMENT-WEBHOOK`; fechadas as lacunas da
+validação adversarial. A listagem de pedidos agora documenta/valida cursor opaco, o fallback
+HMAC do webhook tem cobertura, e o harness HTTP E2E cobre sucesso, replay, falha e assinatura
+inválida com um gateway determinístico restrito a `APP_ENV=e2e`. Dependências vulneráveis foram
+atualizadas e o finding PHPStan preexistente foi removido.
 
 ## Próximos passos (1-3)
 
@@ -22,22 +24,26 @@ owners/canal de alerta, backup remoto, host/domínio/TLS/secrets, rollback e pro
 
 ## Último commit
 
-`0eefb482af5ae4dcdcc0d857f949efdfef391c5a` em `main`; branch está 41 commits à frente de `origin/main`.
-As duas fatias desta sessão estão somente na working tree: não commitadas, staged ou pushed.
+`0244a85` é o commit base desta sessão; as correções de validação, o adapter E2E, a atualização
+de `composer.lock` e o ajuste PHPStan estão na working tree e ainda aguardam o commit/push final.
 
 ## Evidência atual
 
-- Payment webhook: `4 passed (21 assertions)`.
-- Financial regression focada com orders/checkout/confirmação/webhook: `38 passed (440 assertions)`.
-- Architecture: `44 passed (1478 assertions)`.
-- Pint, lint do spec E2E, `git diff --check` e Scribe passaram; Scribe gerou a rota pública.
-- PHPStan: somente finding preexistente em `app/Console/Commands/E2eRunCommand.php:562`.
+- Testes focados finais: `18 passed (146 assertions)`.
+- Suíte completa: `786 passed (6129 assertions)`.
+- Architecture: `44 passed (1478 assertions)`; invariantes do diff verdes.
+- Pint, lint do spec E2E, `git diff --check`, Scribe, Composer validate e Composer audit passaram.
+- PHPStan: `0 errors` após remover o `array_values()` redundante em
+  `app/Console/Commands/E2eRunCommand.php:562`.
+- `composer insights` continua vermelho por findings legados espalhados no repositório; não houve
+  finding novo nos arquivos desta sessão.
 - E2E HTTP declarativo preparado em `tests/e2e-http/financial/payment-webhook.php` e
   `tests/e2e-http/financial/student-orders.php`; runner recusou ambos fora de `APP_ENV=testing|e2e`.
 
 ## CONTEXT CHECKPOINT
 
-- context: médio, estimado; houve muitas leituras/testes, mas o handoff foi reduzido.
-- state: `docs/STATE.md` atualizado após a implementação e validação.
-- recommendation: `continue`.
-- reason: a próxima ação interna é autônoma; somente a execução E2E externa depende da stack dedicada.
+- context: alto, estimado; handoff atualizado com evidência final da sessão.
+- state: `docs/STATE.md` será selado no commit final após o push e a validação independente.
+- recommendation: `clear`.
+- reason: a implementação e os gates locais estão concluídos; resta apenas push e auditoria final
+  independente, além da execução E2E numa stack dedicada.

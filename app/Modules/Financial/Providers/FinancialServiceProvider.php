@@ -4,6 +4,7 @@ namespace App\Modules\Financial\Providers;
 
 use App\Modules\Financial\Contracts\GatewayConfigurationRegistry;
 use App\Modules\Financial\Gateways\Adapters\CashPaymentGateway;
+use App\Modules\Financial\Gateways\Adapters\E2eWebhookGateway;
 use App\Modules\Financial\Gateways\PaymentGatewayManager;
 use App\Modules\Financial\Listeners\CreateEnrollmentFinancialMirrorListener;
 use App\Modules\Financial\Policies\OrderPolicy;
@@ -27,6 +28,9 @@ class FinancialServiceProvider extends ServiceProvider
     public function boot(PaymentGatewayManager $paymentGatewayManager): void
     {
         $paymentGatewayManager->register(new CashPaymentGateway);
+        if (app()->environment('e2e')) {
+            $paymentGatewayManager->register(new E2eWebhookGateway);
+        }
 
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->registerGates();

@@ -113,6 +113,23 @@ it('requires a student token and the orders permission', function (): void {
     assertApiErrorEnvelope($this->getJson('/api/v1/student/orders', $headers), 403, 'access_denied');
 });
 
+it('validates the opaque cursor and rejects client-controlled listing options', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+
+    assertApiErrorEnvelope(
+        $this->getJson('/api/v1/student/orders?cursor='.str_repeat('a', 513), $headers),
+        422,
+        'validation_error',
+    );
+
+    assertApiErrorEnvelope(
+        $this->getJson('/api/v1/student/orders?per_page=100', $headers),
+        422,
+        'validation_error',
+    );
+});
+
 it('rejects non-student personas before reaching the orders action', function (): void {
     $tenant = makeTenant();
     [, $headers] = actingAsUserType(UserType::Instructor, $tenant);

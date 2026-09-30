@@ -559,7 +559,7 @@ class E2eRunCommand extends Command
             }
             $users = array_values($users);
             $tenants = array_values($tenants);
-            $userIds = array_values(array_map(fn (User $user): int => $user->id, $users));
+            $userIds = array_map(fn (User $user): int => $user->id, $users);
             $tenantIds = array_map(fn (Tenant $tenant): int => $tenant->id, $tenants);
 
             $this->deleteFixtureActivities($tenantIds, $userIds);

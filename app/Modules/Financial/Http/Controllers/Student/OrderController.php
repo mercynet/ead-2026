@@ -4,6 +4,7 @@ namespace App\Modules\Financial\Http\Controllers\Student;
 
 use App\Modules\Financial\Actions\Student\ListStudentOrdersAction;
 use App\Modules\Financial\Actions\Student\ShowStudentOrderAction;
+use App\Modules\Financial\Http\Requests\Student\ListStudentOrdersRequest;
 use App\Modules\Financial\Http\Resources\Student\OrderResource;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
@@ -27,11 +28,14 @@ class OrderController extends Controller
      *
      * Lista os pedidos do aluno atual por cursor.
      */
-    public function index(ApiContext $context): AnonymousResourceCollection
+    public function index(ListStudentOrdersRequest $request, ApiContext $context): AnonymousResourceCollection
     {
         Gate::forUser($context->requiredUser())->authorize('financial.orders.list', [$context->requiredTenant()]);
 
-        return OrderResource::collection($this->listStudentOrdersAction->handle($context));
+        return OrderResource::collection($this->listStudentOrdersAction->handle(
+            $context,
+            $request->validated()['cursor'] ?? null,
+        ));
     }
 
     /**

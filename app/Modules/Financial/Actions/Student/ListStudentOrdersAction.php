@@ -8,13 +8,13 @@ use Illuminate\Pagination\CursorPaginator;
 
 class ListStudentOrdersAction
 {
-    public function handle(ApiContext $context): CursorPaginator
+    public function handle(ApiContext $context, ?string $cursor = null): CursorPaginator
     {
         return Order::query()
             ->where('tenant_id', $context->requiredTenant()->id)
             ->where('user_id', $context->requiredUser()->id)
             ->with(['items', 'payments'])
             ->orderByDesc('id')
-            ->cursorPaginate(15);
+            ->cursorPaginate(15, ['*'], 'cursor', $cursor);
     }
 }

@@ -18,6 +18,11 @@ it('redacts gateway secrets and signatures from runner output', function (): voi
         'client_secret' => 'client-secret',
         'api_key' => 'api-secret',
         'signature' => 'sha256=signature-secret',
+        'headline' => 'private headline',
+        'bio' => 'private biography',
+        'avatar' => 'https://private.test/avatar.jpg',
+        'linkedin_url' => 'https://linkedin.test/private',
+        'twitter_url' => 'https://twitter.test/private',
     ], JSON_THROW_ON_ERROR).' Authorization: Bearer token-secret X-Webhook-Signature:sha256=header-secret X-Api-Key:api-header-secret';
     $sanitized = $sanitize->invoke($command, $raw);
 
@@ -27,6 +32,11 @@ it('redacts gateway secrets and signatures from runner output', function (): voi
         ->not->toContain('client-secret')
         ->not->toContain('api-secret')
         ->not->toContain('signature-secret')
+        ->not->toContain('private headline')
+        ->not->toContain('private biography')
+        ->not->toContain('private.test/avatar.jpg')
+        ->not->toContain('linkedin.test/private')
+        ->not->toContain('twitter.test/private')
         ->not->toContain('token-secret')
         ->not->toContain('header-secret')
         ->not->toContain('api-header-secret');

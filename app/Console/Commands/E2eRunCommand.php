@@ -505,7 +505,7 @@ class E2eRunCommand extends Command
         $text = preg_replace('/Bearer\s+[A-Za-z0-9|._~+\/=-]+/', 'Bearer [REDACTED]', $text) ?? $text;
 
         $text = preg_replace(
-            '/("(?:token|plainTextToken|access_token|password|current_password|secret|webhook_secret|client_secret|api_key|signature|email|cpf|phone|telephone|mobile|card|card_number|name)"\s*:\s*")[^"]*(")/i',
+            '/("(?:token|plainTextToken|access_token|password|current_password|secret|webhook_secret|client_secret|api_key|signature|email|cpf|phone|telephone|mobile|card|card_number|name|headline|bio|avatar|linkedin_url|twitter_url)"\s*:\s*")[^"]*(")/i',
             '$1[REDACTED]$2',
             $text,
         ) ?? $text;

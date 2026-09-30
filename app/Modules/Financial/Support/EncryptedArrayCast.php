@@ -35,6 +35,13 @@ class EncryptedArrayCast implements CastsAttributes
             return [$key => null];
         }
 
-        return [$key => Crypt::encryptString(json_encode($value, JSON_THROW_ON_ERROR))];
+        $payload = json_encode($value, JSON_THROW_ON_ERROR);
+
+        return [$key => $this->isJsonColumn($model, $key) ? $payload : Crypt::encryptString($payload)];
+    }
+
+    private function isJsonColumn(Model $model, string $key): bool
+    {
+        return strtolower($model->getConnection()->getSchemaBuilder()->getColumnType($model->getTable(), $key)) === 'json';
     }
 }

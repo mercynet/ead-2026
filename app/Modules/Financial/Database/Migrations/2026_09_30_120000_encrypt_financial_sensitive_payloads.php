@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Crypt;
@@ -22,9 +23,7 @@ return new class extends Migration
         $this->decryptTable('orders', 'metadata');
         $this->decryptTable('payments', 'gateway_response');
         $this->decryptTable('payments', 'metadata');
-
-        // Keep TEXT so both the previous JSON text cast and the current
-        // encrypted cast's plaintext fallback can read a rolled-back payload.
+        $this->changeColumnsToJson();
     }
 
     private function changeColumnsToText(): void
@@ -38,6 +37,17 @@ return new class extends Migration
         });
     }
 
+    private function changeColumnsToJson(): void
+    {
+        Schema::table('orders', function (Blueprint $table): void {
+            $table->json('metadata')->nullable()->change();
+        });
+        Schema::table('payments', function (Blueprint $table): void {
+            $table->json('gateway_response')->nullable()->change();
+            $table->json('metadata')->nullable()->change();
+        });
+    }
+
     private function encryptTable(string $table, string $column): void
     {
         DB::table($table)
@@ -46,7 +56,11 @@ return new class extends Migration
             ->orderBy('id')
             ->chunkById(100, function (\Illuminate\Support\Collection $rows) use ($table, $column): void {
                 foreach ($rows as $row) {
-                    $payload = json_decode((string) $row->{$column}, true, 512, JSON_THROW_ON_ERROR);
+                    [$payload, $alreadyEncrypted] = $this->decodePayload((string) $row->{$column});
+
+                    if ($alreadyEncrypted) {
+                        continue;
+                    }
 
                     DB::table($table)
                         ->where('id', $row->id)
@@ -68,7 +82,7 @@ return new class extends Migration
                 ->orderBy('id')
                 ->chunkById(100, function (\Illuminate\Support\Collection $rows) use ($column): void {
                     foreach ($rows as $row) {
-                        json_decode((string) $row->{$column}, true, 512, JSON_THROW_ON_ERROR);
+                        $this->decodePayload((string) $row->{$column});
                     }
                 });
         }
@@ -82,10 +96,26 @@ return new class extends Migration
             ->orderBy('id')
             ->chunkById(100, function (\Illuminate\Support\Collection $rows) use ($table, $column): void {
                 foreach ($rows as $row) {
+                    [$payload] = $this->decodePayload((string) $row->{$column});
+
                     DB::table($table)
                         ->where('id', $row->id)
-                        ->update([$column => Crypt::decryptString((string) $row->{$column})]);
+                        ->update([$column => json_encode($payload, JSON_THROW_ON_ERROR)]);
                 }
             });
+    }
+
+    /** @return array{0: mixed, 1: bool} */
+    private function decodePayload(string $value): array
+    {
+        try {
+            return [json_decode($value, true, 512, JSON_THROW_ON_ERROR), false];
+        } catch (\JsonException $jsonException) {
+            try {
+                return [json_decode(Crypt::decryptString($value), true, 512, JSON_THROW_ON_ERROR), true];
+            } catch (DecryptException|\JsonException) {
+                throw $jsonException;
+            }
+        }
     }
 };

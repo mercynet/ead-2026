@@ -76,8 +76,23 @@ class StoreCheckoutAction
             if ($gateway->confirmationMode() === PaymentConfirmationMode::Manual && $result->status !== PaymentChargeStatus::Pending) {
                 throw new \UnexpectedValueException('Manual gateway returned an invalid charge result.');
             }
-        } catch (Throwable) {
-            $this->markUnknown($payment, $token);
+        } catch (Throwable $exception) {
+            try {
+                $this->markUnknown($payment, $token);
+            } catch (Throwable $markUnknownException) {
+                Log::critical('Checkout payment state could not be marked unknown after gateway failure.', [
+                    'order_id' => $claim['order']->id,
+                    'payment_id' => $payment->id,
+                    'exception_class' => $markUnknownException::class,
+                ]);
+            }
+
+            Log::error('Checkout gateway charge failed.', [
+                'order_id' => $claim['order']->id,
+                'payment_id' => $payment->id,
+                'exception_class' => $exception::class,
+            ]);
+
             throw new GatewayUnavailableException('Gateway de pagamento indisponível.');
         }
 

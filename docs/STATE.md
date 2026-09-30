@@ -2,7 +2,7 @@
 
 ## Sessão
 
-2026-09-30: entregues e publicados os adapters first-party Stripe, Mercado Pago, PagSeguro/PagBank e Asaas sobre o contrato agnóstico. A reconciliação Asaas agora consulta o estado autoritativo por `checkoutSession`; a retomada deixou PIX-nativo pendente por decisão de provedor/API e entregou os slices legados de Assessment para excluir questão, listar/anexar questões e revogar certificado na superfície Admin (`POST /api/v1/admin/certificates/{id}/revoke`), com isolamento de tenant e idempotência. Mercado Pago usa Orders API em
+2026-09-30: commitados e publicados os adapters first-party Stripe, Mercado Pago, PagSeguro/PagBank e Asaas sobre o contrato agnóstico, além dos slices de Assessment para excluir questão, listar/anexar questões e revogar certificado na superfície Admin (`POST /api/v1/admin/certificates/{id}/revoke`). A reconciliação Asaas consulta o estado autoritativo por `checkoutSession`; PIX-nativo continua pendente por decisão de provedor/API. Mercado Pago usa Orders API em
 cents convertido para decimal string, Bearer token, `X-Idempotency-Key`, redirect de Checkout Pro,
 status normalizado, assinatura `x-signature` com `data.id`/`x-request-id` e webhook nativo que consulta o estado autoritativo da Order. PagBank usa Checkout API em cents, `x-idempotency-key`, link `PAY` e validação ECDSA/SHA-256 do `x-payload-signature`.
 Asaas usa Checkout PIX com `access_token`, `externalReference`, valor decimal JSON sem `float`, link hospedado e webhook `CHECKOUT_*` autenticado por `asaas-access-token`, respondendo HTTP 200 conforme a exigência operacional do provedor.
@@ -24,10 +24,8 @@ operacionais humanas.
 
 ## Último commit
 
-78043aa (main, enviado para origin/main) ancora este handoff após 22df273 e 581f352, que contêm os
-adapters first-party, a reconciliação Asaas, hardening do runner/checkout/webhooks, migration/tests
-financeiros e atualização do contrato de assinaturas de webhook. O working tree contém os slices locais
-de Assessment e a atualização deste handoff; nada foi commitado.
+291d2f8 (main, enviado para origin/main) ancora este handoff com os slices de Assessment e as
+atualizações de contrato/spec/testes. O working tree está limpo após o commit.
 
 ## Evidência atual
 
@@ -38,13 +36,13 @@ de Assessment e a atualização deste handoff; nada foi commitado.
 - Rota nova confirmada por `route:list`: `POST api/v1/admin/certificates/{id}/revoke` com `auth:sanctum`, `area.guard:admin`, `api.context`, resolução/acesso de tenant.
 - Specs E2E HTTP declarativos `tests/e2e-http/assessment/legacy-questionnaire-questions.php` e `admin-certificate-revoke.php`: sintaxe válida; execução recusada pelo runner em ambiente `local`, aguardando stack `APP_ENV=e2e` dedicada.
 - Scribe reconheceu a rota Admin nova, mas não concluiu por ownership do cache `.scribe/endpoints.cache`; nenhum arquivo gerado rastreado foi alterado.
-- Revisão source→sink das mudanças locais: nenhum finding confirmado; nenhuma mudança foi commitada ou enviada.
+- Revisão source→sink das mudanças locais: nenhum finding confirmado; alterações commitadas e enviadas para `origin/main`.
 - E2E HTTP real continua sem stack dedicada; composer insights continua vermelho por findings
   legados. O hook de push reportou 77 sinais de dependências abaixo do limite, sem bloqueio.
 
 ## CONTEXT CHECKPOINT
 
 - context: alto, estimado; handoff atualizado após quatro slices de Assessment.
-- state: PIX-nativo continua pendente por decisão; os quatro slices locais de Assessment estão TEST_VERIFIED; E2E HTTP aguarda stack dedicada; working tree contém implementação e atualizações de tasks/spec/state, sem commit.
+- state: PIX-nativo continua pendente por decisão; os quatro slices de Assessment estão TEST_VERIFIED; E2E HTTP aguarda stack dedicada; commit `291d2f8` está em `origin/main` e o working tree está limpo.
 - recommendation: clear.
 - reason: a fatia autônoma selecionada foi concluída e o handoff está fresco; retomar lendo AGENTS.md + docs/STATE.md antes de escolher o próximo backlog.

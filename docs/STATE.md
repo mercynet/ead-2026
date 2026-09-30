@@ -3,10 +3,12 @@
 ## Sessão
 
 2026-09-30: entregues `STUDENT-PAID-ORDERS` e `PAYMENT-WEBHOOK`; fechadas as lacunas da
-validação adversarial. A listagem de pedidos agora documenta/valida cursor opaco, o fallback
-HMAC do webhook tem cobertura, e o harness HTTP E2E cobre sucesso, replay, falha e assinatura
-inválida com um gateway determinístico restrito a `APP_ENV=e2e`. Dependências vulneráveis foram
-atualizadas e o finding PHPStan preexistente foi removido.
+validação adversarial. A listagem de pedidos agora documenta e rejeita cursor malformado, falhas
+de resolução/verificação de gateway retornam `gateway_unavailable` recuperável, e o checkout
+registra falhas de publicação do outbox sem expor segredo. O harness HTTP E2E cobre sucesso,
+replay, falha, assinatura inválida e matrícula após webhook pago com gateway determinístico em
+`APP_ENV=testing|e2e`. Dependências vulneráveis foram atualizadas e o finding PHPStan
+preexistente foi removido.
 
 ## Próximos passos (1-3)
 
@@ -24,28 +26,33 @@ owners/canal de alerta, backup remoto, host/domínio/TLS/secrets, rollback e pro
 
 ## Último commit
 
-`7578f9c72ea3fbcee31073e520dbf7d5e84f3689` contém as correções de validação, o adapter E2E, a
-atualização de `composer.lock` e o ajuste PHPStan; está commitado em `main`, 43 commits à frente
-de `origin/main`, aguardando push.
+`fbd1b0a` contém o hardening adversarial de webhook/cursor, a prova integrada
+webhook→outbox→enrollment, logging seguro de falhas de outbox, a cobertura E2E correspondente e a
+reconciliação do roadmap. Está commitado em `main`; o push e a auditoria independente final ainda
+estão pendentes.
 
 ## Evidência atual
 
-- Testes focados finais: `18 passed (146 assertions)`.
-- Suíte completa: `786 passed (6129 assertions)`.
+- Testes focados finais: `38 passed (369 assertions)`.
+- Suíte completa: `790 passed (6169 assertions)`.
 - Architecture: `44 passed (1478 assertions)`; invariantes do diff verdes.
-- Pint, lint do spec E2E, `git diff --check`, Scribe, Composer validate e Composer audit passaram.
+- Pint, lint do spec E2E, `git diff --check` e Scribe passaram. O Scribe foi executado com saída
+  temporária em `/tmp` porque o cache/output padrão do container novo ficou pertencendo a
+  `nobody`; a extração de rotas, HTML, Postman e OpenAPI concluiu sem erro.
+- Composer validate e Composer audit passaram nos gates anteriores; o pre-push repetirá a auditoria.
 - PHPStan: `0 errors` após remover o `array_values()` redundante em
   `app/Console/Commands/E2eRunCommand.php:562`.
 - `composer insights` continua vermelho por findings legados espalhados no repositório; não houve
   finding novo nos arquivos desta sessão.
 - E2E HTTP declarativo preparado em `tests/e2e-http/financial/payment-webhook.php` e
-  `tests/e2e-http/financial/student-orders.php`; runner recusou ambos fora de `APP_ENV=testing|e2e`.
+  `tests/e2e-http/financial/student-orders.php`; o runner recusou a execução no ambiente local,
+  corretamente, por exigir `APP_ENV=testing|e2e` e uma base cujo nome contenha `e2e`.
 
 ## CONTEXT CHECKPOINT
 
 - context: alto, estimado; handoff atualizado com evidência final da sessão.
-- state: `docs/STATE.md` atualizado após o commit de implementação; push e auditoria independente
-  ainda estão pendentes.
+- state: este arquivo será commitado junto do handoff; push e auditoria independente ainda estão
+  pendentes.
 - recommendation: `continue`.
 - reason: a implementação e os gates locais estão concluídos; resta push e auditoria final
   independente, além da execução E2E numa stack dedicada.

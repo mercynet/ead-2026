@@ -2,15 +2,17 @@
 
 ## Sessão
 
-2026-09-30: entregues `STUDENT-PAID-ORDERS` e `PAYMENT-WEBHOOK`; fechadas as lacunas da
-validação adversarial. A listagem de pedidos agora documenta e rejeita cursor malformado, falhas
+2026-09-30: entregues `STUDENT-PAID-ORDERS` e `PAYMENT-WEBHOOK`; fechadas as lacunas das
+validações adversariais. A listagem de pedidos agora documenta e rejeita cursor malformado, falhas
 de resolução/verificação/dispatch de gateway retornam `gateway_unavailable` recuperável, e o
 checkout registra falhas de publicação do outbox sem expor segredo. O limiter do webhook usa IP
 sem particionamento por slug controlável. O harness HTTP E2E cobre sucesso, replay, falha,
 assinatura inválida e matrícula após webhook pago com gateway determinístico em
-`APP_ENV=testing|e2e`. O sanitizador do runner cobre segredos e assinaturas; Scribe filtra campos
-proibidos e marca headers obrigatórios. Dependências vulneráveis foram atualizadas e o finding
-PHPStan preexistente foi removido.
+`APP_ENV=testing|e2e`. O sanitizador do runner cobre também valores de asserções JSON; Scribe
+filtra campos proibidos e marca headers obrigatórios. Payloads financeiros (`orders.metadata`,
+`payments.gateway_response` e `payments.metadata`) são cifrados em repouso com migration de
+transição. Dependências vulneráveis foram atualizadas e o finding PHPStan preexistente foi
+removido.
 
 ## Próximos passos (1-3)
 
@@ -28,17 +30,17 @@ owners/canal de alerta, backup remoto, host/domínio/TLS/secrets, rollback e pro
 
 ## Último commit
 
-`7aedb72` contém o hardening de segurança da segunda auditoria: limiter por IP, 503 para falha de
-dispatch, sanitização ampliada, filtro geral de parâmetros proibidos e generator OpenAPI para
-headers obrigatórios. Está commitado em `main`; o push e a auditoria independente final ainda
-estão pendentes.
+`d69b6a7` contém o fechamento da auditoria final: cifragem em repouso dos payloads financeiros,
+sanitização do sink de asserções JSON do runner e os testes de regressão correspondentes. Está
+commitado em `main`; o push e a auditoria independente final ainda estão pendentes.
 
 ## Evidência atual
 
 - Testes focados do lote anterior: `38 passed (369 assertions)`.
 - Testes focados do hardening: `12 passed (68 assertions)`.
-- Suíte completa: `794 passed (6193 assertions)`.
-- Architecture afetada: `11 passed (699 assertions)`; execução direta dos invariantes verdes.
+- Testes de cifragem/sanitização: `4 passed (25 assertions)`.
+- Suíte completa: `796 passed (6200 assertions)`.
+- Architecture completa: `44 passed (1478 assertions)`.
 - Pint, lint do spec E2E, `git diff --check` e Scribe passaram. O Scribe foi executado com saída
   temporária em `/tmp` porque o cache/output padrão do container novo ficou pertencendo a
   `nobody`; a extração de rotas, HTML, Postman e OpenAPI concluiu sem erro.

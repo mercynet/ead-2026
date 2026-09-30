@@ -15,7 +15,12 @@ use App\Modules\Financial\Gateways\PaymentGatewayManager;
 use App\Modules\Financial\Models\Order;
 use App\Modules\Financial\Models\OrderPaidOutbox;
 use App\Modules\Financial\Models\Payment;
+use App\Modules\Financial\Services\Outbox\OrderPaidOutboxService;
 use App\Modules\Learning\Models\Course;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Event;
 
 class CheckoutAutomaticGateway implements PaymentGatewayInterface
 {
@@ -286,6 +291,37 @@ it('records one paid outbox row for winning result and its replay', function ():
     $this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers, $key))->assertOk();
 
     expect(OrderPaidOutbox::query()->count())->toBe(1);
+});
+
+it('logs checkout outbox publish failures without exposing exception details', function (): void {
+    $tenant = makeTenant();
+    [, $headers] = actingAsUserType(UserType::Student, $tenant);
+    checkoutGateway($tenant, new CheckoutAutomaticGateway(PaymentChargeStatus::Paid));
+    $course = checkoutCourse($tenant);
+    $failingDispatcher = Mockery::mock(Dispatcher::class);
+    $failingDispatcher->shouldReceive('dispatch')->once()->andThrow(new RuntimeException('Raw checkout secret.'));
+    app()->instance(OrderPaidOutboxService::class, new OrderPaidOutboxService(app(DatabaseManager::class), $failingDispatcher));
+    $loggedContext = [];
+    Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$loggedContext): void {
+        if ($event->level === 'warning' && $event->message === 'OrderPaid outbox publish failed.') {
+            $loggedContext = $event->context;
+        }
+    });
+
+    $this->postJson('/api/v1/student/checkout', ['course_id' => $course->id], checkoutRequestHeaders($headers, '4b4e1dc1-0ef6-46d8-9bea-aa992d719744'))
+        ->assertCreated();
+
+    $outbox = OrderPaidOutbox::query()->firstOrFail();
+
+    expect($outbox->dispatched_at)->toBeNull()
+        ->and($outbox->attempt_count)->toBe(1)
+        ->and($outbox->last_error_class)->toBe(RuntimeException::class)
+        ->and($loggedContext)->toMatchArray([
+            'order_id' => $outbox->order_id,
+            'outbox_id' => $outbox->id,
+            'exception_class' => RuntimeException::class,
+        ])
+        ->and(json_encode($loggedContext))->not->toContain('secret');
 });
 
 it('returns canonical failures without ledger leaks', function (): void {

@@ -124,6 +124,12 @@ it('validates the opaque cursor and rejects client-controlled listing options', 
     );
 
     assertApiErrorEnvelope(
+        $this->getJson('/api/v1/student/orders?cursor=e30', $headers),
+        422,
+        'validation_error',
+    );
+
+    assertApiErrorEnvelope(
         $this->getJson('/api/v1/student/orders?per_page=100', $headers),
         422,
         'validation_error',

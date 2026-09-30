@@ -4,13 +4,16 @@ namespace App\Modules\Financial\Actions\Webhooks;
 
 use App\Modules\Core\Models\Tenant;
 use App\Modules\Financial\Enums\PaymentConfirmationMode;
+use App\Modules\Financial\Exceptions\GatewayUnavailableException;
 use App\Modules\Financial\Gateways\TenantGatewayResolver;
 use App\Modules\Financial\Jobs\ProcessPaymentWebhookJob;
 use App\Modules\Financial\Models\Payment;
 use App\Modules\Financial\Services\Webhooks\WebhookSignatureVerifier;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class AcceptPaymentWebhookAction
 {
@@ -46,8 +49,8 @@ class AcceptPaymentWebhookAction
                 $payment->gateway_configuration_version,
                 $gatewaySlug,
             );
-        } catch (\Throwable) {
-            throw $this->invalidWebhook();
+        } catch (Throwable $exception) {
+            throw $this->gatewayUnavailable($gatewaySlug, $payment->id, $exception);
         }
 
         if ($gateway->confirmationMode() !== PaymentConfirmationMode::Automatic) {
@@ -61,8 +64,8 @@ class AcceptPaymentWebhookAction
                 $rawPayload,
                 $signature,
             );
-        } catch (\Throwable) {
-            $valid = false;
+        } catch (Throwable $exception) {
+            throw $this->gatewayUnavailable($gatewaySlug, $payment->id, $exception);
         }
 
         if (! $valid) {
@@ -103,5 +106,16 @@ class AcceptPaymentWebhookAction
     private function invalidWebhook(): ValidationException
     {
         return ValidationException::withMessages(['webhook' => 'Webhook inválido.']);
+    }
+
+    private function gatewayUnavailable(string $gatewaySlug, int $paymentId, Throwable $exception): GatewayUnavailableException
+    {
+        Log::warning('Payment webhook gateway unavailable.', [
+            'gateway_slug' => $gatewaySlug,
+            'payment_id' => $paymentId,
+            'exception_class' => $exception::class,
+        ]);
+
+        return new GatewayUnavailableException('Gateway de pagamento indisponível.');
     }
 }

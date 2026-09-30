@@ -28,7 +28,7 @@ class FinancialServiceProvider extends ServiceProvider
     public function boot(PaymentGatewayManager $paymentGatewayManager): void
     {
         $paymentGatewayManager->register(new CashPaymentGateway);
-        if (app()->environment('e2e')) {
+        if (app()->environment(['testing', 'e2e'])) {
             $paymentGatewayManager->register(new E2eWebhookGateway);
         }
 

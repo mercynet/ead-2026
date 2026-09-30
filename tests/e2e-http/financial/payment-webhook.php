@@ -6,8 +6,11 @@ use App\Modules\Ecosystem\Models\Plugin;
 use App\Modules\Ecosystem\Models\PluginActivation;
 use App\Modules\Ecosystem\Models\TenantPluginConfig;
 use App\Modules\Financial\Models\Order;
+use App\Modules\Financial\Models\OrderItem;
 use App\Modules\Financial\Models\OrderPaidOutbox;
 use App\Modules\Financial\Models\Payment;
+use App\Modules\Learning\Models\Course;
+use App\Modules\Learning\Models\Enrollment;
 
 /** @return array<string, string> */
 function e2ePaymentWebhookPayload(array $ctx, string $status, string $orderKey = 'order'): array
@@ -53,6 +56,14 @@ return [
             'gateway_configuration_version' => $config->configuration_version,
             'charge_state' => 'created',
         ]);
+        $course = Course::factory()->create(['tenant_id' => $ctx['tenant']->id]);
+        OrderItem::factory()->create([
+            'order_id' => $order->id,
+            'itemable_type' => Course::class,
+            'itemable_id' => $course->id,
+            'item_snapshot' => ['title' => $course->title],
+            'price_cents' => 12900,
+        ]);
         $failedOrder = Order::factory()->create([
             'tenant_id' => $ctx['tenant']->id,
             'user_id' => $ctx['users']['student']->id,
@@ -71,7 +82,7 @@ return [
             'charge_state' => 'created',
         ]);
 
-        return compact('order', 'payment', 'failedOrder', 'failedPayment', 'config', 'plugin', 'secret');
+        return compact('order', 'payment', 'failedOrder', 'failedPayment', 'config', 'plugin', 'secret', 'course');
     },
 
     'cases' => [
@@ -94,6 +105,7 @@ return [
                 'pedido pago' => ['paid', $ctx['fixtures']['order']->fresh()->status],
                 'pagamento concluído' => ['completed', $ctx['fixtures']['payment']->fresh()->status],
                 'outbox publicado' => [true, OrderPaidOutbox::query()->where('order_id', $ctx['fixtures']['order']->id)->first()?->dispatched_at !== null],
+                'matrícula ativa' => ['active', Enrollment::query()->where('tenant_id', $ctx['tenant']->id)->where('user_id', $ctx['users']['student']->id)->where('course_id', $ctx['fixtures']['course']->id)->value('status')],
             ],
         ],
         [
@@ -149,6 +161,8 @@ return [
         Payment::query()->whereIn('order_id', $orderIds)->delete();
         OrderPaidOutbox::query()->whereIn('order_id', $orderIds)->delete();
         Order::query()->whereIn('id', $orderIds)->delete();
+        Enrollment::query()->where('course_id', $ctx['fixtures']['course']->id)->delete();
+        Course::query()->whereKey($ctx['fixtures']['course']->id)->delete();
         TenantPluginConfig::query()->whereKey($ctx['fixtures']['config']->id)->delete();
         PluginActivation::query()->where('plugin_id', $ctx['fixtures']['plugin']->id)->delete();
         Plugin::query()->whereKey($ctx['fixtures']['plugin']->id)->delete();

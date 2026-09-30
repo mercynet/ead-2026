@@ -83,7 +83,7 @@ it('registers adapters and looks them up by identifier', function (): void {
         ->and($manager->get('pagseguro'))->toBeNull()
         ->and($manager->has('stripe'))->toBeTrue()
         ->and($manager->has('pagseguro'))->toBeFalse()
-        ->and(array_keys($manager->all()))->toBe(['cash', 'stripe', 'mercadopago']);
+        ->and(array_keys($manager->all()))->toBe(['cash', 'e2e-webhook', 'stripe', 'mercadopago']);
 });
 
 it('is bound as a singleton in the container', function (): void {

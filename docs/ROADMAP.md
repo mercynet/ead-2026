@@ -75,7 +75,7 @@ ou conflitante). Na reconciliação de 2026-09-05, nenhuma capability foi promov
 
 | Domínio | Estado | Evidência / lacuna |
 |---|---|---|
-| Financial | `partial` | ledger, checkout e outbox; orders/webhooks/E2E pago pendentes |
+| Financial | `partial` | ledger, checkout, orders, webhooks e outbox entregues; execução E2E HTTP paga depende de stack dedicada |
 | Ecosystem | `partial` | entitlement/config de gateway; marketplace e billing plataforma pendentes |
 
 Financial e Ecosystem não estão “não iniciados”; expandem conforme jornada demandar.
@@ -101,7 +101,7 @@ explícitas: `/api/v1/auth/*`, `/api/v1/webhooks/*`, `/api/v1/public/*`. Prefixo
 | assessment certificates list/show | Student/Admin; verify pública | decisão-needed + public neutral | legado | Assessment / inventory | split e verify neutro |
 | `/admin/courses*`, payment-gateways*, orders/*/confirm-manual-payment | produto Admin | Admin | área-first parcial | multi / inventory | guard persona exata + jornada Admin E2E |
 | `/student/checkout` | produto Student | Student | área-first parcial | Financial / inventory | orders/webhook/E2E pago |
-| planned `/webhooks/gateways/{slug}` | técnica | `/webhooks/gateways/{slug}` | planejada | Financial / inventory | idempotência/outbox + testes |
+| `/webhooks/gateways/{slug}` | técnica | `/webhooks/gateways/{slug}` | `CURRENT_IMPLEMENTED` | Financial / inventory | assinatura, idempotência/outbox + testes; runtime E2E depende de stack dedicada |
 
 ## Diferidos
 

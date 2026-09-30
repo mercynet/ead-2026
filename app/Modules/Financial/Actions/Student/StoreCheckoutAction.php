@@ -21,6 +21,7 @@ use App\Modules\Learning\Contracts\CourseCheckoutCatalog;
 use App\Modules\Learning\Contracts\CourseCheckoutOffering;
 use App\Shared\Http\ApiContext;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class StoreCheckoutAction
@@ -261,7 +262,12 @@ class StoreCheckoutAction
         $outbox = $this->outbox->record($this->orderPaidEvent($order));
         try {
             $this->outbox->publish($outbox->id);
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            Log::warning('OrderPaid outbox publish failed.', [
+                'order_id' => $order->id,
+                'outbox_id' => $outbox->id,
+                'exception_class' => $exception::class,
+            ]);
         }
     }
 

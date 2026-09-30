@@ -24,9 +24,9 @@ operacionais humanas.
 
 ## Último commit
 
-22df273 (main, enviado para origin/main) atualiza este handoff após 581f352, que contém os adapters
-first-party, a reconciliação Asaas, hardening do runner/checkout/webhooks, migration/tests financeiros
-e atualização do contrato de assinaturas de webhook. O working tree está limpo após o commit.
+abcb116 (main, enviado para origin/main) ancora este handoff após 22df273 e 581f352, que contêm os
+adapters first-party, a reconciliação Asaas, hardening do runner/checkout/webhooks, migration/tests
+financeiros e atualização do contrato de assinaturas de webhook. O working tree está limpo após o commit.
 
 ## Evidência atual
 

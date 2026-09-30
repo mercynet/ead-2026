@@ -1,6 +1,6 @@
 ---
 domain: assessment
-last-updated: 2026-09-08
+last-updated: 2026-09-30
 ---
 
 # Tasks — Assessment
@@ -40,6 +40,21 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
   respostas projetadas; parents somente Course/Lesson próprios, isolamento A/B e cross-tenant,
   Assessment Admin-owned invisível e imutabilidade após attempt. Evidência Feature, Architecture,
   PHPStan, Scribe e E2E em `docs/reports/INSTRUCTOR-I03-ASSESSMENT-OWN-RESULTS-2026-09-08.md`.
+- [x] `DELETE /api/v1/assessment/questions/{id}` remove questão tenant-scoped sem tentativa;
+  questões usadas permanecem imutáveis e retornam erro de validação. Cobertura Feature e
+  Architecture.
+  `Journey: ADMIN-OPS | Area: neutral legacy compatibility | Depends on: Assessment Admin basic`
+- [x] `GET /api/v1/assessment/questionnaires/{id}/questions` lista os vínculos ordenados por
+  `sort_order`, com questões eager-loaded e isolamento tenant. Cobertura Feature e Architecture.
+  `Journey: ADMIN-OPS | Area: neutral legacy compatibility | Depends on: Assessment Admin basic`
+- [x] `POST /api/v1/assessment/questionnaires/{id}/questions` anexa questões do mesmo tenant em
+  ordem determinística, rejeita duplicidade e preserva questionários com tentativa imutáveis.
+  Cobertura Feature e Architecture.
+  `Journey: ADMIN-OPS | Area: neutral legacy compatibility | Depends on: GET /questionnaires/{id}/questions`
+- [x] **Assessment Admin — revoke de certificado:** `POST /api/v1/admin/certificates/{id}/revoke`
+  revoga de forma idempotente no tenant atual; Admin de outro tenant recebe `not_found` e a
+  verificação pública passa a retornar `valid=false`. Cobertura Feature e Architecture.
+  `Journey: ADMIN-OPS | Area: admin | Depends on: Assessment certificates`
 
 ## In Progress
 
@@ -50,14 +65,10 @@ Cada task = 1 slice fino (≤ 1 endpoint ou 1 migration+model). Critério de ace
 - [ ] **Assign/transfer pedagógico:** se necessário ao produto, implementar operação explícita,
   autorizada e auditável para atribuir/transferir `instructor_id`; não fazer como efeito colateral do
   CRUD administrativo.
-- [ ] `DELETE /questions/{id}`.
-- [ ] `GET /questionnaires/{id}/questions` (listar questões do questionário).
-- [ ] `POST /questionnaires/{id}/questions` (anexar questões).
 - [ ] Geração de PDF do certificado.
 - [ ] Eventos: `QuizAttemptStarted`, `QuizAttemptFinished` (+ passed/failed), `CertificateIssuedEvent`, `CertificateRevokedEvent` (`CourseCompletedEvent` já existe no Learning).
 - [ ] Trigger complementar de emissão: quiz aprovado **depois** do curso completo
   (`certificate_requires_quiz` + aluno fecha quiz por último — hoje só o `CourseCompletedEvent` engatilha).
-- [ ] Revoke de certificado (`assessment.certificates.revoke`).
 - [ ] Alinhar permissions de Assessment às roles (admin/instructor/student) conforme a matriz em [`../00-architecture/rbac.md`](../00-architecture/rbac.md).
 - [ ] Teste E2E do fluxo do aluno (start → answer → finish → resultado).
 

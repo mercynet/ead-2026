@@ -25,6 +25,7 @@ class QuestionnaireResource extends JsonResource
                 'name' => $this->instructor?->name,
                 'email' => $this->instructor?->email,
             ],
+            'questions' => QuestionnaireQuestionResource::collection($this->whenLoaded('questions')),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

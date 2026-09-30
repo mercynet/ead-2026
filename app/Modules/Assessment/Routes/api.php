@@ -15,6 +15,8 @@ Route::prefix('v1/assessment')
             ->group(function (): void {
                 Route::get('/', 'index');
                 Route::post('/', 'store');
+                Route::get('/{questionnaireId}/questions', 'questions');
+                Route::post('/{questionnaireId}/questions', 'attach');
                 Route::get('/{id}', 'show');
                 Route::patch('/{id}', 'update');
                 Route::delete('/{id}', 'destroy');
@@ -28,6 +30,7 @@ Route::prefix('v1/assessment')
                 Route::post('/', 'store');
                 Route::get('/{id}', 'show');
                 Route::patch('/{id}', 'update');
+                Route::delete('/{id}', 'destroy');
             });
 
         Route::prefix('attempts')

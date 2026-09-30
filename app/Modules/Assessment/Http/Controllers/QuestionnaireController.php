@@ -2,13 +2,17 @@
 
 namespace App\Modules\Assessment\Http\Controllers;
 
+use App\Modules\Assessment\Actions\Questionnaire\AttachQuestionsAction;
 use App\Modules\Assessment\Actions\Questionnaire\DeleteQuestionnaireAction;
+use App\Modules\Assessment\Actions\Questionnaire\ListQuestionnaireQuestionsAction;
 use App\Modules\Assessment\Actions\Questionnaire\ListQuestionnairesAction;
 use App\Modules\Assessment\Actions\Questionnaire\ShowQuestionnaireAction;
 use App\Modules\Assessment\Actions\Questionnaire\StoreQuestionnaireAction;
 use App\Modules\Assessment\Actions\Questionnaire\UpdateQuestionnaireAction;
+use App\Modules\Assessment\Http\Requests\AttachQuestionsRequest;
 use App\Modules\Assessment\Http\Requests\StoreQuestionnaireRequest;
 use App\Modules\Assessment\Http\Requests\UpdateQuestionnaireRequest;
+use App\Modules\Assessment\Http\Resources\QuestionnaireQuestionResource;
 use App\Modules\Assessment\Http\Resources\QuestionnaireResource;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
@@ -28,6 +32,8 @@ class QuestionnaireController extends Controller
         private readonly StoreQuestionnaireAction $storeQuestionnaireAction,
         private readonly UpdateQuestionnaireAction $updateQuestionnaireAction,
         private readonly DeleteQuestionnaireAction $deleteQuestionnaireAction,
+        private readonly ListQuestionnaireQuestionsAction $listQuestionnaireQuestionsAction,
+        private readonly AttachQuestionsAction $attachQuestionsAction,
     ) {}
 
     /**
@@ -96,5 +102,29 @@ class QuestionnaireController extends Controller
         Gate::forUser($context->user)->authorize('assessment.questionnaires.delete', [$context->tenant]);
 
         $this->deleteQuestionnaireAction->handle($id, $context);
+    }
+
+    /**
+     * Listar Questões do Questionário
+     */
+    public function questions(int $questionnaireId, ApiContext $context): AnonymousResourceCollection
+    {
+        Gate::forUser($context->requiredUser())->authorize('assessment.questionnaires.view', [$context->tenant]);
+
+        return QuestionnaireQuestionResource::collection(
+            $this->listQuestionnaireQuestionsAction->handle($questionnaireId, $context),
+        );
+    }
+
+    /**
+     * Anexar Questões ao Questionário
+     */
+    public function attach(AttachQuestionsRequest $request, int $questionnaireId, ApiContext $context): QuestionnaireResource
+    {
+        Gate::forUser($context->requiredUser())->authorize('assessment.questionnaires.update', [$context->tenant]);
+
+        $this->attachQuestionsAction->handle($request, $questionnaireId, $context);
+
+        return QuestionnaireResource::make($this->showQuestionnaireAction->handle($questionnaireId, $context, true));
     }
 }

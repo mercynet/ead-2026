@@ -116,6 +116,22 @@ it('updates a question', function (): void {
     $response->assertJsonPath('data.question', 'Updated Question');
 });
 
+it('deletes a question that has not been used in an attempt', function (): void {
+    Sanctum::actingAs($this->developer);
+
+    $question = QuizQuestion::factory()->create([
+        'tenant_id' => $this->tenant->id,
+    ]);
+
+    $response = $this->deleteJson(
+        "/api/v1/assessment/questions/{$question->id}",
+        ['X-Tenant-ID' => (string) $this->tenant->id],
+    );
+
+    $response->assertSuccessful()->assertExactJson(['data' => null]);
+    expect(QuizQuestion::query()->whereKey($question->id)->exists())->toBeFalse();
+});
+
 it('cannot update question used in completed attempt', function (): void {
     Sanctum::actingAs($this->developer);
 
@@ -146,4 +162,39 @@ it('cannot update question used in completed attempt', function (): void {
     );
 
     assertApiErrorEnvelope($response, 422, 'validation_error');
+});
+
+it('cannot delete question used in an attempt', function (): void {
+    Sanctum::actingAs($this->developer);
+
+    $questionnaire = Questionnaire::factory()->create([
+        'tenant_id' => $this->tenant->id,
+    ]);
+
+    $question = QuizQuestion::factory()->create([
+        'tenant_id' => $this->tenant->id,
+    ]);
+
+    QuestionnaireQuestion::factory()->create([
+        'questionnaire_id' => $questionnaire->id,
+        'quiz_question_id' => $question->id,
+    ]);
+
+    QuizAttempt::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'user_id' => $this->developer->id,
+        'questionnaire_id' => $questionnaire->id,
+        'status' => 'in_progress',
+    ]);
+
+    assertApiErrorEnvelope(
+        $this->deleteJson(
+            "/api/v1/assessment/questions/{$question->id}",
+            ['X-Tenant-ID' => (string) $this->tenant->id],
+        ),
+        422,
+        'validation_error',
+    );
+
+    expect(QuizQuestion::query()->whereKey($question->id)->exists())->toBeTrue();
 });

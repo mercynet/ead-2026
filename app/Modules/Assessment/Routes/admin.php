@@ -2,6 +2,7 @@
 
 use App\Modules\Assessment\Http\Controllers\Admin\QuestionController;
 use App\Modules\Assessment\Http\Controllers\Admin\QuestionnaireController;
+use App\Modules\Assessment\Http\Controllers\Admin\CertificateController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/admin')
@@ -31,5 +32,11 @@ Route::prefix('v1/admin')
                 Route::post('/', 'store');
                 Route::get('/{id}', 'show');
                 Route::patch('/{id}', 'update');
+            });
+
+        Route::controller(CertificateController::class)
+            ->prefix('certificates')
+            ->group(function (): void {
+                Route::post('/{id}/revoke', 'revoke');
             });
     });

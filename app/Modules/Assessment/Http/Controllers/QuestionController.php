@@ -2,6 +2,7 @@
 
 namespace App\Modules\Assessment\Http\Controllers;
 
+use App\Modules\Assessment\Actions\Question\DeleteQuestionAction;
 use App\Modules\Assessment\Actions\Question\ListQuestionsAction;
 use App\Modules\Assessment\Actions\Question\ShowQuestionAction;
 use App\Modules\Assessment\Actions\Question\StoreQuestionAction;
@@ -11,6 +12,7 @@ use App\Modules\Assessment\Http\Requests\UpdateQuestionRequest;
 use App\Modules\Assessment\Http\Resources\QuestionResource;
 use App\Shared\Http\ApiContext;
 use App\Shared\Http\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
@@ -26,6 +28,7 @@ class QuestionController extends Controller
         private readonly ShowQuestionAction $showQuestionAction,
         private readonly StoreQuestionAction $storeQuestionAction,
         private readonly UpdateQuestionAction $updateQuestionAction,
+        private readonly DeleteQuestionAction $deleteQuestionAction,
     ) {}
 
     /**
@@ -76,5 +79,19 @@ class QuestionController extends Controller
         $question = $this->updateQuestionAction->handle($request, $id, $context);
 
         return QuestionResource::make($question);
+    }
+
+    /**
+     * Excluir Questão
+     *
+     * Questões usadas em tentativas permanecem imutáveis para preservar o histórico.
+     */
+    public function destroy(int $id, ApiContext $context): JsonResponse
+    {
+        Gate::forUser($context->requiredUser())->authorize('assessment.questions.delete', [$context->tenant]);
+
+        $this->deleteQuestionAction->handle($id, $context);
+
+        return new JsonResponse(['data' => null]);
     }
 }

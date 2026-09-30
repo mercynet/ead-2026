@@ -122,5 +122,6 @@ assessment.questions.{list,create,view,update,delete}
 
 ## Notes
 
-- Endpoints de anexar/listar questões no questionário e `DELETE /questions/{id}` ainda em
-  revisão/pendentes — ver [`../tasks.md`](../tasks.md).
+- Endpoints de anexar/listar questões no questionário e `DELETE /questions/{id}` foram entregues
+  na compatibilidade legada; a superfície Admin continua sendo expandida por slices área-first —
+  ver [`../tasks.md`](../tasks.md).

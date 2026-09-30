@@ -60,6 +60,7 @@ Emitido quando:
 |--------|------|-----------|------------|
 | GET | `/api/v1/assessment/certificates` | Listar certificados | `assessment.certificates.list` |
 | GET | `/api/v1/assessment/certificates/{id}` | Ver certificado | `assessment.certificates.view` |
+| POST | `/api/v1/admin/certificates/{id}/revoke` | Revogar certificado do tenant | `assessment.certificates.revoke` |
 | GET | `/api/v1/assessment/certificates/verify/{code}` | Verificar (público) | público |
 
 ## Permissions
@@ -73,5 +74,5 @@ Student acessa apenas os próprios (`own`); instructor/admin têm `view`. Ver
 
 ## Notes
 
-- Geração de PDF do certificado e eventos `CertificateIssuedEvent`/`CertificateRevokedEvent`
-  ainda pendentes — ver [`../tasks.md`](../tasks.md).
+- Geração de PDF e eventos `CertificateIssuedEvent`/`CertificateRevokedEvent` ainda pendentes — ver
+  [`../tasks.md`](../tasks.md).
